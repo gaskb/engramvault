@@ -4,13 +4,18 @@ from memoria.db.engine import Database
 from memoria.search.embeddings import EmbeddingEngine
 from memoria.config import RRF_K, BM25_WEIGHT, VEC_WEIGHT
 
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 
 def clean_fts_query(query: str) -> str:
     """Sanitizes user input into a safe FTS5 query with prefix search."""
     tokens = re.findall(r"\b[\w\-\.]{2,}\b", query)
     if not tokens:
         return ""
-    # Use OR or AND; AND with prefix matching works best for finding relevant chunks
     safe_terms = []
     for t in tokens:
         clean = t.replace('"', '').replace("'", "")
@@ -23,6 +28,34 @@ class HybridSearcher:
     def __init__(self, db: Database, embedder: Optional[EmbeddingEngine] = None):
         self.db = db
         self.embedder = embedder or EmbeddingEngine()
+        self._cached_chunk_ids: Optional[List[str]] = None
+        self._cached_matrix: Optional[Any] = None
+        self._cached_count: int = 0
+
+    def _ensure_vector_cache(self):
+        """Loads and caches normalized vector matrix in RAM for millisecond-latency searches."""
+        if not HAS_NUMPY:
+            return
+
+        with self.db.get_connection() as conn:
+            cur = conn.execute("SELECT COUNT(*) FROM chunks WHERE embedding IS NOT NULL")
+            total = cur.fetchone()[0]
+
+            if self._cached_matrix is not None and self._cached_count == total:
+                return
+
+            cur = conn.execute("SELECT id, embedding FROM chunks WHERE embedding IS NOT NULL")
+            rows = cur.fetchall()
+            if not rows:
+                self._cached_chunk_ids = []
+                self._cached_matrix = None
+                self._cached_count = 0
+                return
+
+            self._cached_chunk_ids = [r[0] for r in rows]
+            raw_blobs = b"".join(r[1] for r in rows)
+            self._cached_matrix = np.frombuffer(raw_blobs, dtype=np.float32).reshape((len(rows), -1))
+            self._cached_count = len(rows)
 
     def search_bm25(
         self,
@@ -74,6 +107,62 @@ class HybridSearcher:
     ) -> List[Dict[str, Any]]:
         q_vec = self.embedder.embed_text(query)
 
+        if HAS_NUMPY:
+            self._ensure_vector_cache()
+            if self._cached_matrix is not None and len(self._cached_chunk_ids) > 0:
+                q_arr = np.array(q_vec, dtype=np.float32)
+                scores = self._cached_matrix.dot(q_arr)
+
+                # Filter by candidate_ids or top scores
+                top_k = min(limit * 2, len(scores))
+                top_indices = np.argpartition(scores, -top_k)[-top_k:]
+                sorted_indices = top_indices[np.argsort(-scores[top_indices])]
+
+                selected_ids = []
+                scores_map = {}
+                for idx in sorted_indices:
+                    cid = self._cached_chunk_ids[idx]
+                    if candidate_ids and cid not in candidate_ids:
+                        continue
+                    sim = float(scores[idx])
+                    if sim > 0.05:
+                        selected_ids.append(cid)
+                        scores_map[cid] = sim
+                    if len(selected_ids) >= limit:
+                        break
+
+                if not selected_ids:
+                    return []
+
+                # Fetch details for selected top chunks
+                placeholders = ",".join("?" for _ in selected_ids)
+                sql = f"""
+                    SELECT c.id, c.chunk_text, c.message_id, c.conversation_id,
+                           conv.title AS conv_title, conv.provider, conv.created_at,
+                           m.role AS message_role, m.ts AS message_ts
+                    FROM chunks c
+                    JOIN conversations conv ON c.conversation_id = conv.id
+                    JOIN messages m ON c.message_id = m.id
+                    WHERE c.id IN ({placeholders})
+                """
+                params = list(selected_ids)
+                if provider:
+                    sql += " AND conv.provider = ?"
+                    params.append(provider)
+
+                with self.db.get_connection() as conn:
+                    cur = conn.execute(sql, params)
+                    results = []
+                    for row in cur:
+                        d = dict(row)
+                        d["vector_similarity"] = scores_map.get(d["id"], 0.0)
+                        results.append(d)
+                    results.sort(key=lambda x: x["vector_similarity"], reverse=True)
+                    for r_idx, item in enumerate(results):
+                        item["vector_rank"] = r_idx + 1
+                    return results
+
+        # Pure python fallback
         sql = """
             SELECT c.id, c.chunk_text, c.message_id, c.conversation_id, c.embedding,
                    conv.title AS conv_title, conv.provider, conv.created_at,
@@ -101,7 +190,7 @@ class HybridSearcher:
 
                 doc_vec = self.embedder.blob_to_vector(blob)
                 sim = self.embedder.cosine_similarity(q_vec, doc_vec)
-                if sim > 0.05:  # threshold
+                if sim > 0.05:
                     item = dict(row)
                     del item["embedding"]
                     item["vector_similarity"] = sim
@@ -146,7 +235,6 @@ class HybridSearcher:
             if v_hit:
                 score += w_vec / (rrf_k + v_hit["vector_rank"])
 
-            # Base item info from whichever hit found it
             base_item = b_hit or v_hit
             item_copy = dict(base_item)
             item_copy["rrf_score"] = round(score, 6)
