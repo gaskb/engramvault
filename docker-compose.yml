@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  memoria:
+    build: .
+    container_name: memoria-ai-anti
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      # Per monitorare direttamente le sessioni locali di Claude Code dall'host:
+      - ~/.claude/projects:/root/.claude/projects:ro
+    environment:
+      - MEMORIA_DB_PATH=/app/data/vault.db
+      - MEMORIA_DATA_DIR=/app/data
+      # Opzionale: LLM per sintesi profonda (se presente Ollama sul tuo homelab)
+      # - MEMORIA_LLM_BASE_URL=http://host.docker.internal:11434/v1
+      # - MEMORIA_LLM_MODEL=qwen2.5:3b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

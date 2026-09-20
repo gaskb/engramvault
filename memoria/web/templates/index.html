@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memoria AI Anti - Personal Vault & Knowledge Layer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0c0f17',
+                        cardbg: '#161b26',
+                        cardborder: '#232d3f',
+                        accent: '#10b981',
+                        accenthover: '#059669',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .glass-panel { background: rgba(22, 27, 38, 0.85); backdrop-filter: blur(12px); border: 1px solid #232d3f; }
+        .badge-fact { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-claim { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-decision { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    </style>
+</head>
+<body class="bg-darkbg text-slate-200 min-h-screen flex flex-col">
+
+    <!-- Top Navigation -->
+    <header class="border-b border-cardborder bg-[#10141d] sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xl">
+                    M
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                        Memoria AI <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Anti</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Vault Locale & Knowledge Layer per Homelab</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div id="quick-stats" class="hidden md:flex items-center space-x-4 text-xs text-slate-400">
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Conversazioni: <span id="stat-convs" class="font-semibold text-slate-200">...</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Fatti (FACT): <span id="stat-facts" class="font-semibold text-slate-200">...</span></div>
+                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Decisioni: <span id="stat-decisions" class="font-semibold text-slate-200">...</span></div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <nav class="flex space-x-1">
+                <button onclick="switchTab('ask')" id="tab-btn-ask" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500 text-white transition">🔍 Chiedi</button>
+                <button onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">🧠 Fatti & Entità</button>
+                <button onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚖️ Decisioni</button>
+                <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">💬 Vault Chat</button>
+                <button onclick="switchTab('import')" id="tab-btn-import" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">📥 Ingest</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: ASK & SEARCH -->
+        <section id="tab-ask" class="tab-content space-y-6">
+            <div class="glass-panel p-6 rounded-2xl shadow-xl">
+                <div class="flex flex-col gap-3">
+                    <label class="text-sm font-semibold text-slate-300">Interroga la tua memoria AI unificata:</label>
+                    <div class="flex gap-2">
+                        <input id="query-input" type="text"
+                               placeholder="Es: quali sono le migliori audiocassette per registrare un brano rock tra le audiocassette che ho ?"
+                               class="flex-1 bg-[#10141d] border border-cardborder rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                        <button onclick="submitQuery()" id="btn-submit-query"
+                                class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium text-sm transition flex items-center gap-2">
+                            <span>Chiedi</span>
+                        </button>
+                    </div>
+
+                    <!-- Mode Options & Quick Prompts -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-slate-400">Modalità:</span>
+                            <button onclick="setQueryMode('auto')" id="mode-auto" class="mode-btn px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">Auto (Consigliata)</button>
+                            <button onclick="setQueryMode('synthetic')" id="mode-synthetic" class="mode-btn px-2.5 py-1 rounded-md bg-[#10141d] text-slate-400 border border-cardborder hover:text-white">Sintetica</button>
+                            <button onclick="setQueryMode('structured')" id="mode-structured" class="mode-btn px-2.5 py-1 rounded-md bg-[#10141d] text-slate-400 border border-cardborder hover:text-white">Strutturata</button>
+                            <button onclick="setQueryMode('extractive')" id="mode-extractive" class="mode-btn px-2.5 py-1 rounded-md bg-[#10141d] text-slate-400 border border-cardborder hover:text-white">Estrattiva (Fonti)</button>
+                        </div>
+
+                        <!-- Quick Example Pill -->
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="text-slate-500">Prova subito:</span>
+                            <button onclick="useQuickPrompt('quali sono le migliori audiocassette per registrare un brano rock tra le audiocassette che ho ?')"
+                                    class="bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-md transition">
+                                📼 Test Audiocassette Rock
+                            </button>
+                            <button onclick="useQuickPrompt('quali decisioni ho preso riguardo all interfaccia audio?')"
+                                    class="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-md transition">
+                                🎛️ Setup Audio & Zen Go
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Query Results Box -->
+            <div id="query-result-box" class="hidden glass-panel p-6 rounded-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-cardborder pb-3">
+                    <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                        <span>Risultato Interrogazione</span>
+                        <span id="result-mode-badge" class="text-xs px-2 py-0.5 rounded font-mono uppercase bg-slate-800 text-slate-300"></span>
+                    </h2>
+                </div>
+                <div id="query-answer-content" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans">
+                    <!-- Dynamic Output -->
+                </div>
+                <!-- Source Citations (if any) -->
+                <div id="query-sources-container" class="pt-4 border-t border-cardborder hidden">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fonti e Citazioni Usate:</h3>
+                    <div id="query-sources-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: KNOWLEDGE & ENTITIES -->
+        <section id="tab-knowledge" class="tab-content hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Catalogo Entità & Memoria Distillata</h2>
+                    <p class="text-xs text-slate-400">Separazione netta tra fatti dell'utente (FACT) e opinioni dei modelli (CLAIM).</p>
+                </div>
+                <div class="flex gap-2">
+                    <select id="entity-cat-filter" onchange="loadEntities()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
+                        <option value="">Tutte le categorie</option>
+                        <option value="audiocassette">Audiocassette</option>
+                        <option value="audio_interface">Interfacce Audio</option>
+                        <option value="hardware_deck">Deck / Registratori</option>
+                        <option value="software">Software & Code</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="entities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Entities loaded via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 3: DECISIONS & TIMELINE -->
+        <section id="tab-decisions" class="tab-content hidden space-y-6">
+            <div>
+                <h2 class="text-lg font-bold text-white">Registro Decisioni & Timeline Evolutiva</h2>
+                <p class="text-xs text-slate-400">Come sono cambiate le tue scelte e il tuo setup hardware/software nel tempo.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Decisions Column -->
+                <div class="lg:col-span-2 glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                        <span>⚖️ Decisioni Registrate</span>
+                    </h3>
+                    <div id="decisions-list" class="space-y-3">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Timeline Column -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                        <span>⏳ Cronologia Setup</span>
+                    </h3>
+                    <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: VAULT CONVERSATIONS -->
+        <section id="tab-vault" class="tab-content hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Conversation Vault (Archivio Grezzo)</h2>
+                    <p class="text-xs text-slate-400">Conversazioni normalizzate conservate come unica fonte di verità.</p>
+                </div>
+                <div class="flex gap-2">
+                    <select id="vault-provider-filter" onchange="loadVault()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
+                        <option value="">Tutti i provider</option>
+                        <option value="chatgpt">ChatGPT</option>
+                        <option value="claude">Claude</option>
+                        <option value="claude_code">Claude Code (CLI)</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="vault-list" class="space-y-3">
+                <!-- Loaded via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 5: INGEST & SEED -->
+        <section id="tab-import" class="tab-content hidden space-y-6">
+            <div class="max-w-2xl mx-auto glass-panel p-8 rounded-2xl space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Importa Nuove Conversazioni</h2>
+                    <p class="text-xs text-slate-400">Trascina o carica il file di export (ZIP di ChatGPT, JSON di Claude, JSONL di Claude Code o Takeout di Gemini).</p>
+                </div>
+
+                <form id="upload-form" onsubmit="handleUpload(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Provider:</label>
+                        <select name="provider" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none">
+                            <option value="auto">Rilevamento Automatico</option>
+                            <option value="chatgpt">ChatGPT (.zip o conversations.json)</option>
+                            <option value="claude">Claude Web (.zip o conversations.json)</option>
+                            <option value="claude_code">Claude Code (.jsonl)</option>
+                            <option value="gemini">Gemini Takeout</option>
+                            <option value="markdown">Cartella / File Markdown (.md)</option>
+                        </select>
+                    </div>
+
+                    <div class="border-2 border-dashed border-cardborder hover:border-emerald-500/50 rounded-2xl p-8 text-center transition cursor-pointer bg-[#10141d]/50"
+                         onclick="document.getElementById('file-upload-input').click()">
+                        <input id="file-upload-input" type="file" name="file" class="hidden" onchange="fileSelected(this)">
+                        <div class="text-3xl mb-2">📁</div>
+                        <p id="upload-label" class="text-sm text-slate-300 font-medium">Clicca per selezionare un file o trascinalo qui</p>
+                        <p class="text-xs text-slate-500 mt-1">Supporta .zip, .json, .jsonl, .md</p>
+                    </div>
+
+                    <button type="submit" id="btn-upload" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-medium text-sm transition">
+                        Avvia Ingestione & Indicizzazione
+                    </button>
+                </form>
+
+                <div class="pt-6 border-t border-cardborder flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-white">Dataset di Prova & Benchmark</h3>
+                        <p class="text-xs text-slate-400">Carica 6 conversazioni realistiche multi-provider (incluso il caso audiocassette).</p>
+                    </div>
+                    <button onclick="runSeed()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-medium transition">
+                        Carica Dati Demo
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for viewing full conversation -->
+    <div id="conv-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardbg border border-cardborder rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-cardborder flex items-center justify-between">
+                <div>
+                    <h3 id="modal-title" class="font-bold text-white text-base">Titolo Conversazione</h3>
+                    <p id="modal-meta" class="text-xs text-slate-400"></p>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+            </div>
+            <div id="modal-messages" class="p-4 overflow-y-auto space-y-4 flex-1 text-sm">
+                <!-- Messages dynamic -->
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script>
+        let currentMode = 'auto';
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('stat-convs').innerText = data.conversations || 0;
+                document.getElementById('stat-facts').innerText = data.facts || 0;
+                document.getElementById('stat-decisions').innerText = data.decisions || 0;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-emerald-500', 'text-white');
+                el.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const btn = document.getElementById(`tab-btn-${tabId}`);
+            btn.classList.add('bg-emerald-500', 'text-white');
+            btn.classList.remove('text-slate-400');
+
+            if (tabId === 'knowledge') loadEntities();
+            if (tabId === 'decisions') { loadDecisions(); loadTimeline(); }
+            if (tabId === 'vault') loadVault();
+        }
+
+        function setQueryMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.className = 'mode-btn px-2.5 py-1 rounded-md bg-[#10141d] text-slate-400 border border-cardborder hover:text-white';
+            });
+            document.getElementById(`mode-${mode}`).className = 'mode-btn px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        }
+
+        function useQuickPrompt(text) {
+            document.getElementById('query-input').value = text;
+            submitQuery();
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('query-input').value.trim();
+            if (!query) return;
+
+            const btn = document.getElementById('btn-submit-query');
+            btn.innerHTML = '<span>Ricerca...</span>';
+            btn.disabled = true;
+
+            const resBox = document.getElementById('query-result-box');
+            resBox.classList.remove('hidden');
+            document.getElementById('query-answer-content').innerText = 'Interrogazione in corso sulla memoria locale...';
+
+            try {
+                const res = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, mode: currentMode })
+                });
+                const data = await res.json();
+
+                document.getElementById('result-mode-badge').innerText = data.mode;
+
+                if (data.answer) {
+                    document.getElementById('query-answer-content').innerText = data.answer;
+                } else if (data.results) {
+                    let html = `Trovati ${data.results.length} passaggi pertinenti:\n\n`;
+                    data.results.forEach((h, idx) => {
+                        html += `[${idx+1}] ${h.provider.toUpperCase()} — "${h.conv_title}" (${h.created_at.slice(0, 10)})\n` +
+                                `    ${h.chunk_text.slice(0, 240)}...\n\n`;
+                    });
+                    document.getElementById('query-answer-content').innerText = html;
+                }
+
+                // Sources list
+                const sources = data.sources || data.results || [];
+                const srcContainer = document.getElementById('query-sources-container');
+                const srcList = document.getElementById('query-sources-list');
+                srcList.innerHTML = '';
+
+                if (sources.length > 0) {
+                    srcContainer.classList.remove('hidden');
+                    sources.slice(0, 4).forEach(s => {
+                        const div = document.createElement('div');
+                        div.className = 'p-3 bg-[#10141d] rounded-xl border border-cardborder text-xs';
+                        div.innerHTML = `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono mr-1">${s.provider}</span>` +
+                                        `<span class="font-semibold text-white">${s.conv_title}</span>` +
+                                        `<p class="text-slate-400 mt-1 italic line-clamp-2">"${s.chunk_text}"</p>`;
+                        srcList.appendChild(div);
+                    });
+                } else {
+                    srcContainer.classList.add('hidden');
+                }
+
+            } catch (e) {
+                document.getElementById('query-answer-content').innerText = 'Errore durante la query: ' + e;
+            } finally {
+                btn.innerHTML = '<span>Chiedi</span>';
+                btn.disabled = false;
+            }
+        }
+
+        async function loadEntities() {
+            const cat = document.getElementById('entity-cat-filter').value;
+            const url = cat ? `/api/entities?category=${cat}` : '/api/entities';
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const c = document.getElementById('entities-container');
+            c.innerHTML = '';
+            if (data.length === 0) {
+                c.innerHTML = '<p class="text-xs text-slate-500 col-span-3">Nessuna entità estratta al momento.</p>';
+                return;
+            }
+
+            data.forEach(e => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-4 rounded-xl border border-cardborder space-y-3';
+                let stmtsHtml = '';
+
+                (e.statements || []).forEach(s => {
+                    const badgeClass = s.statement_type === 'FACT' ? 'badge-fact' : 'badge-claim';
+                    const currBadge = s.is_current ? '<span class="text-emerald-400 font-mono text-[10px] ml-1">● ATTUALE</span>' : '<span class="text-slate-500 font-mono text-[10px] ml-1">○ PASSATO</span>';
+                    stmtsHtml += `<div class="text-xs p-2 rounded bg-[#10141d] border border-cardborder/50">` +
+                                 `<div class="flex items-center justify-between mb-1">` +
+                                 `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}">${s.statement_type}</span>` +
+                                 `${currBadge}</div>` +
+                                 `<div class="text-slate-200"><strong>${s.predicate}:</strong> ${s.object}</div>` +
+                                 `<div class="text-[10px] text-slate-500 mt-1">Fonte: ${s.conversation_title || 'N/D'}</div></div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-bold text-white text-sm">${e.name}</h4>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase font-mono">${e.category}</span>
+                    </div>
+                    <div class="space-y-2">${stmtsHtml || '<span class="text-xs text-slate-500">Nessuna affermazione registrata</span>'}</div>
+                `;
+                c.appendChild(card);
+            });
+        }
+
+        async function loadDecisions() {
+            const res = await fetch('/api/decisions');
+            const data = await res.json();
+            const c = document.getElementById('decisions-list');
+            c.innerHTML = '';
+            if (data.length === 0) {
+                c.innerHTML = '<p class="text-xs text-slate-500">Nessuna decisione registrata.</p>';
+                return;
+            }
+
+            data.forEach(d => {
+                const item = document.createElement('div');
+                item.className = 'p-3 bg-[#10141d] rounded-xl border border-cardborder text-xs space-y-1';
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-amber-300 text-sm">${d.topic}</span>
+                        <span class="badge-decision px-2 py-0.5 rounded text-[10px] font-mono">${d.status}</span>
+                    </div>
+                    <p class="text-slate-200">${d.decision_text}</p>
+                    <div class="text-[10px] text-slate-500 flex justify-between pt-1">
+                        <span>Fonte: ${d.conversation_title || 'N/D'} (${d.conversation_provider})</span>
+                        <span>${(d.decided_at || '').slice(0, 10)}</span>
+                    </div>
+                `;
+                c.appendChild(item);
+            });
+        }
+
+        async function loadTimeline() {
+            const res = await fetch('/api/timeline');
+            const data = await res.json();
+            const c = document.getElementById('timeline-list');
+            c.innerHTML = '';
+            data.forEach(ev => {
+                const div = document.createElement('div');
+                div.className = 'text-xs space-y-0.5 relative';
+                const dt = (ev.event_date || '').slice(0, 10) || 'N/D';
+                const curr = ev.is_current ? '<span class="text-emerald-400 font-bold">● Attuale</span>' : '<span class="text-slate-500">○ Storico</span>';
+                div.innerHTML = `
+                    <div class="text-[10px] font-mono text-indigo-400">${dt} — ${curr}</div>
+                    <div class="font-semibold text-white">${ev.subject} <span class="text-slate-400 font-normal">(${ev.predicate})</span></div>
+                    <div class="text-slate-300 italic">"${ev.object}"</div>
+                `;
+                c.appendChild(div);
+            });
+        }
+
+        async function loadVault() {
+            const prov = document.getElementById('vault-provider-filter').value;
+            const url = prov ? `/api/conversations?provider=${prov}` : '/api/conversations';
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const c = document.getElementById('vault-list');
+            c.innerHTML = '';
+            data.forEach(cv => {
+                const item = document.createElement('div');
+                item.className = 'glass-panel p-4 rounded-xl flex items-center justify-between hover:border-emerald-500/40 cursor-pointer transition';
+                item.onclick = () => openModal(cv.id);
+                item.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono font-bold">${cv.provider}</span>
+                            <span class="font-bold text-white text-sm">${cv.title}</span>
+                        </div>
+                        <p class="text-xs text-slate-500">Ref: ${cv.external_ref} • Creato il: ${(cv.created_at || '').slice(0, 10)}</p>
+                    </div>
+                    <span class="text-slate-400 text-sm">Visualizza ➔</span>
+                `;
+                c.appendChild(item);
+            });
+        }
+
+        async function openModal(convId) {
+            const res = await fetch(`/api/conversations/${convId}`);
+            const data = await res.json();
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-meta').innerText = `${data.provider.toUpperCase()} • ${data.created_at}`;
+
+            const mBox = document.getElementById('modal-messages');
+            mBox.innerHTML = '';
+            (data.messages || []).forEach(m => {
+                const d = document.createElement('div');
+                const isUser = m.role === 'user';
+                d.className = `p-3 rounded-xl text-xs space-y-1 ${isUser ? 'bg-emerald-950/30 border border-emerald-500/20 mr-8' : 'bg-[#10141d] border border-cardborder ml-8'}`;
+                d.innerHTML = `
+                    <div class="flex justify-between font-bold ${isUser ? 'text-emerald-400' : 'text-indigo-400'}">
+                        <span>${isUser ? '👤 Tu' : '🤖 ' + data.provider.toUpperCase()}</span>
+                        <span class="text-[10px] text-slate-500 font-normal">${(m.ts || '').slice(0, 19).replace('T', ' ')}</span>
+                    </div>
+                    <div class="text-slate-200 leading-relaxed whitespace-pre-wrap">${m.content}</div>
+                `;
+                mBox.appendChild(d);
+            });
+
+            document.getElementById('conv-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('conv-modal').classList.add('hidden');
+        }
+
+        function fileSelected(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('upload-label').innerText = 'Selezionato: ' + input.files[0].name;
+            }
+        }
+
+        async function handleUpload(e) {
+            e.preventDefault();
+            const form = document.getElementById('upload-form');
+            const fileInput = document.getElementById('file-upload-input');
+            if (!fileInput.files[0]) {
+                alert('Seleziona prima un file!');
+                return;
+            }
+
+            const btn = document.getElementById('btn-upload');
+            btn.innerText = 'Ingestione in corso...';
+            btn.disabled = true;
+
+            const formData = new FormData(form);
+            try {
+                const res = await fetch('/api/ingest', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                alert(`Ingestione completata!\nImportate: ${data.imported}\nSaltate (duplicate): ${data.skipped}`);
+                fetchStats();
+                switchTab('vault');
+            } catch (err) {
+                alert('Errore caricamento: ' + err);
+            } finally {
+                btn.innerText = 'Avvia Ingestione & Indicizzazione';
+                btn.disabled = false;
+            }
+        }
+
+        async function runSeed() {
+            if (!confirm('Vuoi caricare il dataset demo con conversazioni di prova?')) return;
+            const res = await fetch('/api/seed', { method: 'POST' });
+            const data = await res.json();
+            alert(`Caricate ${data.seeded_count} conversazioni dimostrative!`);
+            fetchStats();
+            switchTab('knowledge');
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchStats();
+        });
+    </script>
+</body>
+</html>
