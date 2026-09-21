@@ -61,8 +61,10 @@ class AnthropicProvider(BaseLLMProvider):
             "model": self.model,
             "messages": chat_messages,
             "max_tokens": max_tokens,
-            "temperature": min(max(temperature, 0.0), 1.0),
         }
+        # Fable models deprecate temperature parameter
+        if "fable" not in self.model.lower():
+            payload["temperature"] = min(max(temperature, 0.0), 1.0)
 
         # Format system prompt with cache_control for prompt caching
         if extracted_sys:

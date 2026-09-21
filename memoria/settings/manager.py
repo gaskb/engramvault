@@ -56,10 +56,10 @@ PROVIDER_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "env_url": "GEMINI_BASE_URL",
         "is_local": False,
         "default_models": [
+            "gemini-3.6-flash",
             "gemini-3-flash-preview",
             "gemini-flash-latest",
             "gemini-pro-latest",
-            "gemini-2.5-flash-lite",
             "gemini-3.5-flash",
         ],
     },
@@ -297,11 +297,17 @@ class SettingsManager:
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     data = json.loads(resp.read().decode("utf-8"))
                     raw_models = data.get("models", [])
+                    skip_patterns = (
+                        "-tuning", "-image", "-tts", "-transcribe",
+                        "robotics", "computer-use", "customtools", "gemini-2.5-flash",
+                    )
                     for rm in raw_models:
                         name = rm.get("name", "").replace("models/", "")
                         methods = rm.get("supportedGenerationMethods", [])
-                        if "generateContent" in methods and "gemini" in name.lower() and not name.endswith("-tuning"):
+                        if "generateContent" in methods and "gemini" in name.lower() and not any(p in name.lower() for p in skip_patterns):
                             fetched.append(name)
+                    priority = ["gemini-3.6-flash", "gemini-3-flash-preview", "gemini-flash-latest", "gemini-pro-latest"]
+                    fetched.sort(key=lambda x: priority.index(x) if x in priority else 99)
 
             elif prov == "anthropic":
                 if not api_key:
