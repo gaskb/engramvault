@@ -1,6 +1,9 @@
+import asyncio
+import logging
 import os
 import shutil
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, Request, UploadFile, File, Form
@@ -8,14 +11,14 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from memoria.config import DEFAULT_DB_PATH
+from memoria.config import DEFAULT_DB_PATH, DEFAULT_INCOMING_DIR, WATCH_INTERVAL, WATCH_ENABLED
 from memoria.db.engine import Database
 from memoria.knowledge.query_planner import QueryPlanner
-from memoria.adapters.registry import parse_source, detect_provider
-from memoria.search.embeddings import EmbeddingEngine
-from memoria.knowledge.extractor import KnowledgeExtractor
-from memoria.seed.seed_data import seed_database, chunk_text
+from memoria.ingest.pipeline import ingest_source
+from memoria.ingest.watcher import DropFolderWatcher
+from memoria.seed.seed_data import seed_database
 
+logger = logging.getLogger("memoria.web")
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 
@@ -25,10 +28,46 @@ class QueryRequest(BaseModel):
 
 
 def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
-    app = FastAPI(title="Memoria AI Anti", description="Personal AI Conversation Vault")
-    templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
     db = Database(db_path)
     planner = QueryPlanner(db)
+    watcher = DropFolderWatcher(db, incoming_dir=DEFAULT_INCOMING_DIR, poll_interval=WATCH_INTERVAL)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        stop_event = asyncio.Event()
+
+        async def _watch_loop():
+            while not stop_event.is_set():
+                try:
+                    await asyncio.to_thread(watcher.scan_once)
+                except Exception as e:
+                    logger.error(f"Errore watcher drop folder: {e}")
+                try:
+                    await asyncio.wait_for(stop_event.wait(), timeout=WATCH_INTERVAL)
+                except asyncio.TimeoutError:
+                    pass
+
+        watch_task = None
+        if WATCH_ENABLED:
+            watch_task = asyncio.create_task(_watch_loop())
+            logger.info(f"Watcher drop folder attivato su: {DEFAULT_INCOMING_DIR}")
+
+        yield
+
+        if watch_task:
+            stop_event.set()
+            watch_task.cancel()
+            try:
+                await watch_task
+            except asyncio.CancelledError:
+                pass
+
+    app = FastAPI(
+        title="Memoria AI Anti",
+        description="Personal AI Conversation Vault",
+        lifespan=lifespan,
+    )
+    templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request):
@@ -36,7 +75,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         return templates.TemplateResponse(
             request=request,
             name="index.html",
-            context={"stats": stats, "db_name": db.db_path.name}
+            context={"stats": stats, "db_name": db.db_path.name},
         )
 
     @app.get("/api/stats")
@@ -88,39 +127,23 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             tmp_path = Path(tmp.name)
 
         try:
-            conversations = parse_source(tmp_path, provider=provider)
-            embedder = EmbeddingEngine()
-            extractor = KnowledgeExtractor(db)
-            imported = 0
-            skipped = 0
-
-            for conv in conversations:
-                if db.conversation_exists_by_hash(conv.compute_hash()):
-                    skipped += 1
-                    continue
-
-                chunk_payloads = []
-                for idx, msg in enumerate(conv.messages):
-                    for c_str in chunk_text(msg.text):
-                        blob = embedder.embed_to_blob(c_str)
-                        chunk_payloads.append((idx, c_str, blob))
-
-                conv_id = db.insert_conversation_with_chunks(conv, chunk_payloads)
-                conv_record = db.get_conversation(conv_id)
-                if conv_record:
-                    extractor.extract_from_conversation(conv, conv_id, conv_record["messages"])
-
-                imported += 1
-
-            return {
-                "status": "success",
-                "filename": file.filename,
-                "imported": imported,
-                "skipped": skipped,
-                "stats": db.get_stats()
-            }
+            summary = ingest_source(tmp_path, db, provider=provider)
+            summary["filename"] = file.filename
+            summary["stats"] = db.get_stats()
+            return summary
         finally:
             if tmp_path.exists():
                 tmp_path.unlink()
+
+    @app.post("/api/ingest/scan")
+    async def trigger_drop_folder_scan():
+        """Immediately scans the incoming drop folder."""
+        results = await asyncio.to_thread(watcher.scan_once)
+        return {
+            "status": "success",
+            "incoming_dir": str(watcher.incoming_dir),
+            "processed": results,
+            "stats": db.get_stats(),
+        }
 
     return app

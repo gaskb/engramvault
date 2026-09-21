@@ -20,6 +20,18 @@ BM25_WEIGHT = float(os.getenv("MEMORIA_BM25_WEIGHT", "1.0"))
 VEC_WEIGHT = float(os.getenv("MEMORIA_VEC_WEIGHT", "1.0"))
 
 
+# Watcher & Incoming settings
+DEFAULT_INCOMING_DIR = Path(os.getenv("MEMORIA_INCOMING_DIR", DEFAULT_DATA_DIR / "incoming"))
+WATCH_INTERVAL = int(os.getenv("MEMORIA_WATCH_INTERVAL", "5"))
+WATCH_ENABLED = os.getenv("MEMORIA_WATCH_ENABLED", "true").lower() in ("true", "1", "yes")
+
+
 def ensure_data_dir() -> Path:
     DEFAULT_DATA_DIR.mkdir(parents=True, exist_ok=True)
     return DEFAULT_DATA_DIR
+
+
+def ensure_incoming_dir() -> Path:
+    DEFAULT_INCOMING_DIR.mkdir(parents=True, exist_ok=True)
+    return DEFAULT_INCOMING_DIR
+

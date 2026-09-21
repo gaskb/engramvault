@@ -104,11 +104,18 @@ def parse_claude_code_session(file_path: Path) -> NormalizedConversation | None:
 
 
 def parse_claude_code(source: Union[str, Path]) -> List[NormalizedConversation]:
-    """Parses Claude Code session file or directory (e.g. ~/.claude/projects)."""
+    """Parses Claude Code session file, directory or zip archive (e.g. ~/.claude/projects)."""
     p = Path(source)
     conversations: List[NormalizedConversation] = []
 
     if p.is_file():
+        if p.suffix.lower() == ".zip":
+            import tempfile
+            import zipfile
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                with zipfile.ZipFile(p, "r") as zf:
+                    zf.extractall(tmp_dir)
+                return parse_claude_code(Path(tmp_dir))
         conv = parse_claude_code_session(p)
         if conv:
             conversations.append(conv)

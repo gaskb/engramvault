@@ -29,6 +29,8 @@ def detect_provider(path: Path) -> str:
         try:
             with zipfile.ZipFile(path, "r") as z:
                 names = z.namelist()
+                if any(n.endswith(".jsonl") for n in names):
+                    return "claude_code"
                 if any("conversations.json" in n for n in names):
                     # Check snippet of conversations.json
                     for n in names:

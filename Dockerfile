@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir
 
 COPY memoria/ ./memoria/
 
-RUN mkdir -p /app/data
+RUN mkdir -p /app/data /app/data/incoming
 
 EXPOSE 8080
 

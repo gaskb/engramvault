@@ -1,14 +1,12 @@
 import argparse
 import sys
 from pathlib import Path
-from memoria.config import DEFAULT_DB_PATH
+from memoria.config import DEFAULT_DB_PATH, DEFAULT_INCOMING_DIR, WATCH_INTERVAL
 from memoria.db.engine import Database
-from memoria.adapters.registry import parse_source, detect_provider
-from memoria.search.embeddings import EmbeddingEngine
+from memoria.ingest.pipeline import ingest_source
 from memoria.search.hybrid import HybridSearcher
-from memoria.knowledge.extractor import KnowledgeExtractor
 from memoria.knowledge.query_planner import QueryPlanner
-from memoria.seed.seed_data import seed_database, chunk_text
+from memoria.seed.seed_data import seed_database
 
 
 def cmd_init(args, db: Database):
@@ -29,40 +27,50 @@ def cmd_ingest(args, db: Database):
         print(f"Errore: Percorso '{source_path}' non trovato.", file=sys.stderr)
         sys.exit(1)
 
-    provider = args.provider
-    if provider == "auto":
-        detected = detect_provider(source_path)
-        print(f"Rilevato provider: '{detected}' per '{source_path.name}'")
+    print(f"Avvio ingestione da: {source_path}...")
+    res = ingest_source(source_path, db, provider=args.provider)
+    print(
+        f"✓ Ingestione completata ({res['provider']}): "
+        f"{res['imported']} importate, {res['skipped']} saltate (totale: {res['total']})."
+    )
 
-    print(f"Caricamento conversazioni da: {source_path}...")
-    conversations = parse_source(source_path, provider=provider)
-    print(f"Trovate {len(conversations)} conversazioni. Indicizzazione in corso...")
 
-    embedder = EmbeddingEngine()
-    extractor = KnowledgeExtractor(db)
-    imported = 0
-    skipped = 0
+def cmd_watch(args, db: Database):
+    from memoria.ingest.watcher import DropFolderWatcher
+    watcher = DropFolderWatcher(
+        db,
+        incoming_dir=args.incoming_dir,
+        poll_interval=args.interval,
+    )
+    print(f"Avvio monitoraggio cartella drop: '{watcher.incoming_dir}' (intervallo {args.interval}s)...")
+    print("I file (.zip, .json, .jsonl, .md) verranno importati ed eliminati automaticamente.")
+    watcher.run_forever()
 
-    for conv in conversations:
-        chash = conv.compute_hash()
-        if db.conversation_exists_by_hash(chash):
-            skipped += 1
-            continue
 
-        chunk_payloads = []
-        for idx, msg in enumerate(conv.messages):
-            for c_str in chunk_text(msg.text):
-                blob = embedder.embed_to_blob(c_str)
-                chunk_payloads.append((idx, c_str, blob))
+def cmd_sync_claude_code(args, db: Database):
+    from memoria.sync.claude_code import ClaudeCodeSyncer
+    syncer = ClaudeCodeSyncer(
+        projects_dir=args.projects_dir,
+        state_file=args.state_file,
+        remote_url=args.remote,
+        db=db if not args.remote else None,
+    )
+    dest_desc = f"server remoto '{args.remote}'" if args.remote else f"database locale '{db.db_path}'"
+    print(f"Sincronizzazione log Claude Code verso {dest_desc}...")
+    print(f"Sorgente: {syncer.projects_dir}")
 
-        conv_id = db.insert_conversation_with_chunks(conv, chunk_payloads)
-        conv_record = db.get_conversation(conv_id)
-        if conv_record:
-            extractor.extract_from_conversation(conv, conv_id, conv_record["messages"])
-
-        imported += 1
-
-    print(f"✓ Ingestione completata: {imported} importate, {skipped} saltate (già presenti).")
+    res = syncer.sync(dry_run=args.dry_run)
+    if args.dry_run:
+        print(f"[DRY-RUN] Trovate {res['changed_count']} sessioni nuove o modificate:")
+        for f in res.get("files", []):
+            print(f"  - {f}")
+    elif res.get("status") == "up_to_date":
+        print("✓ Nessuna nuova sessione da sincronizzare (tutto aggiornato).")
+    else:
+        print(
+            f"✓ Sincronizzazione completata: {res.get('synced_count', 0)} sessioni sincronizzate, "
+            f"{res.get('error_count', 0)} errori."
+        )
 
 
 def cmd_ask(args, db: Database):
@@ -154,7 +162,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog="memoria",
         parents=[base_parser],
-        description="Memoria AI: Conversation Vault & Knowledge Layer"
+        description="Memoria AI: Conversation Vault & Knowledge Layer",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -172,6 +180,22 @@ def main():
     p_ingest.add_argument("path", help="Percorso del file export (JSON/ZIP/JSONL/MD) o cartella")
     p_ingest.add_argument("--provider", default="auto", choices=["auto", "chatgpt", "claude", "claude_code", "gemini", "markdown", "normalized"])
     p_ingest.set_defaults(func=cmd_ingest)
+
+    # watch (Issue #4)
+    p_watch = subparsers.add_parser("watch", parents=[base_parser], help="Monitora cartella drop incoming per ingest ed eliminazione automatica")
+    p_watch.add_argument("--incoming-dir", default=str(DEFAULT_INCOMING_DIR), help="Cartella monitorata")
+    p_watch.add_argument("--interval", type=int, default=WATCH_INTERVAL, help="Intervallo di scansione in secondi")
+    p_watch.set_defaults(func=cmd_watch)
+
+    # sync (Issue #3)
+    p_sync = subparsers.add_parser("sync", parents=[base_parser], help="Comandi di sincronizzazione log")
+    sync_sub = p_sync.add_subparsers(dest="sync_target", required=True)
+    p_sync_claude = sync_sub.add_parser("claude-code", parents=[base_parser], help="Sincronizza sessioni Claude Code (~/.claude/projects/)")
+    p_sync_claude.add_argument("--remote", default=None, help="URL dell'istanza remota (es. http://localhost:5006)")
+    p_sync_claude.add_argument("--projects-dir", default=None, help="Percorso alternativo ~/.claude/projects")
+    p_sync_claude.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
+    p_sync_claude.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
+    p_sync_claude.set_defaults(func=cmd_sync_claude_code)
 
     # ask
     p_ask = subparsers.add_parser("ask", parents=[base_parser], help="Fai una domanda alla tua memoria AI")
