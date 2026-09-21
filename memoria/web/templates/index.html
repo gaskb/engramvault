@@ -299,7 +299,14 @@
                         </div>
                     </div>
 
-                    <div class="space-y-2 pt-4 border-t border-cardborder">
+                    <div class="space-y-3 pt-4 border-t border-cardborder">
+                        <div class="flex items-center justify-between text-xs bg-[#10141d] p-2.5 rounded-xl border border-cardborder">
+                            <label for="enrich-limit-input" class="text-slate-300 font-medium">Limite conversazioni:</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="enrich-limit-input" placeholder="Tutte (vuoto)" min="1" max="2000" class="w-32 bg-cardbg border border-cardborder rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                                <span class="text-[11px] text-slate-400 font-mono">(es. 5 o 10)</span>
+                            </div>
+                        </div>
                         <div class="flex gap-2">
                             <button onclick="startEnrich(false)" id="btn-start-enrich"
                                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-1.5">
@@ -989,10 +996,13 @@
                 return;
             }
 
+            const limitInput = document.getElementById('enrich-limit-input');
+            const limitVal = limitInput && limitInput.value ? parseInt(limitInput.value, 10) : null;
+
             const res = await fetch('/api/enrich/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rebuild, delay: 0.1 })
+                body: JSON.stringify({ rebuild, limit: limitVal, delay: 0.1 })
             });
             const data = await res.json();
             checkEnrichStatus();
