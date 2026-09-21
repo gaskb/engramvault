@@ -96,16 +96,17 @@ class LLMClient:
             "2. Se l'utente chiede cosa scegliere tra ciò che ha, considera SOLO gli elementi confermati nel suo inventario (FACT), "
             "menzionando eventuali altri solo come confronto o nota a margine.\n"
             "3. Motiva ogni scelta con dettagli tecnici specifici e collega i consigli alle discussioni passate citando le fonti se rilevanti.\n"
-            "4. Mantieni uno stile diretto, da esperto di settore, senza preamboli burocratici."
+            "4. Cita le fonti delle conversazioni passate riutilizzando i link markdown [Titolo Conversazione](#conv-ID) presenti negli estratti.\n"
+            "5. Mantieni uno stile diretto, da esperto di settore, senza preamboli burocratici."
         )
 
         facts_text = "\n".join([
-            f"- [{f.get('statement_type', 'FACT')}] {f.get('subject')} -> {f.get('predicate')}: {f.get('object')} (Fonte: {f.get('conversation_title', 'N/D')})"
+            f"- [{f.get('statement_type', 'FACT')}] {f.get('subject')} -> {f.get('predicate')}: {f.get('object')} (Fonte: [{f.get('conversation_title', 'Inventario')}](#conv-{f.get('source_conversation_id', '')}))"
             for f in facts
         ]) if facts else "Nessun fatto specifico trovato."
 
         chunks_text = "\n\n".join([
-            f"--- FONTE: {c.get('provider')} | {c.get('conv_title')} ({c.get('created_at', '')[:10]}) ---\n{c.get('chunk_text', '')}"
+            f"--- FONTE: [{c.get('conv_title', 'Conversazione')}](#conv-{c.get('conversation_id', '')}) | {c.get('provider')} ({c.get('created_at', '')[:10]}) ---\n{c.get('chunk_text', '')}"
             for c in chunks
         ]) if chunks else "Nessun frammento rilevante trovato."
 

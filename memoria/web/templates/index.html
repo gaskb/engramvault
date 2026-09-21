@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memoria AI Anti - Personal Vault & Knowledge Layer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -27,6 +28,29 @@
         .badge-fact { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
         .badge-claim { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
         .badge-decision { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* Markdown formatting for query responses */
+        .markdown-content h1 { font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-top: 1.1rem; margin-bottom: 0.5rem; }
+        .markdown-content h2 { font-size: 1.1rem; font-weight: 700; color: #ffffff; margin-top: 1rem; margin-bottom: 0.4rem; border-bottom: 1px solid #232d3f; padding-bottom: 0.25rem; }
+        .markdown-content h3 { font-size: 0.95rem; font-weight: 600; color: #818cf8; margin-top: 0.85rem; margin-bottom: 0.3rem; }
+        .markdown-content h4 { font-size: 0.875rem; font-weight: 600; color: #34d399; margin-top: 0.6rem; margin-bottom: 0.25rem; }
+        .markdown-content p { margin-bottom: 0.75rem; line-height: 1.6; }
+        .markdown-content ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+        .markdown-content ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+        .markdown-content li { margin-bottom: 0.35rem; line-height: 1.55; }
+        .markdown-content strong { color: #ffffff; font-weight: 600; }
+        .markdown-content em { color: #cbd5e1; font-style: italic; }
+        .markdown-content blockquote { border-left: 3px solid #818cf8; padding-left: 0.75rem; color: #94a3b8; margin: 0.75rem 0; font-style: italic; }
+        .markdown-content hr { border-color: #232d3f; margin: 1.25rem 0; }
+        .markdown-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.8rem; }
+        .markdown-content th, .markdown-content td { border: 1px solid #232d3f; padding: 0.4rem 0.6rem; text-align: left; }
+        .markdown-content th { background-color: #161b26; color: #ffffff; font-weight: 600; }
+        .markdown-content code { background-color: #10141d; color: #a5b4fc; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.85em; }
+        .markdown-content pre { background-color: #10141d; border: 1px solid #232d3f; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75rem 0; }
+        .markdown-content a { color: #818cf8; text-decoration: underline; text-underline-offset: 2px; }
+        .markdown-content a:hover { color: #a5b4fc; }
+        .markdown-content .citation-link { color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.15rem 0.45rem; border-radius: 0.375rem; font-size: 0.82em; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.15s; vertical-align: baseline; margin: 0 0.15rem; }
+        .markdown-content .citation-link:hover { background: rgba(16, 185, 129, 0.25); border-color: #34d399; color: #ffffff; text-decoration: none; }
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 min-h-screen flex flex-col">
@@ -122,7 +146,7 @@
                         <span id="result-mode-badge" class="text-xs px-2 py-0.5 rounded font-mono uppercase bg-slate-800 text-slate-300"></span>
                     </h2>
                 </div>
-                <div id="query-answer-content" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans"></div>
+                <div id="query-answer-content" class="markdown-content text-slate-200 text-sm leading-relaxed"></div>
                 <div id="query-sources-container" class="pt-4 border-t border-cardborder hidden">
                     <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fonti e Citazioni Usate:</h3>
                     <div id="query-sources-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -562,6 +586,100 @@
             submitQuery();
         }
 
+        function renderMarkdown(mdText, sources = [], facts = []) {
+            if (!mdText) return '';
+
+            // Build map of conversation titles to conversation IDs
+            const convMap = {};
+            (sources || []).forEach(s => {
+                if (s.conv_title && s.conversation_id) {
+                    convMap[s.conv_title.toLowerCase().trim()] = s.conversation_id;
+                }
+            });
+            (facts || []).forEach(f => {
+                const title = f.conversation_title;
+                const cid = f.source_conversation_id;
+                if (title && cid) {
+                    convMap[title.toLowerCase().trim()] = cid;
+                }
+            });
+
+            // Convert pseudo-links like [Inventario studio e audiocassette vintage] or [Fonte: Titolo Chat] into [Title](#conv-ID)
+            let processed = mdText.replace(/\[([^\]\n]+)\](?!\()/g, (match, title) => {
+                const cleanTitle = title.replace(/^(Fonte:\s*|Source:\s*)/i, '').trim();
+                const matchedId = convMap[cleanTitle.toLowerCase()] || convMap[title.toLowerCase()];
+                if (matchedId) {
+                    return `[${title}](#conv-${matchedId})`;
+                }
+                return match;
+            });
+
+            // If marked.js is available from CDN, use it with custom link renderer
+            if (window.marked && typeof window.marked.parse === 'function') {
+                const renderer = new marked.Renderer();
+                
+                renderer.link = function(hrefObj) {
+                    let href = typeof hrefObj === 'object' ? hrefObj.href : hrefObj;
+                    let text = typeof hrefObj === 'object' ? hrefObj.text : arguments[2];
+                    href = href || '';
+
+                    let convId = null;
+                    if (href.startsWith('#conv-')) {
+                        convId = href.replace('#conv-', '');
+                    } else if (href.startsWith('conversation://')) {
+                        convId = href.replace('conversation://', '');
+                    } else {
+                        const cleanText = (text || '').toLowerCase().replace(/^(fonte:\s*)/i, '').trim();
+                        if (convMap[cleanText]) convId = convMap[cleanText];
+                    }
+
+                    if (convId) {
+                        return `<a href="javascript:void(0)" onclick="openModal('${convId}')" class="citation-link" title="Fai clic per aprire la chat originale"><span>📄</span> <span>${text}</span> <span class="text-[10px] opacity-70">➔</span></a>`;
+                    }
+                    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                };
+
+                try {
+                    return marked.parse(processed, { renderer: renderer, gfm: true, breaks: true });
+                } catch (err) {
+                    console.warn('Marked parse error, using fallback:', err);
+                }
+            }
+
+            // Fallback parser if CDN is unreachable
+            return fallbackParseMarkdown(processed, convMap);
+        }
+
+        function fallbackParseMarkdown(text, convMap = {}) {
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // Blockquotes
+            html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+            // Bold & Italic
+            html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
+
+            // Links with #conv-
+            html = html.replace(/\[(.*?)\]\(#conv-(.*?)\)/gim, '<a href="javascript:void(0)" onclick="openModal(\'$2\')" class="citation-link" title="Apri conversazione"><span>📄</span> <span>$1</span> <span class="text-[10px]">➔</span></a>');
+            html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+            // Unordered list items
+            html = html.replace(/^\s*[-•]\s+(.*$)/gim, '<li>$1</li>');
+
+            // Paragraphs and breaks
+            html = html.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>');
+            return `<p>${html}</p>`;
+        }
+
         async function submitQuery() {
             const query = document.getElementById('query-input').value.trim();
             if (!query) return;
@@ -572,7 +690,7 @@
 
             const resBox = document.getElementById('query-result-box');
             resBox.classList.remove('hidden');
-            document.getElementById('query-answer-content').innerText = 'Interrogazione in corso sulla memoria locale...';
+            document.getElementById('query-answer-content').innerHTML = '<div class="flex items-center gap-2 text-indigo-300 py-2"><span class="animate-spin text-base">⏳</span> Interrogazione in corso sulla memoria locale e sintesi con LLM...</div>';
 
             try {
                 const res = await fetch('/api/query', {
@@ -585,14 +703,14 @@
                 document.getElementById('result-mode-badge').innerText = data.mode;
 
                 if (data.answer) {
-                    document.getElementById('query-answer-content').innerText = data.answer;
+                    document.getElementById('query-answer-content').innerHTML = renderMarkdown(data.answer, data.sources, data.facts);
                 } else if (data.results) {
-                    let html = `Trovati ${data.results.length} passaggi pertinenti:\n\n`;
+                    let html = `### Trovati ${data.results.length} passaggi pertinenti:\n\n`;
                     data.results.forEach((h, idx) => {
-                        html += `[${idx+1}] ${h.provider.toUpperCase()} — "${h.conv_title}" (${h.created_at.slice(0, 10)})\n` +
-                                `    ${h.chunk_text.slice(0, 240)}...\n\n`;
+                        html += `**[${idx+1}] ${h.provider.toUpperCase()} — "${h.conv_title}"** (${h.created_at.slice(0, 10)})\n` +
+                                `> ${h.chunk_text.slice(0, 240)}...\n\n`;
                     });
-                    document.getElementById('query-answer-content').innerText = html;
+                    document.getElementById('query-answer-content').innerHTML = renderMarkdown(html, data.results, []);
                 }
 
                 const sources = data.sources || data.results || [];
