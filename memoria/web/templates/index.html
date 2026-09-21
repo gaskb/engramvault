@@ -59,7 +59,7 @@
                 <button onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">🧠 Fatti & Entità</button>
                 <button onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚖️ Decisioni</button>
                 <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">💬 Vault Chat</button>
-                <button onclick="switchTab('import')" id="tab-btn-import" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">📥 Ingest</button>
+                <button onclick="switchTab('import')" id="tab-btn-import" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">📥 Ingest & Enrich</button>
             </nav>
         </div>
     </header>
@@ -116,10 +116,7 @@
                         <span id="result-mode-badge" class="text-xs px-2 py-0.5 rounded font-mono uppercase bg-slate-800 text-slate-300"></span>
                     </h2>
                 </div>
-                <div id="query-answer-content" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans">
-                    <!-- Dynamic Output -->
-                </div>
-                <!-- Source Citations (if any) -->
+                <div id="query-answer-content" class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans"></div>
                 <div id="query-sources-container" class="pt-4 border-t border-cardborder hidden">
                     <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fonti e Citazioni Usate:</h3>
                     <div id="query-sources-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -127,45 +124,54 @@
             </div>
         </section>
 
-        <!-- TAB 2: KNOWLEDGE & ENTITIES -->
+        <!-- TAB 2: KNOWLEDGE & ENTITIES (with Manual Curation - Issue #5) -->
         <section id="tab-knowledge" class="tab-content hidden space-y-6">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-lg font-bold text-white">Catalogo Entità & Memoria Distillata</h2>
-                    <p class="text-xs text-slate-400">Separazione netta tra fatti dell'utente (FACT) e opinioni dei modelli (CLAIM).</p>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>Catalogo Entità & Memoria Distillata</span>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Curation Attiva</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Fai clic sui badge [FACT / CLAIM] o [ATTUALE / PASSATO] per correggere e validare la memoria.</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex items-center gap-2">
+                    <button onclick="openNewStatementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                        <span>+ Nuovo Fatto</span>
+                    </button>
                     <select id="entity-cat-filter" onchange="loadEntities()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
                         <option value="">Tutte le categorie</option>
                         <option value="audiocassette">Audiocassette</option>
                         <option value="audio_interface">Interfacce Audio</option>
                         <option value="hardware_deck">Deck / Registratori</option>
                         <option value="software">Software & Code</option>
+                        <option value="general">Generale</option>
                     </select>
                 </div>
             </div>
 
-            <div id="entities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Entities loaded via JS -->
-            </div>
+            <div id="entities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
-        <!-- TAB 3: DECISIONS & TIMELINE -->
+        <!-- TAB 3: DECISIONS & TIMELINE (with Manual Curation - Issue #5) -->
         <section id="tab-decisions" class="tab-content hidden space-y-6">
-            <div>
-                <h2 class="text-lg font-bold text-white">Registro Decisioni & Timeline Evolutiva</h2>
-                <p class="text-xs text-slate-400">Come sono cambiate le tue scelte e il tuo setup hardware/software nel tempo.</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Registro Decisioni & Timeline Evolutiva</h2>
+                    <p class="text-xs text-slate-400">Scelte tecniche, hardware e architetturali con gestione dello stato.</p>
+                </div>
+                <button onclick="openNewDecisionModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                    <span>+ Nuova Decisione</span>
+                </button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Decisions Column -->
                 <div class="lg:col-span-2 glass-panel p-5 rounded-2xl space-y-4">
-                    <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider flex items-center justify-between">
                         <span>⚖️ Decisioni Registrate</span>
+                        <span id="decisions-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
-                    <div id="decisions-list" class="space-y-3">
-                        <!-- Loaded dynamically -->
-                    </div>
+                    <div id="decisions-list" class="space-y-3"></div>
                 </div>
 
                 <!-- Timeline Column -->
@@ -173,9 +179,7 @@
                     <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
                         <span>⏳ Cronologia Setup</span>
                     </h3>
-                    <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20">
-                        <!-- Loaded dynamically -->
-                    </div>
+                    <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20"></div>
                 </div>
             </div>
         </section>
@@ -199,60 +203,120 @@
                 </div>
             </div>
 
-            <div id="vault-list" class="space-y-3">
-                <!-- Loaded via JS -->
-            </div>
+            <div id="vault-list" class="space-y-3"></div>
         </section>
 
-        <!-- TAB 5: INGEST & SEED -->
+        <!-- TAB 5: INGEST & BATCH ENRICH (Issue #2 & #4) -->
         <section id="tab-import" class="tab-content hidden space-y-6">
-            <div class="max-w-2xl mx-auto glass-panel p-8 rounded-2xl space-y-6">
-                <div>
-                    <h2 class="text-lg font-bold text-white">Importa Nuove Conversazioni</h2>
-                    <p class="text-xs text-slate-400">Trascina o carica il file di export (ZIP di ChatGPT, JSON di Claude, JSONL di Claude Code o Takeout di Gemini).</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <!-- Drop Folder & Upload Panel -->
+                <div class="glass-panel p-6 rounded-2xl space-y-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Importa Conversazioni (Drop & Upload)</h2>
+                        <p class="text-xs text-slate-400">Carica manualmente archivi (.zip, .json, .jsonl, .md) oppure usa la cartella drop monitorata.</p>
+                    </div>
+
+                    <form id="upload-form" onsubmit="handleUpload(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Provider:</label>
+                            <select name="provider" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none">
+                                <option value="auto">Rilevamento Automatico</option>
+                                <option value="chatgpt">ChatGPT (.zip o conversations.json)</option>
+                                <option value="claude">Claude Web (.zip o conversations.json)</option>
+                                <option value="claude_code">Claude Code (.jsonl o .zip)</option>
+                                <option value="gemini">Gemini Takeout</option>
+                                <option value="markdown">Cartella / File Markdown (.md)</option>
+                            </select>
+                        </div>
+
+                        <div class="border-2 border-dashed border-cardborder hover:border-emerald-500/50 rounded-2xl p-6 text-center transition cursor-pointer bg-[#10141d]/50"
+                             onclick="document.getElementById('file-upload-input').click()">
+                            <input id="file-upload-input" type="file" name="file" class="hidden" onchange="fileSelected(this)">
+                            <div class="text-3xl mb-1">📁</div>
+                            <p id="upload-label" class="text-sm text-slate-300 font-medium">Seleziona file o trascinalo qui</p>
+                            <p class="text-xs text-slate-500 mt-1">Supporta .zip, .json, .jsonl, .md</p>
+                        </div>
+
+                        <button type="submit" id="btn-upload" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium text-sm transition">
+                            Carica & Indicizza
+                        </button>
+                    </form>
+
+                    <div class="pt-4 border-t border-cardborder flex items-center justify-between">
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-300">Scansione Drop Folder Immediata</h4>
+                            <p class="text-[11px] text-slate-500">Forza scansione della cartella data/incoming/</p>
+                        </div>
+                        <button onclick="triggerDropScan()" class="bg-[#10141d] hover:bg-slate-800 border border-cardborder text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                            Scansiona Ora
+                        </button>
+                    </div>
                 </div>
 
-                <form id="upload-form" onsubmit="handleUpload(event)" class="space-y-4">
+                <!-- Batch Knowledge Enrichment Panel (Issue #2) -->
+                <div class="glass-panel p-6 rounded-2xl space-y-6 flex flex-col justify-between">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Provider:</label>
-                        <select name="provider" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none">
-                            <option value="auto">Rilevamento Automatico</option>
-                            <option value="chatgpt">ChatGPT (.zip o conversations.json)</option>
-                            <option value="claude">Claude Web (.zip o conversations.json)</option>
-                            <option value="claude_code">Claude Code (.jsonl)</option>
-                            <option value="gemini">Gemini Takeout</option>
-                            <option value="markdown">Cartella / File Markdown (.md)</option>
-                        </select>
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <span>Batch Knowledge Enrich</span>
+                                <span id="enrich-running-pill" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono uppercase">Inattivo</span>
+                            </h2>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Elabora sistematicamente tutte le conversazioni con il modello LLM attivo per estrarre entità, fatti, claims e decisioni.
+                        </p>
+
+                        <!-- Live Progress Widget -->
+                        <div id="enrich-widget" class="mt-4 p-4 rounded-xl bg-[#10141d] border border-cardborder space-y-3">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-slate-400">Stato Avanzamento:</span>
+                                <span id="enrich-progress-text" class="font-mono text-emerald-400 font-bold">0 / 0</span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                                <div id="enrich-progress-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                                <div class="bg-cardbg p-2 rounded border border-cardborder/50">
+                                    <span class="text-slate-500 block text-[10px]">Nuovi Fatti</span>
+                                    <span id="enrich-stat-facts" class="font-bold text-white">0</span>
+                                </div>
+                                <div class="bg-cardbg p-2 rounded border border-cardborder/50">
+                                    <span class="text-slate-500 block text-[10px]">Nuove Decisioni</span>
+                                    <span id="enrich-stat-decisions" class="font-bold text-white">0</span>
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-slate-400 truncate">
+                                Modello: <span id="enrich-model-name" class="text-indigo-300 font-mono">...</span>
+                            </div>
+                            <div id="enrich-current-conv" class="text-[10px] text-slate-500 truncate italic"></div>
+                        </div>
                     </div>
 
-                    <div class="border-2 border-dashed border-cardborder hover:border-emerald-500/50 rounded-2xl p-8 text-center transition cursor-pointer bg-[#10141d]/50"
-                         onclick="document.getElementById('file-upload-input').click()">
-                        <input id="file-upload-input" type="file" name="file" class="hidden" onchange="fileSelected(this)">
-                        <div class="text-3xl mb-2">📁</div>
-                        <p id="upload-label" class="text-sm text-slate-300 font-medium">Clicca per selezionare un file o trascinalo qui</p>
-                        <p class="text-xs text-slate-500 mt-1">Supporta .zip, .json, .jsonl, .md</p>
+                    <div class="space-y-2 pt-4 border-t border-cardborder">
+                        <div class="flex gap-2">
+                            <button onclick="startEnrich(false)" id="btn-start-enrich"
+                                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-1.5">
+                                <span>▶ Avvia Enrich Incrementale</span>
+                            </button>
+                            <button onclick="stopEnrich()" id="btn-stop-enrich" disabled
+                                    class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-xl font-medium text-xs transition disabled:opacity-40">
+                                Arresta
+                            </button>
+                        </div>
+                        <button onclick="startEnrich(true)"
+                                class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-300 border border-cardborder text-slate-400 py-2 rounded-xl text-xs transition">
+                            ⚠️ Ricostruisci Grafo da Zero (--rebuild)
+                        </button>
                     </div>
-
-                    <button type="submit" id="btn-upload" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-medium text-sm transition">
-                        Avvia Ingestione & Indicizzazione
-                    </button>
-                </form>
-
-                <div class="pt-6 border-t border-cardborder flex items-center justify-between">
-                    <div>
-                        <h3 class="text-sm font-semibold text-white">Dataset di Prova & Benchmark</h3>
-                        <p class="text-xs text-slate-400">Carica 6 conversazioni realistiche multi-provider (incluso il caso audiocassette).</p>
-                    </div>
-                    <button onclick="runSeed()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-medium transition">
-                        Carica Dati Demo
-                    </button>
                 </div>
+
             </div>
         </section>
 
     </main>
 
-    <!-- Modal for viewing full conversation -->
+    <!-- Modal: View Full Conversation -->
     <div id="conv-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
             <div class="p-4 border-b border-cardborder flex items-center justify-between">
@@ -260,17 +324,102 @@
                     <h3 id="modal-title" class="font-bold text-white text-base">Titolo Conversazione</h3>
                     <p id="modal-meta" class="text-xs text-slate-400"></p>
                 </div>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+                <button onclick="closeModal('conv-modal')" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
             </div>
-            <div id="modal-messages" class="p-4 overflow-y-auto space-y-4 flex-1 text-sm">
-                <!-- Messages dynamic -->
+            <div id="modal-messages" class="p-4 overflow-y-auto space-y-4 flex-1 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- Modal: New Decision (Issue #5) -->
+    <div id="decision-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-cardborder pb-3">
+                <h3 class="text-base font-bold text-white">Nuova Decisione Personale</h3>
+                <button onclick="closeModal('decision-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
+            <form id="decision-form" onsubmit="handleCreateDecision(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Argomento / Oggetto:</label>
+                    <input type="text" id="new-dec-topic" required placeholder="Es. Interfaccia Audio, Backup Homelab"
+                           class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Testo della Decisione:</label>
+                    <textarea id="new-dec-text" required rows="3" placeholder="Es. Scelto Zen Go come interfaccia principale per stabilità driver."
+                              class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Stato Iniziale:</label>
+                    <select id="new-dec-status" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
+                        <option value="ADOPTED">ADOPTED (Adottata)</option>
+                        <option value="EVALUATING">EVALUATING (In Valutazione)</option>
+                        <option value="ABANDONED">ABANDONED (Scartata/Abbandonata)</option>
+                    </select>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('decision-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">Annulla</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium">Salva Decisione</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: New Statement / Fact (Issue #5) -->
+    <div id="statement-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-cardborder pb-3">
+                <h3 class="text-base font-bold text-white">Nuovo Fatto Manuale</h3>
+                <button onclick="closeModal('statement-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form id="statement-form" onsubmit="handleCreateStatement(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Soggetto / Entità:</label>
+                    <input type="text" id="new-stmt-subject" required placeholder="Es. TDK SA-X, Docker, Mac Studio"
+                           class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Proprietà / Predicato:</label>
+                        <input type="text" id="new-stmt-predicate" required value="owned_by_user" placeholder="Es. owned_by_user, uses"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Valore / Oggetto:</label>
+                        <input type="text" id="new-stmt-object" required value="true" placeholder="Es. true, 90 min"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Tipo:</label>
+                        <select id="new-stmt-type" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
+                            <option value="FACT">FACT (Fatto confermato)</option>
+                            <option value="CLAIM">CLAIM (Ipotesi/Suggerimento)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Categoria:</label>
+                        <select id="new-stmt-cat" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
+                            <option value="audiocassette">Audiocassetta</option>
+                            <option value="audio_interface">Interfaccia Audio</option>
+                            <option value="hardware_deck">Deck / Hardware</option>
+                            <option value="software">Software</option>
+                            <option value="general">Generale</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('statement-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">Annulla</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium">Aggiungi Fatto</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- JavaScript Controller -->
     <script>
         let currentMode = 'auto';
+        let enrichPollInterval = null;
 
         async function fetchStats() {
             try {
@@ -299,6 +448,7 @@
             if (tabId === 'knowledge') loadEntities();
             if (tabId === 'decisions') { loadDecisions(); loadTimeline(); }
             if (tabId === 'vault') loadVault();
+            if (tabId === 'import') checkEnrichStatus();
         }
 
         function setQueryMode(mode) {
@@ -347,7 +497,6 @@
                     document.getElementById('query-answer-content').innerText = html;
                 }
 
-                // Sources list
                 const sources = data.sources || data.results || [];
                 const srcContainer = document.getElementById('query-sources-container');
                 const srcList = document.getElementById('query-sources-list');
@@ -375,6 +524,8 @@
             }
         }
 
+        // --- Curation: Entities & Statements (Issue #5) ---
+
         async function loadEntities() {
             const cat = document.getElementById('entity-cat-filter').value;
             const url = cat ? `/api/entities?category=${cat}` : '/api/entities';
@@ -394,20 +545,45 @@
                 let stmtsHtml = '';
 
                 (e.statements || []).forEach(s => {
-                    const badgeClass = s.statement_type === 'FACT' ? 'badge-fact' : 'badge-claim';
-                    const currBadge = s.is_current ? '<span class="text-emerald-400 font-mono text-[10px] ml-1">● ATTUALE</span>' : '<span class="text-slate-500 font-mono text-[10px] ml-1">○ PASSATO</span>';
-                    stmtsHtml += `<div class="text-xs p-2 rounded bg-[#10141d] border border-cardborder/50">` +
-                                 `<div class="flex items-center justify-between mb-1">` +
-                                 `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}">${s.statement_type}</span>` +
-                                 `${currBadge}</div>` +
-                                 `<div class="text-slate-200"><strong>${s.predicate}:</strong> ${s.object}</div>` +
-                                 `<div class="text-[10px] text-slate-500 mt-1">Fonte: ${s.conversation_title || 'N/D'}</div></div>`;
+                    const badgeClass = s.statement_type === 'FACT' ? 'badge-fact hover:bg-emerald-500/30' : 'badge-claim hover:bg-indigo-500/30';
+                    const currColor = s.is_current ? 'text-emerald-400' : 'text-slate-500';
+                    const currText = s.is_current ? '● ATTUALE' : '○ PASSATO';
+                    
+                    stmtsHtml += `
+                    <div class="text-xs p-2.5 rounded-lg bg-[#10141d] border border-cardborder/50 group relative">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <button onclick="toggleStatementType('${s.id}', '${s.statement_type}')" title="Clicca per invertire FACT/CLAIM"
+                                    class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition cursor-pointer ${badgeClass}">
+                                ${s.statement_type} ⇄
+                            </button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleStatementStatus('${s.id}', ${s.is_current})" title="Clicca per cambiare stato attivo/passato"
+                                        class="${currColor} font-mono text-[10px] hover:underline cursor-pointer">
+                                    ${currText}
+                                </button>
+                                <button onclick="deleteStatement('${s.id}')" title="Elimina affermazione errata"
+                                        class="text-slate-600 hover:text-rose-400 transition p-0.5 text-xs">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-slate-200"><strong>${s.predicate}:</strong> ${s.object}</div>
+                        <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
+                            <span>${s.conversation_title ? 'Fonte: ' + s.conversation_title : (s.notes || '')}</span>
+                            <span>${(s.valid_from || '').slice(0, 10)}</span>
+                        </div>
+                    </div>`;
                 });
 
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-white text-sm">${e.name}</h4>
-                        <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase font-mono">${e.category}</span>
+                        <h4 class="font-bold text-white text-sm flex items-center gap-1.5">
+                            <span>${e.name}</span>
+                        </h4>
+                        <div class="flex items-center gap-1">
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase font-mono">${e.category}</span>
+                            <button onclick="deleteEntity('${e.id}', '${e.name}')" title="Elimina entità" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs">✕</button>
+                        </div>
                     </div>
                     <div class="space-y-2">${stmtsHtml || '<span class="text-xs text-slate-500">Nessuna affermazione registrata</span>'}</div>
                 `;
@@ -415,11 +591,82 @@
             });
         }
 
+        async function toggleStatementType(stmtId, currentType) {
+            const newType = currentType === 'FACT' ? 'CLAIM' : 'FACT';
+            const res = await fetch(`/api/statements/${stmtId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statement_type: newType })
+            });
+            if (res.ok) {
+                fetchStats();
+                loadEntities();
+            }
+        }
+
+        async function toggleStatementStatus(stmtId, currentStatus) {
+            const newStatus = currentStatus ? 0 : 1;
+            const res = await fetch(`/api/statements/${stmtId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_current: newStatus })
+            });
+            if (res.ok) {
+                loadEntities();
+            }
+        }
+
+        async function deleteStatement(stmtId) {
+            if (!confirm('Eliminare questo fatto/claim?')) return;
+            const res = await fetch(`/api/statements/${stmtId}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchStats();
+                loadEntities();
+            }
+        }
+
+        async function deleteEntity(entityId, name) {
+            if (!confirm(`Eliminare l'entità "${name}"?`)) return;
+            const res = await fetch(`/api/entities/${entityId}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchStats();
+                loadEntities();
+            }
+        }
+
+        function openNewStatementModal() {
+            document.getElementById('statement-modal').classList.remove('hidden');
+        }
+
+        async function handleCreateStatement(e) {
+            e.preventDefault();
+            const subject = document.getElementById('new-stmt-subject').value.trim();
+            const predicate = document.getElementById('new-stmt-predicate').value.trim();
+            const object = document.getElementById('new-stmt-object').value.trim();
+            const statement_type = document.getElementById('new-stmt-type').value;
+            const entity_category = document.getElementById('new-stmt-cat').value;
+
+            const res = await fetch('/api/statements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subject, predicate, object, statement_type, entity_category })
+            });
+            if (res.ok) {
+                closeModal('statement-modal');
+                document.getElementById('statement-form').reset();
+                fetchStats();
+                loadEntities();
+            }
+        }
+
+        // --- Curation: Decisions (Issue #5) ---
+
         async function loadDecisions() {
             const res = await fetch('/api/decisions');
             const data = await res.json();
             const c = document.getElementById('decisions-list');
             c.innerHTML = '';
+            document.getElementById('decisions-count-badge').innerText = `${data.length} totali`;
             if (data.length === 0) {
                 c.innerHTML = '<p class="text-xs text-slate-500">Nessuna decisione registrata.</p>';
                 return;
@@ -427,21 +674,74 @@
 
             data.forEach(d => {
                 const item = document.createElement('div');
-                item.className = 'p-3 bg-[#10141d] rounded-xl border border-cardborder text-xs space-y-1';
+                item.className = 'p-3.5 bg-[#10141d] rounded-xl border border-cardborder text-xs space-y-2';
                 item.innerHTML = `
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-amber-300 text-sm">${d.topic}</span>
-                        <span class="badge-decision px-2 py-0.5 rounded text-[10px] font-mono">${d.status}</span>
+                        <div class="flex items-center gap-2">
+                            <select onchange="updateDecisionStatus('${d.id}', this.value)" class="badge-decision px-2 py-0.5 rounded text-[10px] font-mono bg-transparent cursor-pointer">
+                                <option value="ADOPTED" ${d.status === 'ADOPTED' ? 'selected' : ''}>ADOPTED</option>
+                                <option value="EVALUATING" ${d.status === 'EVALUATING' ? 'selected' : ''}>EVALUATING</option>
+                                <option value="ABANDONED" ${d.status === 'ABANDONED' ? 'selected' : ''}>ABANDONED</option>
+                            </select>
+                            <button onclick="deleteDecision('${d.id}')" title="Elimina decisione" class="text-slate-600 hover:text-rose-400 text-xs">✕</button>
+                        </div>
                     </div>
-                    <p class="text-slate-200">${d.decision_text}</p>
-                    <div class="text-[10px] text-slate-500 flex justify-between pt-1">
-                        <span>Fonte: ${d.conversation_title || 'N/D'} (${d.conversation_provider})</span>
+                    <p class="text-slate-200 leading-relaxed">${d.decision_text}</p>
+                    <div class="text-[10px] text-slate-500 flex justify-between pt-1 border-t border-cardborder/40">
+                        <span>Fonte: ${d.conversation_title ? d.conversation_provider + ' - ' + d.conversation_title : 'Manuale'}</span>
                         <span>${(d.decided_at || '').slice(0, 10)}</span>
                     </div>
                 `;
                 c.appendChild(item);
             });
         }
+
+        async function updateDecisionStatus(decId, newStatus) {
+            await fetch(`/api/decisions/${decId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            loadDecisions();
+            loadTimeline();
+        }
+
+        async function deleteDecision(decId) {
+            if (!confirm('Eliminare questa decisione?')) return;
+            const res = await fetch(`/api/decisions/${decId}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchStats();
+                loadDecisions();
+                loadTimeline();
+            }
+        }
+
+        function openNewDecisionModal() {
+            document.getElementById('decision-modal').classList.remove('hidden');
+        }
+
+        async function handleCreateDecision(e) {
+            e.preventDefault();
+            const topic = document.getElementById('new-dec-topic').value.trim();
+            const decision_text = document.getElementById('new-dec-text').value.trim();
+            const status = document.getElementById('new-dec-status').value;
+
+            const res = await fetch('/api/decisions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic, decision_text, status })
+            });
+            if (res.ok) {
+                closeModal('decision-modal');
+                document.getElementById('decision-form').reset();
+                fetchStats();
+                loadDecisions();
+                loadTimeline();
+            }
+        }
+
+        // --- Timeline & Vault ---
 
         async function loadTimeline() {
             const res = await fetch('/api/timeline');
@@ -513,8 +813,8 @@
             document.getElementById('conv-modal').classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('conv-modal').classList.add('hidden');
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
         }
 
         function fileSelected(input) {
@@ -538,32 +838,83 @@
 
             const formData = new FormData(form);
             try {
-                const res = await fetch('/api/ingest', {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch('/api/ingest', { method: 'POST', body: formData });
                 const data = await res.json();
-                alert(`Ingestione completata!\nImportate: ${data.imported}\nSaltate (duplicate): ${data.skipped}`);
+                alert(`Ingestione completata!\nImportate: ${data.imported}\nSaltate: ${data.skipped}`);
                 fetchStats();
                 switchTab('vault');
             } catch (err) {
                 alert('Errore caricamento: ' + err);
             } finally {
-                btn.innerText = 'Avvia Ingestione & Indicizzazione';
+                btn.innerText = 'Carica & Indicizza';
                 btn.disabled = false;
             }
         }
 
-        async function runSeed() {
-            if (!confirm('Vuoi caricare il dataset demo con conversazioni di prova?')) return;
-            const res = await fetch('/api/seed', { method: 'POST' });
+        async function triggerDropScan() {
+            const res = await fetch('/api/ingest/scan', { method: 'POST' });
             const data = await res.json();
-            alert(`Caricate ${data.seeded_count} conversazioni dimostrative!`);
+            alert(`Scansione drop folder completata!\nElaborati: ${data.processed.length} file.`);
             fetchStats();
-            switchTab('knowledge');
         }
 
-        // Initialize on page load
+        // --- Batch Enrich Controller (Issue #2) ---
+
+        async function checkEnrichStatus() {
+            try {
+                const res = await fetch('/api/enrich/status');
+                const s = await res.json();
+
+                const isRunning = s.is_running;
+                const pill = document.getElementById('enrich-running-pill');
+                pill.innerText = isRunning ? 'In Esecuzione...' : 'Inattivo';
+                pill.className = isRunning
+                    ? 'text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded font-mono uppercase animate-pulse'
+                    : 'text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono uppercase';
+
+                document.getElementById('enrich-progress-text').innerText = `${s.processed} / ${s.total_to_process}`;
+                const pct = s.total_to_process > 0 ? Math.round((s.processed / s.total_to_process) * 100) : 0;
+                document.getElementById('enrich-progress-bar').style.width = `${pct}%`;
+                document.getElementById('enrich-stat-facts').innerText = s.new_facts;
+                document.getElementById('enrich-stat-decisions').innerText = s.new_decisions;
+                document.getElementById('enrich-model-name').innerText = s.extractor_model || 'heuristics';
+                document.getElementById('enrich-current-conv').innerText = s.current_conversation ? `Attuale: "${s.current_conversation}"` : '';
+
+                document.getElementById('btn-start-enrich').disabled = isRunning;
+                document.getElementById('btn-stop-enrich').disabled = !isRunning;
+
+                if (!isRunning && enrichPollInterval) {
+                    clearInterval(enrichPollInterval);
+                    enrichPollInterval = null;
+                    fetchStats();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function startEnrich(rebuild = false) {
+            if (rebuild && !confirm('ATTENZIONE: La modalità --rebuild azzera tutti i fatti, decisioni ed entità per rigenerarli da zero con il modello attuale. Continuare?')) {
+                return;
+            }
+
+            const res = await fetch('/api/enrich/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rebuild, delay: 0.1 })
+            });
+            const data = await res.json();
+            checkEnrichStatus();
+            if (!enrichPollInterval) {
+                enrichPollInterval = setInterval(checkEnrichStatus, 1500);
+            }
+        }
+
+        async function stopEnrich() {
+            await fetch('/api/enrich/stop', { method: 'POST' });
+            checkEnrichStatus();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             fetchStats();
         });

@@ -73,6 +73,25 @@ def cmd_sync_claude_code(args, db: Database):
         )
 
 
+def cmd_enrich(args, db: Database):
+    from memoria.knowledge.enricher import KnowledgeEnricher
+    from memoria.llm.client import LLMClient
+
+    llm = LLMClient(provider=args.provider, model=args.model)
+    enricher = KnowledgeEnricher(db, llm=llm, delay_between_calls=args.delay)
+    mode_desc = "ricostruzione completa (--rebuild)" if args.rebuild else "incrementale"
+    print(f"Avvio pipeline di estrazione conoscenza [{mode_desc}]...")
+    print(f"Modello: {enricher.status['extractor_model']} (delay: {args.delay}s)")
+
+    res = enricher.run_batch(limit=args.limit, rebuild=args.rebuild, delay=args.delay)
+    print(f"\n✓ Batch enrichment completato:")
+    print(f"  - Elaborate       : {res['processed']} / {res['total_to_process']}")
+    print(f"  - Nuovi fatti     : {res['new_facts']}")
+    print(f"  - Nuove decisioni : {res['new_decisions']}")
+    if res.get("error"):
+        print(f"  - Errore          : {res['error']}")
+
+
 def cmd_ask(args, db: Database):
     planner = QueryPlanner(db)
     res = planner.route_query(args.query, mode=args.mode)
@@ -196,6 +215,15 @@ def main():
     p_sync_claude.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
     p_sync_claude.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
     p_sync_claude.set_defaults(func=cmd_sync_claude_code)
+
+    # enrich (Issue #2)
+    p_enrich = subparsers.add_parser("enrich", parents=[base_parser], help="Pipeline batch di estrazione e arricchimento conoscenza")
+    p_enrich.add_argument("--limit", type=int, default=None, help="Numero massimo di conversazioni da elaborare")
+    p_enrich.add_argument("--provider", default=None, choices=["auto", "anthropic", "openai", "gemini", "grok", "deepseek", "qwen"], help="Provider LLM da usare")
+    p_enrich.add_argument("--model", default=None, help="Modello LLM specifico per estrazione")
+    p_enrich.add_argument("--rebuild", action="store_true", help="Azzera e ri-estrae da zero la conoscenza su tutte le conversazioni")
+    p_enrich.add_argument("--delay", type=float, default=0.1, help="Ritardo in secondi tra le chiamate LLM")
+    p_enrich.set_defaults(func=cmd_enrich)
 
     # ask
     p_ask = subparsers.add_parser("ask", parents=[base_parser], help="Fai una domanda alla tua memoria AI")

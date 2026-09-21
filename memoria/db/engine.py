@@ -54,19 +54,9 @@ class Database:
 
         with self.get_connection() as conn:
             conn.execute(
-                """
-                INSERT INTO conversations (id, provider, external_ref, title, created_at, content_hash, metadata_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    conv_id,
-                    conv.assistant,
-                    conv.external_ref,
-                    conv.title,
-                    conv.date,
-                    content_hash,
-                    json.dumps(conv.metadata, ensure_ascii=False)
-                )
+                "INSERT INTO conversations (id, provider, external_ref, title, created_at, content_hash, metadata_json) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (conv_id, conv.assistant, conv.external_ref, conv.title, conv.date, content_hash, json.dumps(conv.metadata, ensure_ascii=False))
             )
 
             msg_id_map: Dict[int, str] = {}
@@ -74,29 +64,16 @@ class Database:
                 msg_id = str(uuid.uuid4())
                 msg_id_map[idx] = msg_id
                 conn.execute(
-                    """
-                    INSERT INTO messages (id, conversation_id, role, content, ts, sequence_order, metadata_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        msg_id,
-                        conv_id,
-                        msg.role,
-                        msg.text,
-                        msg.ts,
-                        idx,
-                        json.dumps(msg.metadata, ensure_ascii=False)
-                    )
+                    "INSERT INTO messages (id, conversation_id, role, content, ts, sequence_order, metadata_json) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (msg_id, conv_id, msg.role, msg.text, msg.ts, idx, json.dumps(msg.metadata, ensure_ascii=False))
                 )
 
             for chunk_idx, (seq_order, chunk_text, vec_blob) in enumerate(chunk_texts_with_vectors):
                 chunk_id = str(uuid.uuid4())
                 target_msg_id = msg_id_map.get(seq_order, msg_id_map.get(0, conv_id))
                 conn.execute(
-                    """
-                    INSERT INTO chunks (id, message_id, conversation_id, chunk_index, chunk_text, embedding)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    """,
+                    "INSERT INTO chunks (id, message_id, conversation_id, chunk_index, chunk_text, embedding) VALUES (?, ?, ?, ?, ?, ?)",
                     (chunk_id, target_msg_id, conv_id, chunk_idx, chunk_text, vec_blob)
                 )
 
@@ -164,88 +141,37 @@ class Database:
 
     def insert_statement(self, stmt: StatementRecord) -> str:
         stmt_id = stmt.id or str(uuid.uuid4())
+        sql = """INSERT INTO statements (id, entity_id, statement_type, subject, predicate, object, author, confidence, source_message_id, source_conversation_id, valid_from, valid_until, is_current, supersedes_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         with self.get_connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO statements (
-                    id, entity_id, statement_type, subject, predicate, object,
-                    author, confidence, source_message_id, source_conversation_id,
-                    valid_from, valid_until, is_current, supersedes_id, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    stmt_id,
-                    stmt.entity_id,
-                    stmt.statement_type,
-                    stmt.subject,
-                    stmt.predicate,
-                    stmt.object,
-                    stmt.author,
-                    stmt.confidence,
-                    stmt.source_message_id,
-                    stmt.source_conversation_id,
-                    stmt.valid_from,
-                    stmt.valid_until,
-                    stmt.is_current,
-                    stmt.supersedes_id,
-                    stmt.notes,
-                )
-            )
+            conn.execute(sql, (
+                stmt_id, stmt.entity_id, stmt.statement_type, stmt.subject, stmt.predicate, stmt.object,
+                stmt.author, stmt.confidence, stmt.source_message_id, stmt.source_conversation_id,
+                stmt.valid_from, stmt.valid_until, stmt.is_current, stmt.supersedes_id, stmt.notes,
+            ))
             conn.commit()
             return stmt_id
 
     def invalidate_statement(self, stmt_id: str, valid_until: str, supersedes_id: Optional[str] = None):
         with self.get_connection() as conn:
-            conn.execute(
-                """
-                UPDATE statements
-                SET is_current = 0, valid_until = ?
-                WHERE id = ?
-                """,
-                (valid_until, stmt_id)
-            )
+            conn.execute("UPDATE statements SET is_current = 0, valid_until = ? WHERE id = ?", (valid_until, stmt_id))
             conn.commit()
 
     def insert_decision(self, dec: DecisionRecord) -> str:
         dec_id = dec.id or str(uuid.uuid4())
+        sql = """INSERT INTO decisions (id, topic, decision_text, status, decided_at, source_message_id, source_conversation_id) VALUES (?, ?, ?, ?, ?, ?, ?)"""
         with self.get_connection() as conn:
-            conn.execute(
-                """
-                INSERT INTO decisions (
-                    id, topic, decision_text, status, decided_at,
-                    source_message_id, source_conversation_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    dec_id,
-                    dec.topic,
-                    dec.decision_text,
-                    dec.status,
-                    dec.decided_at,
-                    dec.source_message_id,
-                    dec.source_conversation_id,
-                )
-            )
+            conn.execute(sql, (
+                dec_id, dec.topic, dec.decision_text, dec.status,
+                dec.decided_at, dec.source_message_id, dec.source_conversation_id,
+            ))
             conn.commit()
             return dec_id
 
     def insert_relation(self, rel: RelationRecord):
         rel_id = rel.id or str(uuid.uuid4())
+        sql = """INSERT OR IGNORE INTO relations (id, from_entity_id, to_entity_id, relation_type, source_message_id) VALUES (?, ?, ?, ?, ?)"""
         with self.get_connection() as conn:
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO relations (
-                    id, from_entity_id, to_entity_id, relation_type, source_message_id
-                ) VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    rel_id,
-                    rel.from_entity_id,
-                    rel.to_entity_id,
-                    rel.relation_type,
-                    rel.source_message_id,
-                )
-            )
+            conn.execute(sql, (rel_id, rel.from_entity_id, rel.to_entity_id, rel.relation_type, rel.source_message_id))
             conn.commit()
 
     def get_stats(self) -> Dict[str, int]:
@@ -364,3 +290,157 @@ class Database:
 
             events.sort(key=lambda x: x.get("event_date") or "")
             return events
+
+    def update_statement(
+        self,
+        stmt_id: str,
+        statement_type: Optional[str] = None,
+        is_current: Optional[int] = None,
+        notes: Optional[str] = None,
+    ) -> bool:
+        """Updates statement attributes (type, status, notes)."""
+        fields = []
+        params = []
+        if statement_type is not None:
+            fields.append("statement_type = ?")
+            params.append(statement_type)
+        if is_current is not None:
+            fields.append("is_current = ?")
+            params.append(is_current)
+        if notes is not None:
+            fields.append("notes = ?")
+            params.append(notes)
+
+        if not fields:
+            return False
+
+        params.append(stmt_id)
+        sql = f"UPDATE statements SET {', '.join(fields)} WHERE id = ?"
+        with self.get_connection() as conn:
+            cur = conn.execute(sql, params)
+            conn.commit()
+            return cur.rowcount > 0
+
+    def delete_statement(self, stmt_id: str) -> bool:
+        with self.get_connection() as conn:
+            cur = conn.execute("DELETE FROM statements WHERE id = ?", (stmt_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
+    def update_decision(
+        self,
+        dec_id: str,
+        status: Optional[str] = None,
+        decision_text: Optional[str] = None,
+    ) -> bool:
+        fields = []
+        params = []
+        if status is not None:
+            fields.append("status = ?")
+            params.append(status)
+        if decision_text is not None:
+            fields.append("decision_text = ?")
+            params.append(decision_text)
+
+        if not fields:
+            return False
+
+        params.append(dec_id)
+        sql = f"UPDATE decisions SET {', '.join(fields)} WHERE id = ?"
+        with self.get_connection() as conn:
+            cur = conn.execute(sql, params)
+            conn.commit()
+            return cur.rowcount > 0
+
+    def delete_decision(self, dec_id: str) -> bool:
+        with self.get_connection() as conn:
+            cur = conn.execute("DELETE FROM decisions WHERE id = ?", (dec_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
+    def update_entity(
+        self,
+        entity_id: str,
+        name: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> bool:
+        fields = []
+        params = []
+        if name is not None:
+            fields.append("name = ?")
+            params.append(name.strip())
+            fields.append("normalized_name = ?")
+            params.append(name.strip().lower())
+        if category is not None:
+            fields.append("category = ?")
+            params.append(category.strip().lower())
+
+        if not fields:
+            return False
+
+        params.append(entity_id)
+        sql = f"UPDATE entities SET {', '.join(fields)} WHERE id = ?"
+        with self.get_connection() as conn:
+            cur = conn.execute(sql, params)
+            conn.commit()
+            return cur.rowcount > 0
+
+    def delete_entity(self, entity_id: str) -> bool:
+        with self.get_connection() as conn:
+            cur = conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
+            conn.commit()
+            return cur.rowcount > 0
+
+    def get_unenriched_conversations(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Returns conversations that have not yet been processed by the batch enricher."""
+        sql = """
+            SELECT id, provider, title, created_at, metadata_json
+            FROM conversations
+            WHERE metadata_json IS NULL OR metadata_json NOT LIKE '%"enriched": true%'
+            ORDER BY created_at DESC
+        """
+        if limit:
+            sql += f" LIMIT {int(limit)}"
+        with self.get_connection() as conn:
+            cur = conn.execute(sql)
+            return [dict(r) for r in cur.fetchall()]
+
+    def mark_conversation_enriched(self, conv_id: str, model_name: str, extracted_count: int):
+        with self.get_connection() as conn:
+            cur = conn.execute("SELECT metadata_json FROM conversations WHERE id = ?", (conv_id,))
+            row = cur.fetchone()
+            meta = {}
+            if row and row["metadata_json"]:
+                try:
+                    meta = json.loads(row["metadata_json"])
+                except Exception:
+                    pass
+
+            meta["enriched"] = True
+            meta["enriched_at"] = sqlite3.datetime.datetime.now(sqlite3.timezone.utc).isoformat() if hasattr(sqlite3, 'timezone') else "now"
+            meta["extractor_model"] = model_name
+            meta["extracted_count"] = extracted_count
+
+            conn.execute(
+                "UPDATE conversations SET metadata_json = ? WHERE id = ?",
+                (json.dumps(meta, ensure_ascii=False), conv_id),
+            )
+            conn.commit()
+
+    def reset_knowledge_layer(self):
+        """Wipes the derived Level 3 tables (statements, decisions, relations, entities) for clean rebuilds."""
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM statements")
+            conn.execute("DELETE FROM decisions")
+            conn.execute("DELETE FROM relations")
+            conn.execute("DELETE FROM entities")
+            # Clear enriched flags in conversations
+            conn.execute(
+                """
+                UPDATE conversations
+                SET metadata_json = json_remove(metadata_json, '$.enriched', '$.enriched_at', '$.extractor_model', '$.extracted_count')
+                WHERE metadata_json LIKE '%"enriched": true%'
+                """
+            )
+            conn.commit()
+
