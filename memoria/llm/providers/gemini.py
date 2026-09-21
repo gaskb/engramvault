@@ -88,17 +88,29 @@ class GeminiProvider(BaseLLMProvider):
             return None
 
         parts = candidates[0].get("content", {}).get("parts", [])
-        text = "".join(p.get("text", "") for p in parts).strip()
+        text_parts = []
+        thought_parts = []
+        for p in parts:
+            if p.get("thought") is True:
+                thought_parts.append(p.get("text", ""))
+            else:
+                text_parts.append(p.get("text", ""))
+        text = "".join(text_parts).strip()
+        reasoning = "\n".join(thought_parts).strip() if thought_parts else None
+        if not text and thought_parts:
+            text = reasoning or ""
 
         usage_raw = data.get("usageMetadata", {})
         usage = {
             "prompt_tokens": usage_raw.get("promptTokenCount", 0),
             "completion_tokens": usage_raw.get("candidatesTokenCount", 0),
             "cached_tokens": usage_raw.get("cachedContentTokenCount", 0),
+            "thought_tokens": usage_raw.get("thoughtsTokenCount", 0),
         }
 
         return LLMResponse(
             content=text,
+            reasoning=reasoning,
             provider=self.provider_name,
             model=self.model,
             usage=usage,

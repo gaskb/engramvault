@@ -360,8 +360,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             res = await asyncio.to_thread(
                 client.chat_completion,
                 [{"role": "user", "content": "Respond strictly with the word 'OK'."}],
-                max_tokens=10,
-                timeout=12,
+                max_tokens=200,
+                timeout=20,
             )
             elapsed = int((asyncio.get_event_loop().time() - start_t) * 1000)
             if res:
