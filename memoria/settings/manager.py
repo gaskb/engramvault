@@ -147,9 +147,11 @@ class SettingsManager:
         env_p = os.getenv("MEMORIA_LLM_PROVIDER", "").lower()
         if env_p and env_p in PROVIDER_DEFAULTS:
             return env_p
-        for p in ("qwen", "openai", "gemini", "anthropic", "deepseek", "grok"):
+        for p in ("deepseek", "anthropic", "gemini", "openai", "grok"):
             if self.is_provider_configured(p):
                 return p
+        if self.is_provider_configured("qwen"):
+            return "qwen"
         return "qwen"
 
     def get_active_model(self, provider: Optional[str] = None) -> str:

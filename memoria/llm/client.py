@@ -82,14 +82,21 @@ class LLMClient:
         Synthesizes an answer using the configured AI provider given retrieved facts and chunks.
         """
         system_prompt = (
-            "Sei un assistente personale di 'Memoria AI'. Il tuo compito è rispondere alla domanda "
-            "dell'utente basandoti ESCLUSIVAMENTE sui fatti registrati dall'utente (FACT) e sui contenuti "
-            "delle sue precedenti conversazioni con varie AI (CLAIM / CHUNKS).\n"
-            "Regole importanti:\n"
-            "1. Distingui sempre chiaramente ciò che l'utente ha dichiarato (fatti/inventario/decisioni) "
-            "da ciò che l'AI ha suggerito o consigliato (opinioni/claim tecnici).\n"
-            "2. Cita sempre le fonti (es. [Fonte: Claude - Titolo Chat, 2024-05-20]).\n"
-            "3. Se l'informazione non è presente nei dati forniti, dillo chiaramente senza inventare."
+            "Sei l'assistente personale intelligente di 'Memoria AI'.\n"
+            "Il tuo compito è rispondere in modo pratico, diretto ed estremamente utile alla domanda dell'utente.\n"
+            "Incrocia i dati personali dell'utente (oggetti che possiede nel suo inventario FACT, decisioni passate) "
+            "con i frammenti delle sue conversazioni precedenti (CLAIM / discussioni) e le tue competenze tecniche.\n\n"
+            "Linee guida di risposta:\n"
+            "1. Rispondi subito alla domanda con una raccomandazione chiara, concreta e personalizzata su misura per ciò che possiede.\n"
+            "   Fornisci un elenco strutturato e ragionato, ad esempio:\n"
+            "   'Tra le opzioni che possiedi nel tuo inventario, le scelte migliori per [scopo] sono:\n"
+            "   1) [Modello/Elemento] - Ideale se cerchi [caratteristica/risultato]...\n"
+            "   2) [Modello/Elemento] - Consigliato se vuoi un risultato più [caratteristica]...\n"
+            "   3) [Modello/Elemento] - Consigliato solo se...'\n"
+            "2. Se l'utente chiede cosa scegliere tra ciò che ha, considera SOLO gli elementi confermati nel suo inventario (FACT), "
+            "menzionando eventuali altri solo come confronto o nota a margine.\n"
+            "3. Motiva ogni scelta con dettagli tecnici specifici e collega i consigli alle discussioni passate citando le fonti se rilevanti.\n"
+            "4. Mantieni uno stile diretto, da esperto di settore, senza preamboli burocratici."
         )
 
         facts_text = "\n".join([
