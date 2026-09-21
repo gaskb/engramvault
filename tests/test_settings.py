@@ -134,3 +134,18 @@ def test_planner_and_enricher_use_active_settings(tmp_path):
     enricher = KnowledgeEnricher(db)
     assert enricher.llm.provider_name == "deepseek"
     assert enricher.llm.model == "deepseek-reasoner"
+
+
+def test_refresh_all_models_endpoint(tmp_path):
+    db_path = tmp_path / "test_refresh_all.db"
+    app = create_app(db_path)
+    client = TestClient(app)
+
+    with patch.object(SettingsManager, "fetch_live_models") as mock_fetch:
+        mock_fetch.return_value = {"status": "success", "count": 3, "models": ["m1", "m2", "m3"]}
+        res = client.post("/api/settings/models/refresh", json={"provider": "all"})
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "success"
+        assert "results" in data
+        assert "qwen" in data["results"]

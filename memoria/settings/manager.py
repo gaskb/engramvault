@@ -386,6 +386,23 @@ class SettingsManager:
                 "models": self.get_models_for_provider(prov),
             }
 
+    def fetch_all_live_models(self) -> Dict[str, Any]:
+        """Interrogates all configured providers to refresh their available models."""
+        results = {}
+        total_fetched = 0
+        for prov in PROVIDER_DEFAULTS:
+            if self.is_provider_configured(prov):
+                res = self.fetch_live_models(prov)
+                results[prov] = res
+                if res.get("status") == "success":
+                    total_fetched += res.get("count", 0)
+        return {
+            "status": "success",
+            "total_fetched": total_fetched,
+            "results": results,
+            "settings": self.get_full_settings(),
+        }
+
     def get_llm_client(
         self,
         provider_name: Optional[str] = None,

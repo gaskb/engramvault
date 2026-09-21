@@ -47,7 +47,7 @@ class AddModelRequest(BaseModel):
 
 
 class RefreshModelsRequest(BaseModel):
-    provider: str
+    provider: Optional[str] = "all"
 
 
 class TestProviderRequest(BaseModel):
@@ -349,6 +349,9 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
 
     @app.post("/api/settings/models/refresh")
     async def refresh_provider_models(payload: RefreshModelsRequest):
+        if not payload.provider or payload.provider.lower() in ("all", "*"):
+            res = await asyncio.to_thread(settings_mgr.fetch_all_live_models)
+            return res
         res = await asyncio.to_thread(settings_mgr.fetch_live_models, payload.provider)
         return res
 
