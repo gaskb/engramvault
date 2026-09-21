@@ -34,8 +34,9 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     async def index(request: Request):
         stats = db.get_stats()
         return templates.TemplateResponse(
-            "index.html",
-            {"request": request, "stats": stats, "db_name": db.db_path.name}
+            request=request,
+            name="index.html",
+            context={"stats": stats, "db_name": db.db_path.name}
         )
 
     @app.get("/api/stats")
