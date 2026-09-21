@@ -1,8 +1,5 @@
-version: '3.8'
-
 services:
   memoria:
-    build: .
     image: gaskb/memoria-ai-anti:latest
     container_name: memoria_ai_anti
     restart: unless-stopped
