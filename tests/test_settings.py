@@ -66,20 +66,20 @@ def test_settings_api_endpoints(tmp_path):
     # 2. POST /api/settings - Update active provider & model & keys
     payload = {
         "active_provider": "anthropic",
-        "active_model": "claude-3-7-sonnet-20250219",
+        "active_model": "claude-sonnet-4-5-20250929",
         "api_keys": {"anthropic": "sk-ant-test-99887766"},
     }
     post_res = client.post("/api/settings", json=payload)
     assert post_res.status_code == 200
     new_data = post_res.json()["settings"]
     assert new_data["active_provider"] == "anthropic"
-    assert new_data["active_model"] == "claude-3-7-sonnet-20250219"
+    assert new_data["active_model"] == "claude-sonnet-4-5-20250929"
     assert new_data["providers"]["anthropic"]["is_configured"] is True
 
     # 3. GET /api/settings/models
     models_res = client.get("/api/settings/models?provider=anthropic")
     assert models_res.status_code == 200
-    assert "claude-3-7-sonnet-20250219" in models_res.json()["models"]
+    assert "claude-sonnet-4-5-20250929" in models_res.json()["models"]
 
     # 4. POST /api/settings/models - Add custom model
     add_res = client.post(
@@ -93,7 +93,7 @@ def test_settings_api_endpoints(tmp_path):
     with patch("memoria.llm.client.LLMClient.chat_completion", return_value="OK"):
         test_res = client.post(
             "/api/settings/test",
-            json={"provider": "anthropic", "model": "claude-3-7-sonnet-20250219"},
+            json={"provider": "anthropic", "model": "claude-sonnet-4-5-20250929"},
         )
         assert test_res.status_code == 200
         assert test_res.json()["status"] == "success"
@@ -108,14 +108,14 @@ def test_planner_and_enricher_use_active_settings(tmp_path):
     # Configure active settings to Anthropic
     mgr.update_settings(
         active_provider="anthropic",
-        active_model="claude-3-7-sonnet-20250219",
+        active_model="claude-sonnet-4-5-20250929",
         api_keys={"anthropic": "sk-ant-mock-key-1234"},
     )
 
     # QueryPlanner resolves active LLM client
     planner = QueryPlanner(db)
     assert planner.llm.provider_name == "anthropic"
-    assert planner.llm.model == "claude-3-7-sonnet-20250219"
+    assert planner.llm.model == "claude-sonnet-4-5-20250929"
     assert planner.llm.api_key == "sk-ant-mock-key-1234"
 
     # Switch to DeepSeek

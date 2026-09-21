@@ -18,7 +18,7 @@ class AnthropicProvider(BaseLLMProvider):
         super().__init__(
             api_key=api_key or os.getenv("ANTHROPIC_API_KEY") or os.getenv("MEMORIA_LLM_API_KEY"),
             base_url=base_url or os.getenv("ANTHROPIC_BASE_URL") or "https://api.anthropic.com/v1",
-            model=model or os.getenv("MEMORIA_LLM_MODEL") or "claude-3-5-sonnet-20241022",
+            model=model or os.getenv("MEMORIA_LLM_MODEL") or "claude-sonnet-4-5-20250929",
         )
 
     @property

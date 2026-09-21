@@ -42,9 +42,11 @@ PROVIDER_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "env_url": "ANTHROPIC_BASE_URL",
         "is_local": False,
         "default_models": [
-            "claude-3-7-sonnet-20250219",
-            "claude-3-5-haiku-20241022",
-            "claude-3-5-sonnet-20241022",
+            "claude-sonnet-4-5-20250929",
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5",
+            "claude-opus-5",
+            "claude-opus-4-5-20251101",
         ],
     },
     "gemini": {
@@ -54,9 +56,11 @@ PROVIDER_DEFAULTS: Dict[str, Dict[str, Any]] = {
         "env_url": "GEMINI_BASE_URL",
         "is_local": False,
         "default_models": [
-            "gemini-2.0-flash",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest",
+            "gemini-pro-latest",
+            "gemini-2.5-flash-lite",
+            "gemini-3.5-flash",
         ],
     },
     "grok": {
@@ -150,17 +154,17 @@ class SettingsManager:
 
     def get_active_model(self, provider: Optional[str] = None) -> str:
         prov = (provider or self.get_active_provider()).lower()
+        models = self.get_models_for_provider(prov)
         stored = self.db.get_setting(f"active_model:{prov}")
-        if stored:
+        if stored and (stored in models or not models):
             return stored
         if prov == self.get_active_provider():
             global_model = self.db.get_setting("active_model")
-            if global_model:
+            if global_model and (global_model in models or not models):
                 return global_model
         env_m = os.getenv("MEMORIA_LLM_MODEL")
-        if env_m and not provider:
+        if env_m and not provider and (env_m in models or not models):
             return env_m
-        models = self.get_models_for_provider(prov)
         return models[0] if models else "qwen2.5:3b"
 
     def get_models_for_provider(self, provider: str) -> List[str]:
@@ -259,6 +263,18 @@ class SettingsManager:
                 if not k_val or "••••" in k_val:
                     continue
                 self.db.set_setting(f"api_key:{prov}", k_val)
+                # Auto-sync live models for newly configured provider
+                try:
+                    sync_res = self.fetch_live_models(prov)
+                    if sync_res.get("status") == "success" and sync_res.get("models"):
+                        first_m = sync_res["models"][0]
+                        cur_m = self.get_active_model(prov)
+                        if cur_m not in sync_res["models"]:
+                            self.db.set_setting(f"active_model:{prov}", first_m)
+                            if self.get_active_provider() == prov:
+                                self.db.set_setting("active_model", first_m)
+                except Exception:
+                    pass
 
         return self.get_full_settings()
 
@@ -283,7 +299,8 @@ class SettingsManager:
                     raw_models = data.get("models", [])
                     for rm in raw_models:
                         name = rm.get("name", "").replace("models/", "")
-                        if "gemini" in name.lower() and not name.endswith("-tuning"):
+                        methods = rm.get("supportedGenerationMethods", [])
+                        if "generateContent" in methods and "gemini" in name.lower() and not name.endswith("-tuning"):
                             fetched.append(name)
 
             elif prov == "anthropic":

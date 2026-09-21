@@ -33,6 +33,7 @@ class BaseLLMProvider(ABC):
         self.api_key = api_key or ""
         self.base_url = (base_url or "").rstrip("/")
         self.model = model or ""
+        self.last_error: Optional[str] = None
 
     @property
     @abstractmethod
@@ -71,6 +72,7 @@ class BaseLLMProvider(ABC):
         """
         Sends HTTP POST request with defensive retry on transient 429/5xx errors.
         """
+        self.last_error = None
         data_bytes = json.dumps(payload).encode("utf-8")
         req_headers = {"Content-Type": "application/json", **headers}
 
@@ -87,13 +89,25 @@ class BaseLLMProvider(ABC):
                         raw_body = response.read().decode("utf-8")
                         return json.loads(raw_body)
             except urllib.error.HTTPError as e:
-                # Retry on rate limits (429) or server errors (500, 502, 503, 504)
+                err_body = ""
+                try:
+                    raw_err = e.read().decode("utf-8")
+                    err_json = json.loads(raw_err)
+                    if "error" in err_json:
+                        err_obj = err_json["error"]
+                        err_body = err_obj.get("message", str(err_obj)) if isinstance(err_obj, dict) else str(err_obj)
+                    else:
+                        err_body = raw_err
+                except Exception:
+                    pass
+                self.last_error = f"HTTP {e.code}: {err_body or e.reason}"
                 if e.code in (429, 500, 502, 503, 504) and attempt < max_retries:
                     sleep_time = (2 ** attempt) * 0.5
                     time.sleep(sleep_time)
                     continue
                 return None
-            except Exception:
+            except Exception as e:
+                self.last_error = str(e)
                 if attempt < max_retries:
                     time.sleep(0.5)
                     continue

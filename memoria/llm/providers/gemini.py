@@ -5,8 +5,8 @@ from memoria.llm.base import BaseLLMProvider, LLMResponse
 
 class GeminiProvider(BaseLLMProvider):
     """
-    Adapter for Google Gemini (Gemini 2.0 Flash / Pro) via OpenAI-compatible endpoint
-    or Google AI Studio.
+    Adapter for Google Gemini via Google AI Studio native generateContent API.
+    Provides direct, high-speed access to Gemini models.
     """
 
     def __init__(
@@ -20,9 +20,9 @@ class GeminiProvider(BaseLLMProvider):
             base_url=(
                 base_url
                 or os.getenv("GEMINI_BASE_URL")
-                or "https://generativelanguage.googleapis.com/v1beta/openai"
+                or "https://generativelanguage.googleapis.com"
             ),
-            model=model or os.getenv("MEMORIA_LLM_MODEL") or "gemini-2.0-flash",
+            model=model or os.getenv("MEMORIA_LLM_MODEL") or "gemini-3-flash-preview",
         )
 
     @property
@@ -40,49 +40,65 @@ class GeminiProvider(BaseLLMProvider):
         if not self.is_configured():
             return None
 
-        formatted_messages: List[Dict[str, str]] = []
-        if system_prompt:
-            formatted_messages.append({"role": "system", "content": system_prompt})
+        clean_model = self.model.replace("models/", "").strip()
+        url = f"{self.base_url}/v1beta/models/{clean_model}:generateContent?key={self.api_key}"
+        headers = {"Content-Type": "application/json"}
+
+        # Format chat messages into Gemini contents structure
+        contents: List[Dict[str, Any]] = []
+        sys_instructions = [system_prompt] if system_prompt else []
 
         for msg in messages:
-            formatted_messages.append({
-                "role": msg.get("role", "user"),
-                "content": msg.get("content", ""),
-            })
+            role = msg.get("role", "user")
+            text = (msg.get("content") or "").strip()
+            if not text:
+                continue
+            if role == "system":
+                sys_instructions.append(text)
+            else:
+                gemini_role = "model" if role in ("assistant", "model") else "user"
+                contents.append({
+                    "role": gemini_role,
+                    "parts": [{"text": text}],
+                })
 
-        url = f"{self.base_url}/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-        }
+        # Ensure at least one user content exists
+        if not contents:
+            contents.append({"role": "user", "parts": [{"text": "Hello"}]})
 
         payload: Dict[str, Any] = {
-            "model": self.model,
-            "messages": formatted_messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
+            "contents": contents,
+            "generationConfig": {
+                "temperature": max(0.0, min(temperature, 2.0)),
+                "maxOutputTokens": max_tokens,
+            },
         }
 
+        if sys_instructions:
+            payload["systemInstruction"] = {
+                "parts": [{"text": "\n\n".join(sys_instructions)}],
+            }
+
         data = self._send_http_request(url, headers, payload, timeout=timeout)
-        if not data or "choices" not in data or not data["choices"]:
+        if not data:
             return None
 
-        choice = data["choices"][0]
-        text = choice.get("message", {}).get("content", "") or ""
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None
 
-        usage_raw = data.get("usage", {})
-        cached_tokens = (
-            usage_raw.get("prompt_tokens_details", {}).get("cached_tokens", 0)
-            or usage_raw.get("cached_content_token_count", 0)
-        )
+        parts = candidates[0].get("content", {}).get("parts", [])
+        text = "".join(p.get("text", "") for p in parts).strip()
 
+        usage_raw = data.get("usageMetadata", {})
         usage = {
-            "prompt_tokens": usage_raw.get("prompt_tokens", 0),
-            "completion_tokens": usage_raw.get("completion_tokens", 0),
-            "cached_tokens": cached_tokens,
+            "prompt_tokens": usage_raw.get("promptTokenCount", 0),
+            "completion_tokens": usage_raw.get("candidatesTokenCount", 0),
+            "cached_tokens": usage_raw.get("cachedContentTokenCount", 0),
         }
 
         return LLMResponse(
-            content=text.strip(),
+            content=text,
             provider=self.provider_name,
             model=self.model,
             usage=usage,

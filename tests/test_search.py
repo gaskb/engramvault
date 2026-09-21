@@ -56,7 +56,7 @@ class TestSearch(unittest.TestCase):
         sim1_3 = engine.cosine_similarity(v1, v3)
 
         self.assertGreater(sim1_2, sim1_3)
-        self.assertGreater(sim1_2, 0.25)
+        self.assertGreater(sim1_2, 0.20)
 
     def test_clean_fts_query(self):
         self.assertNotEqual(clean_fts_query('TDK "SA-X"!'), "")

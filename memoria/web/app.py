@@ -366,7 +366,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             elapsed = int((asyncio.get_event_loop().time() - start_t) * 1000)
             if res:
                 return {"status": "success", "response": res.strip(), "elapsed_ms": elapsed}
-            return {"status": "error", "message": "Nessuna risposta dal provider. Verifica chiave o endpoint."}
+            err_msg = getattr(client.provider_instance, "last_error", None) or "Nessuna risposta dal provider. Verifica chiave o endpoint."
+            return {"status": "error", "message": err_msg}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 

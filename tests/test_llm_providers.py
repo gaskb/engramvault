@@ -108,24 +108,30 @@ def test_openai_standard_and_reasoning_models():
 
 
 def test_gemini_provider():
-    provider = GeminiProvider(api_key="AIzaSyTest1234", model="gemini-2.0-flash")
+    provider = GeminiProvider(api_key="AIzaSyTest1234", model="gemini-3-flash-preview")
     assert provider.is_configured() is True
     assert provider.provider_name == "gemini"
 
     mock_gemini = {
-        "choices": [{"message": {"role": "assistant", "content": "Risposta Gemini"}}],
-        "usage": {
-            "prompt_tokens": 50,
-            "completion_tokens": 25,
-            "cached_content_token_count": 30,
+        "candidates": [
+            {"content": {"parts": [{"text": "Risposta Gemini"}], "role": "model"}}
+        ],
+        "usageMetadata": {
+            "promptTokenCount": 50,
+            "candidatesTokenCount": 25,
+            "cachedContentTokenCount": 30,
         },
     }
 
-    with patch.object(provider, "_send_http_request", return_value=mock_gemini):
-        res = provider.generate([{"role": "user", "content": "Ciao"}])
+    with patch.object(provider, "_send_http_request", return_value=mock_gemini) as mock_send:
+        res = provider.generate([{"role": "user", "content": "Ciao"}], system_prompt="Sys")
         assert res is not None
         assert res.content == "Risposta Gemini"
+        assert res.usage["prompt_tokens"] == 50
         assert res.usage["cached_tokens"] == 30
+        _, _, payload = mock_send.call_args[0][:3]
+        assert "systemInstruction" in payload
+        assert payload["contents"][0]["role"] == "user"
 
 
 def test_grok_provider():
