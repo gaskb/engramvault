@@ -122,3 +122,10 @@ CREATE TABLE IF NOT EXISTS relations (
 
 CREATE INDEX IF NOT EXISTS idx_rel_from ON relations(from_entity_id);
 CREATE INDEX IF NOT EXISTS idx_rel_to ON relations(to_entity_id);
+
+-- 4. Global Settings (API keys, active provider, model catalog)
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);

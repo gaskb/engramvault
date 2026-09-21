@@ -25,12 +25,13 @@ class KnowledgeEnricher:
         delay_between_calls: float = 0.1,
     ):
         self.db = db
-        self.llm = llm or LLMClient()
+        self._custom_llm = llm
         self.delay_between_calls = delay_between_calls
         self.extractor = KnowledgeExtractor(db)
         self.is_running = False
         self._thread: Optional[threading.Thread] = None
 
+        m_name = self.llm.model if self.llm.is_configured() else "rule-based-heuristics"
         self.status = {
             "is_running": False,
             "total_to_process": 0,
@@ -38,9 +39,16 @@ class KnowledgeEnricher:
             "new_facts": 0,
             "new_decisions": 0,
             "current_conversation": "",
-            "extractor_model": self.llm.model if self.llm.is_configured() else "rule-based-heuristics",
+            "extractor_model": m_name,
             "error": None,
         }
+
+    @property
+    def llm(self) -> LLMClient:
+        if self._custom_llm is not None:
+            return self._custom_llm
+        from memoria.settings.manager import SettingsManager
+        return SettingsManager(self.db).get_llm_client()
 
     def get_status(self) -> Dict[str, Any]:
         return dict(self.status)

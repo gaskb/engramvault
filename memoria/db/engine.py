@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import time
 import uuid
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
@@ -34,6 +35,7 @@ class Database:
         with self.get_connection() as conn:
             schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
             conn.executescript(schema_sql)
+            conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
 
     def conversation_exists_by_hash(self, content_hash: str) -> bool:
         with self.get_connection() as conn:
@@ -443,4 +445,25 @@ class Database:
                 """
             )
             conn.commit()
+
+    def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        with self.get_connection() as conn:
+            cur = conn.execute("SELECT value FROM settings WHERE key = ?", (key,))
+            row = cur.fetchone()
+            return row["value"] if row else default
+
+    def set_setting(self, key: str, value: str):
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with self.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                (key, value, now_iso),
+            )
+            conn.commit()
+
+    def get_all_settings(self) -> Dict[str, str]:
+        with self.get_connection() as conn:
+            cur = conn.execute("SELECT key, value FROM settings")
+            return {row["key"]: row["value"] for row in cur.fetchall()}
 

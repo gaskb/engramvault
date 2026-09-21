@@ -51,6 +51,11 @@
                 <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Conversazioni: <span id="stat-convs" class="font-semibold text-slate-200">...</span></div>
                 <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Fatti (FACT): <span id="stat-facts" class="font-semibold text-slate-200">...</span></div>
                 <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Decisioni: <span id="stat-decisions" class="font-semibold text-slate-200">...</span></div>
+                <div onclick="switchTab('settings')" class="cursor-pointer hidden lg:flex items-center gap-1.5 bg-[#10141d] border border-cardborder px-2.5 py-1 rounded-lg text-xs hover:border-emerald-500/50 transition" title="Clicca per aprire le Impostazioni LLM">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-400">LLM:</span>
+                    <span id="header-active-llm" class="font-mono text-emerald-400 font-semibold">Qwen / qwen2.5:3b</span>
+                </div>
             </div>
 
             <!-- Tabs Navigation -->
@@ -60,6 +65,7 @@
                 <button onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚖️ Decisioni</button>
                 <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">💬 Vault Chat</button>
                 <button onclick="switchTab('import')" id="tab-btn-import" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">📥 Ingest & Enrich</button>
+                <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚙️ Impostazioni</button>
             </nav>
         </div>
     </header>
@@ -314,6 +320,81 @@
             </div>
         </section>
 
+        <!-- TAB 6: SETTINGS (Issue #7) -->
+        <section id="tab-settings" class="tab-content hidden space-y-6">
+            <!-- Card 1: Active Provider & Model Selection -->
+            <div class="glass-panel p-6 rounded-2xl space-y-5">
+                <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span>🎯 Provider e Modello Attivo</span>
+                            <span id="settings-status-badge" class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Configurato</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Seleziona quale provider e quale modello utilizzare come predefiniti per le interrogazioni e l'arricchimento batch.</p>
+                    </div>
+                    <button onclick="saveActiveSelection()" id="btn-save-active-llm" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+                        <span>💾 Salva Predefinito</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Provider Select -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Provider LLM:</label>
+                        <select id="settings-provider-select" onchange="onProviderSelectChange()" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        </select>
+                        <p id="provider-configured-hint" class="text-[11px] text-slate-400 mt-1"></p>
+                    </div>
+
+                    <!-- Model Select & Refresh / Custom Model -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-xs font-semibold text-slate-300">Modello Selezionato:</label>
+                            <div class="flex items-center gap-2">
+                                <button onclick="refreshModelsFromApi()" id="btn-refresh-models" title="Interroga l'API del provider per scoprire i modelli disponibili" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition">
+                                    <span>🔄 Aggiorna da API</span>
+                                </button>
+                                <span class="text-slate-600">|</span>
+                                <button onclick="promptCustomModel()" class="text-xs text-emerald-400 hover:text-emerald-300 transition">
+                                    <span>+ Nuovo Modello</span>
+                                </button>
+                            </div>
+                        </div>
+                        <select id="settings-model-select" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        </select>
+                        <div class="flex items-center justify-between mt-1.5">
+                            <span id="model-count-hint" class="text-[11px] text-slate-500"></span>
+                            <button onclick="testActiveConnection()" id="btn-test-active" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition">
+                                <span>⚡ Testa Connessione</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Connection Output Container -->
+                <div id="test-result-box" class="hidden p-3 rounded-xl border text-xs leading-relaxed"></div>
+            </div>
+
+            <!-- Card 2: API Keys Management -->
+            <div class="glass-panel p-6 rounded-2xl space-y-5">
+                <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span>🔑 Gestione Credenziali e API Keys</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Le chiavi inserite vengono salvate nel database persistente dell'Homelab e mascherate per sicurezza.</p>
+                    </div>
+                    <button onclick="saveAllApiKeys()" id="btn-save-keys" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+                        <span>💾 Salva Tutte le Credenziali</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="api-keys-container">
+                    <!-- Populated dynamically by JavaScript -->
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Modal: View Full Conversation -->
@@ -449,6 +530,7 @@
             if (tabId === 'decisions') { loadDecisions(); loadTimeline(); }
             if (tabId === 'vault') loadVault();
             if (tabId === 'import') checkEnrichStatus();
+            if (tabId === 'settings') loadSettings();
         }
 
         function setQueryMode(mode) {
@@ -915,8 +997,298 @@
             checkEnrichStatus();
         }
 
+        // --- Settings Management (Issue #7) ---
+        let currentSettingsData = null;
+
+        async function loadSettingsSummary() {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                currentSettingsData = data;
+                const badge = document.getElementById('header-active-llm');
+                if (badge && data.active_provider) {
+                    badge.innerText = `${data.active_provider.toUpperCase()} / ${data.active_model}`;
+                }
+            } catch (e) {
+                console.error("Errore caricamento summary impostazioni:", e);
+            }
+        }
+
+        async function loadSettings(selectedProvider = null) {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                currentSettingsData = data;
+
+                const activeProv = selectedProvider || data.active_provider;
+                const provSelect = document.getElementById('settings-provider-select');
+                provSelect.innerHTML = '';
+
+                Object.keys(data.providers).forEach(pKey => {
+                    const p = data.providers[pKey];
+                    const opt = document.createElement('option');
+                    opt.value = pKey;
+                    const statusText = p.is_configured ? '● Configurato' : '○ Non configurato';
+                    opt.innerText = `${p.name} [${statusText}]`;
+                    if (pKey === activeProv) opt.selected = true;
+                    provSelect.appendChild(opt);
+                });
+
+                updateModelDropdown(activeProv);
+                renderApiKeysCards(data);
+
+                const badge = document.getElementById('header-active-llm');
+                if (badge && data.active_provider) {
+                    badge.innerText = `${data.active_provider.toUpperCase()} / ${data.active_model}`;
+                }
+            } catch (e) {
+                console.error("Errore caricamento impostazioni:", e);
+            }
+        }
+
+        function updateModelDropdown(provKey) {
+            if (!currentSettingsData || !currentSettingsData.providers[provKey]) return;
+            const p = currentSettingsData.providers[provKey];
+            const modelSelect = document.getElementById('settings-model-select');
+            modelSelect.innerHTML = '';
+
+            const models = p.models || [];
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.innerText = m;
+                if (m === p.active_model || (provKey === currentSettingsData.active_provider && m === currentSettingsData.active_model)) {
+                    opt.selected = true;
+                }
+                modelSelect.appendChild(opt);
+            });
+
+            document.getElementById('model-count-hint').innerText = `${models.length} modelli disponibili`;
+
+            const hint = document.getElementById('provider-configured-hint');
+            if (p.is_configured) {
+                hint.innerHTML = `<span class="text-emerald-400">✓ Provider configurato e pronto all'uso.</span>`;
+            } else {
+                hint.innerHTML = `<span class="text-amber-400">⚠ Chiave API mancante. Inseriscila nella sezione sottostante per abilitare le chiamate.</span>`;
+            }
+        }
+
+        function onProviderSelectChange() {
+            const provKey = document.getElementById('settings-provider-select').value;
+            updateModelDropdown(provKey);
+            document.getElementById('test-result-box').classList.add('hidden');
+        }
+
+        async function saveActiveSelection() {
+            const prov = document.getElementById('settings-provider-select').value;
+            const model = document.getElementById('settings-model-select').value;
+            const btn = document.getElementById('btn-save-active-llm');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Salvataggio...</span>';
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active_provider: prov, active_model: model })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    currentSettingsData = data.settings;
+                    const badge = document.getElementById('header-active-llm');
+                    if (badge) {
+                        badge.innerText = `${prov.toUpperCase()} / ${model}`;
+                    }
+                    btn.innerHTML = '<span>✓ Salvato!</span>';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>💾 Salva Predefinito</span>';
+                    }, 1800);
+                }
+            } catch (e) {
+                alert('Errore salvataggio: ' + e);
+                btn.disabled = false;
+                btn.innerHTML = '<span>💾 Salva Predefinito</span>';
+            }
+        }
+
+        async function refreshModelsFromApi() {
+            const prov = document.getElementById('settings-provider-select').value;
+            const btn = document.getElementById('btn-refresh-models');
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳ Recupero...</span>';
+
+            try {
+                const res = await fetch('/api/settings/models/refresh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: prov })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`Aggiornamento completato: trovati ${data.count} modelli dall'API per ${prov.toUpperCase()}!`);
+                    await loadSettings(prov);
+                } else if (data.status === 'warning') {
+                    alert(`Nessun modello trovato dall'API: ${data.message || ''}`);
+                } else {
+                    alert(`Errore recupero modelli: ${data.message}`);
+                }
+            } catch (e) {
+                alert('Errore chiamata API: ' + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🔄 Aggiorna da API</span>';
+            }
+        }
+
+        async function promptCustomModel() {
+            const prov = document.getElementById('settings-provider-select').value;
+            const modelName = prompt(`Inserisci il nome del nuovo modello per ${prov.toUpperCase()} (es. gpt-4.5-preview, o3-pro, qwen2.5:14b):`);
+            if (!modelName || !modelName.trim()) return;
+
+            try {
+                const res = await fetch('/api/settings/models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: prov, model_name: modelName.trim() })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    await loadSettings(prov);
+                    document.getElementById('settings-model-select').value = modelName.trim();
+                }
+            } catch (e) {
+                alert('Errore aggiunta modello: ' + e);
+            }
+        }
+
+        async function testActiveConnection() {
+            const prov = document.getElementById('settings-provider-select').value;
+            const model = document.getElementById('settings-model-select').value;
+            const box = document.getElementById('test-result-box');
+            const btn = document.getElementById('btn-test-active');
+
+            box.classList.remove('hidden');
+            box.className = 'p-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 text-indigo-300 text-xs flex items-center gap-2';
+            box.innerHTML = `<span class="animate-spin">⚡</span><span>Invio richiesta di test al modello <strong>${prov}/${model}</strong>...</span>`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/settings/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: prov, model: model })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    box.className = 'p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-xs';
+                    box.innerHTML = `✅ <strong>Connessione Riuscita (${data.elapsed_ms}ms)!</strong> Risposta: <em>"${data.response}"</em>`;
+                } else {
+                    box.className = 'p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs';
+                    box.innerHTML = `❌ <strong>Test Fallito:</strong> ${data.message}`;
+                }
+            } catch (e) {
+                box.className = 'p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs';
+                box.innerHTML = `❌ <strong>Errore di rete:</strong> ${e}`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function renderApiKeysCards(data) {
+            const c = document.getElementById('api-keys-container');
+            c.innerHTML = '';
+
+            Object.keys(data.providers).forEach(pKey => {
+                const p = data.providers[pKey];
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-4 rounded-xl border border-cardborder space-y-3';
+
+                const statusBadge = p.is_configured
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">● CONFIGURATA</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-cardborder">○ MANCANTE</span>`;
+
+                let inputsHtml = '';
+                if (p.is_local) {
+                    inputsHtml = `
+                    <div>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">Base URL Endpoint:</label>
+                        <input type="text" id="key-url-${pKey}" value="${p.base_url || ''}" placeholder="http://localhost:11434/v1"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">API Key Cloud (Opzionale DashScope):</label>
+                        <input type="password" id="key-val-${pKey}" placeholder="${p.api_key_masked || 'sk-...'}"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                    </div>`;
+                } else {
+                    inputsHtml = `
+                    <div>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">API Key:</label>
+                        <input type="password" id="key-val-${pKey}" placeholder="${p.api_key_masked || 'sk-...'}"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">Base URL (Personalizzato/Proxy):</label>
+                        <input type="text" id="key-url-${pKey}" value="${p.base_url || ''}"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none">
+                    </div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-cardborder pb-2">
+                        <span class="font-bold text-sm text-white">${p.name}</span>
+                        ${statusBadge}
+                    </div>
+                    ${inputsHtml}
+                `;
+                c.appendChild(card);
+            });
+        }
+
+        async function saveAllApiKeys() {
+            if (!currentSettingsData) return;
+            const btn = document.getElementById('btn-save-keys');
+            btn.disabled = true;
+            btn.innerHTML = '<span>Salvataggio...</span>';
+
+            const api_keys = {};
+            const base_urls = {};
+
+            Object.keys(currentSettingsData.providers).forEach(pKey => {
+                const keyInput = document.getElementById(`key-val-${pKey}`);
+                const urlInput = document.getElementById(`key-url-${pKey}`);
+                if (keyInput && keyInput.value.trim() && !keyInput.value.includes('••••')) {
+                    api_keys[pKey] = keyInput.value.trim();
+                }
+                if (urlInput && urlInput.value.trim()) {
+                    base_urls[pKey] = urlInput.value.trim();
+                }
+            });
+
+            try {
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_keys, base_urls })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Credenziali salvate correttamente!');
+                    await loadSettings();
+                }
+            } catch (e) {
+                alert('Errore salvataggio credenziali: ' + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>💾 Salva Tutte le Credenziali</span>';
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             fetchStats();
+            loadSettingsSummary();
         });
     </script>
 </body>

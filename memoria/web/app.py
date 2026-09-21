@@ -21,6 +21,7 @@ from memoria.knowledge.query_planner import QueryPlanner
 from memoria.ingest.pipeline import ingest_source
 from memoria.ingest.watcher import DropFolderWatcher
 from memoria.seed.seed_data import seed_database
+from memoria.settings.manager import SettingsManager
 
 logger = logging.getLogger("memoria.web")
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -30,6 +31,28 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 class QueryRequest(BaseModel):
     query: str
     mode: str = "auto"
+
+
+class UpdateSettingsRequest(BaseModel):
+    active_provider: Optional[str] = None
+    active_model: Optional[str] = None
+    api_keys: Optional[Dict[str, str]] = None
+    base_urls: Optional[Dict[str, str]] = None
+    provider_active_models: Optional[Dict[str, str]] = None
+
+
+class AddModelRequest(BaseModel):
+    provider: str
+    model_name: str
+
+
+class RefreshModelsRequest(BaseModel):
+    provider: str
+
+
+class TestProviderRequest(BaseModel):
+    provider: str
+    model: Optional[str] = None
 
 
 class CreateStatementRequest(BaseModel):
@@ -72,6 +95,7 @@ class EnrichStartRequest(BaseModel):
 
 def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     db = Database(db_path)
+    settings_mgr = SettingsManager(db)
     planner = QueryPlanner(db)
     watcher = DropFolderWatcher(db, incoming_dir=DEFAULT_INCOMING_DIR, poll_interval=WATCH_INTERVAL)
     enricher = KnowledgeEnricher(db)
@@ -295,5 +319,55 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     async def stop_enrich():
         enricher.stop()
         return {"status": "stopped", "enrich_status": enricher.get_status()}
+
+    # --- Settings Endpoints (Issue #7) ---
+
+    @app.get("/api/settings")
+    async def get_settings():
+        return settings_mgr.get_full_settings()
+
+    @app.post("/api/settings")
+    async def save_settings(payload: UpdateSettingsRequest):
+        res = settings_mgr.update_settings(
+            active_provider=payload.active_provider,
+            active_model=payload.active_model,
+            api_keys=payload.api_keys,
+            base_urls=payload.base_urls,
+            provider_active_models=payload.provider_active_models,
+        )
+        return {"status": "success", "settings": res}
+
+    @app.get("/api/settings/models")
+    async def get_provider_models(provider: str):
+        models = settings_mgr.get_models_for_provider(provider)
+        return {"provider": provider, "models": models}
+
+    @app.post("/api/settings/models")
+    async def add_custom_model(payload: AddModelRequest):
+        models = settings_mgr.add_model_to_provider(payload.provider, payload.model_name)
+        return {"status": "success", "provider": payload.provider, "models": models}
+
+    @app.post("/api/settings/models/refresh")
+    async def refresh_provider_models(payload: RefreshModelsRequest):
+        res = await asyncio.to_thread(settings_mgr.fetch_live_models, payload.provider)
+        return res
+
+    @app.post("/api/settings/test")
+    async def test_provider(payload: TestProviderRequest):
+        client = settings_mgr.get_llm_client(provider_name=payload.provider, model=payload.model)
+        start_t = asyncio.get_event_loop().time()
+        try:
+            res = await asyncio.to_thread(
+                client.chat_completion,
+                [{"role": "user", "content": "Respond strictly with the word 'OK'."}],
+                max_tokens=10,
+                timeout=12,
+            )
+            elapsed = int((asyncio.get_event_loop().time() - start_t) * 1000)
+            if res:
+                return {"status": "success", "response": res.strip(), "elapsed_ms": elapsed}
+            return {"status": "error", "message": "Nessuna risposta dal provider. Verifica chiave o endpoint."}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     return app

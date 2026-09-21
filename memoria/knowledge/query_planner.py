@@ -14,7 +14,14 @@ class QueryPlanner:
     ):
         self.db = db
         self.searcher = searcher or HybridSearcher(db)
-        self.llm = llm or LLMClient()
+        self._llm = llm
+
+    @property
+    def llm(self) -> LLMClient:
+        if self._llm is not None:
+            return self._llm
+        from memoria.settings.manager import SettingsManager
+        return SettingsManager(self.db).get_llm_client()
 
     def route_query(self, query: str, mode: str = "auto") -> Dict[str, Any]:
         """Routes user query into Extractive, Structured, or Synthetic execution."""
