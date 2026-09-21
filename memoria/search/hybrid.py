@@ -7,7 +7,7 @@ from memoria.config import RRF_K, BM25_WEIGHT, VEC_WEIGHT
 try:
     import numpy as np
     HAS_NUMPY = True
-except ImportError:
+except (ImportError, RuntimeError, Exception):
     HAS_NUMPY = False
 
 
