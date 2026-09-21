@@ -109,7 +109,7 @@ class QueryPlanner:
             if llm_response:
                 return {
                     "query": query,
-                    "mode": "synthetic (LLM-powered)",
+                    "mode": f"synthetic ({self.llm.provider_name.capitalize()}-powered)",
                     "answer": llm_response,
                     "sources": hits,
                     "facts": owned_stmts,

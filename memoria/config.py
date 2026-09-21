@@ -5,6 +5,7 @@ DEFAULT_DATA_DIR = Path(os.getenv("MEMORIA_DATA_DIR", Path.home() / ".memoria"))
 DEFAULT_DB_PATH = Path(os.getenv("MEMORIA_DB_PATH", DEFAULT_DATA_DIR / "vault.db"))
 
 # LLM Configuration
+LLM_PROVIDER = os.getenv("MEMORIA_LLM_PROVIDER", "")
 LLM_BASE_URL = os.getenv("MEMORIA_LLM_BASE_URL", "http://localhost:11434/v1")
 LLM_API_KEY = os.getenv("MEMORIA_LLM_API_KEY", "dummy")
 LLM_MODEL = os.getenv("MEMORIA_LLM_MODEL", "qwen2.5:3b")
