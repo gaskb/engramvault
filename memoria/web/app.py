@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -25,6 +26,7 @@ from memoria.settings.manager import SettingsManager
 
 logger = logging.getLogger("memoria.web")
 TEMPLATES_DIR = Path(__file__).parent / "templates"
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 # Pydantic Schemas for Requests
@@ -136,6 +138,9 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         description="Personal AI Conversation Vault & Knowledge Layer",
         lifespan=lifespan,
     )
+    if STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     @app.get("/", response_class=HTMLResponse)

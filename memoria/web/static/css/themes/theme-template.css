@@ -1,0 +1,93 @@
+/**
+ * gaskb_style - theme-template.css
+ * Template for creating a per-project color palette.
+ *
+ * Istruzioni:
+ * 1. Copia questo file in `css/themes/nome-app.css`
+ * 2. Sostituisci i valori HEX con la tonalità del tuo progetto (Light & Dark)
+ * 3. Includi il file HTML dopo `gaskb.css`:
+ *    <link rel="stylesheet" href="/static/css/themes/nome-app.css">
+ */
+
+:root {
+  /* --- LIGHT MODE --- */
+  --md-primary: #00668b;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #c4e7ff;
+  --md-on-primary-container: #001e2d;
+
+  --md-background: #fcfcff;
+  --md-on-background: #191c1e;
+
+  --md-surface: #fcfcff;
+  --md-on-surface: #191c1e;
+  --md-surface-container: #edf0f4;
+  --md-surface-container-high: #e7ebef;
+  --md-surface-variant: #dee3ea;
+  --md-on-surface-variant: #41474d;
+
+  --md-outline: #72787e;
+  --md-outline-variant: #c1c7ce;
+
+  --md-error: #ba1a1a;
+  --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #410002;
+
+  /* Opzionale: font personalizzato per il logo/titolo brand */
+  /* --md-font-brand: "NomeFont", serif; */
+}
+
+/* --- DARK MODE (Automatica via prefers-color-scheme) --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --md-primary: #7dcdff;
+    --md-on-primary: #00344a;
+    --md-primary-container: #004c6a;
+    --md-on-primary-container: #c4e7ff;
+
+    --md-background: #101416;
+    --md-on-background: #e1e3e5;
+
+    --md-surface: #101416;
+    --md-on-surface: #e1e3e5;
+    --md-surface-container: #1d2023;
+    --md-surface-container-high: #272a2e;
+    --md-surface-variant: #41474d;
+    --md-on-surface-variant: #c1c7ce;
+
+    --md-outline: #8b9198;
+    --md-outline-variant: #41474d;
+
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffdad6;
+  }
+}
+
+/* --- DARK MODE (Override esplicito con [data-theme="dark"]) --- */
+:root[data-theme="dark"] {
+  --md-primary: #7dcdff;
+  --md-on-primary: #00344a;
+  --md-primary-container: #004c6a;
+  --md-on-primary-container: #c4e7ff;
+
+  --md-background: #101416;
+  --md-on-background: #e1e3e5;
+
+  --md-surface: #101416;
+  --md-on-surface: #e1e3e5;
+  --md-surface-container: #1d2023;
+  --md-surface-container-high: #272a2e;
+  --md-surface-variant: #41474d;
+  --md-on-surface-variant: #c1c7ce;
+
+  --md-outline: #8b9198;
+  --md-outline-variant: #41474d;
+
+  --md-error: #ffb4ab;
+  --md-on-error: #690005;
+  --md-error-container: #93000a;
+  --md-on-error-container: #ffdad6;
+}

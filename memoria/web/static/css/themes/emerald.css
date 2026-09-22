@@ -1,0 +1,81 @@
+/**
+ * gaskb_style - emerald.css
+ * Sage & emerald green palette. Ideal for monitoring, nature or status tools.
+ */
+
+:root {
+  --md-primary: #006d44;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #8ff7be;
+  --md-on-primary-container: #002111;
+
+  --md-background: #f7fbf3;
+  --md-on-background: #181d19;
+
+  --md-surface: #f7fbf3;
+  --md-on-surface: #181d19;
+  --md-surface-container: #e6ede4;
+  --md-surface-container-high: #e0e8dd;
+  --md-surface-variant: #dce5db;
+  --md-on-surface-variant: #404942;
+
+  --md-outline: #707971;
+  --md-outline-variant: #c0c9bf;
+
+  --md-error: #ba1a1a;
+  --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #410002;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --md-primary: #72daa3;
+    --md-on-primary: #003921;
+    --md-primary-container: #005232;
+    --md-on-primary-container: #8ff7be;
+
+    --md-background: #101511;
+    --md-on-background: #e0e4de;
+
+    --md-surface: #101511;
+    --md-on-surface: #e0e4de;
+    --md-surface-container: #1c211d;
+    --md-surface-container-high: #262c27;
+    --md-surface-variant: #404942;
+    --md-on-surface-variant: #c0c9bf;
+
+    --md-outline: #8a938a;
+    --md-outline-variant: #404942;
+
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffdad6;
+  }
+}
+
+:root[data-theme="dark"] {
+  --md-primary: #72daa3;
+  --md-on-primary: #003921;
+  --md-primary-container: #005232;
+  --md-on-primary-container: #8ff7be;
+
+  --md-background: #101511;
+  --md-on-background: #e0e4de;
+
+  --md-surface: #101511;
+  --md-on-surface: #e0e4de;
+  --md-surface-container: #1c211d;
+  --md-surface-container-high: #262c27;
+  --md-surface-variant: #404942;
+  --md-on-surface-variant: #c0c9bf;
+
+  --md-outline: #8a938a;
+  --md-outline-variant: #404942;
+
+  --md-error: #ffb4ab;
+  --md-on-error: #690005;
+  --md-error-container: #93000a;
+  --md-on-error-container: #ffdad6;
+}

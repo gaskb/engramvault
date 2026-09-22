@@ -1,0 +1,81 @@
+/**
+ * gaskb_style - indigo.css
+ * Deep indigo & tech blue palette. Ideal for network, AI and dev tools.
+ */
+
+:root {
+  --md-primary: #385ca9;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #d9e2ff;
+  --md-on-primary-container: #001945;
+
+  --md-background: #faf8ff;
+  --md-on-background: #1a1b21;
+
+  --md-surface: #faf8ff;
+  --md-on-surface: #1a1b21;
+  --md-surface-container: #edf0f8;
+  --md-surface-container-high: #e7eaf2;
+  --md-surface-variant: #e1e2ec;
+  --md-on-surface-variant: #44464f;
+
+  --md-outline: #757780;
+  --md-outline-variant: #c5c6d0;
+
+  --md-error: #ba1a1a;
+  --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #410002;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --md-primary: #b0c6ff;
+    --md-on-primary: #002d6f;
+    --md-primary-container: #1b448f;
+    --md-on-primary-container: #d9e2ff;
+
+    --md-background: #121318;
+    --md-on-background: #e3e2e9;
+
+    --md-surface: #121318;
+    --md-on-surface: #e3e2e9;
+    --md-surface-container: #1e2025;
+    --md-surface-container-high: #292a30;
+    --md-surface-variant: #44464f;
+    --md-on-surface-variant: #c5c6d0;
+
+    --md-outline: #8f9099;
+    --md-outline-variant: #44464f;
+
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffdad6;
+  }
+}
+
+:root[data-theme="dark"] {
+  --md-primary: #b0c6ff;
+  --md-on-primary: #002d6f;
+  --md-primary-container: #1b448f;
+  --md-on-primary-container: #d9e2ff;
+
+  --md-background: #121318;
+  --md-on-background: #e3e2e9;
+
+  --md-surface: #121318;
+  --md-on-surface: #e3e2e9;
+  --md-surface-container: #1e2025;
+  --md-surface-container-high: #292a30;
+  --md-surface-variant: #44464f;
+  --md-on-surface-variant: #c5c6d0;
+
+  --md-outline: #8f9099;
+  --md-outline-variant: #44464f;
+
+  --md-error: #ffb4ab;
+  --md-on-error: #690005;
+  --md-error-container: #93000a;
+  --md-on-error-container: #ffdad6;
+}

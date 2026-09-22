@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html lang="it" class="dark">
+<html lang="it" class="dark" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memoria AI Anti - Personal Vault & Knowledge Layer</title>
+
+    <!-- gaskb_style Design System -->
+    <link rel="stylesheet" href="/static/css/gaskb.css">
+    <link id="active-theme-link" rel="stylesheet" href="/static/css/themes/emerald.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
@@ -28,6 +33,43 @@
         .badge-fact { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
         .badge-claim { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
         .badge-decision { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* gaskb_style tab adjustments */
+        .tabs.tabs-centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .tab-item {
+            cursor: pointer;
+            border-radius: 9999px;
+            padding: 0.45rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.18s ease-in-out;
+            background-color: transparent;
+            color: #94a3b8;
+            border: 1px solid transparent;
+        }
+        .tab-item:hover {
+            color: #f1f5f9;
+            background-color: rgba(255, 255, 255, 0.06);
+        }
+        .tab-item.active {
+            background-color: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.4);
+            font-weight: 600;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+        }
 
         /* Markdown formatting for query responses */
         .markdown-content h1 { font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-top: 1.1rem; margin-bottom: 0.5rem; }
@@ -55,47 +97,126 @@
 </head>
 <body class="bg-darkbg text-slate-200 min-h-screen flex flex-col">
 
-    <!-- Top Navigation -->
-    <header class="border-b border-cardborder bg-[#10141d] sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xl">
-                    M
+    <!-- Top Navigation Header with Centered Layout (gaskb_style standard) -->
+    <header class="border-b border-cardborder bg-[#10141d]/95 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+            <div class="site-header-centered">
+                <!-- Leading Brand Mark -->
+                <div class="header-leading">
+                    <a href="/" class="brand flex items-center gap-2.5" title="Memoria AI Home">
+                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xl shadow-sm hover:scale-105 transition">
+                            🧠
+                        </div>
+                        <div class="hidden md:flex flex-col text-left">
+                            <span class="font-brand font-bold text-white text-base leading-tight">Memoria AI</span>
+                            <span class="text-[11px] text-slate-400 font-mono">Vault & Knowledge</span>
+                        </div>
+                    </a>
                 </div>
-                <div>
-                    <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                        Memoria AI <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Anti</span>
+
+                <!-- Center: Centered Title + Dual Version Badges -->
+                <div class="header-center">
+                    <h1 class="app-title flex items-center justify-center gap-2">
+                        <span class="text-white">Memoria AI</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">Anti</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Vault Locale & Knowledge Layer per Homelab</p>
+                    <div class="version-badges" title="Versioni attive: Frontend e Backend separati">
+                        <span class="version-badge"><span class="version-badge-label">UI</span> v1.2.0</span>
+                        <span class="version-badge"><span class="version-badge-label">API</span> v1.2.0</span>
+                        <span class="version-badge"><span class="version-badge-label">NODE</span> .220</span>
+                    </div>
+                </div>
+
+                <!-- Actions: Notion, GitLab, Theme & Settings -->
+                <div class="header-actions">
+                    <a href="https://app.notion.com/p/AI-Things-00000000000000000000000000000000" target="_blank" rel="noopener"
+                       class="btn btn-tonal text-xs py-1.5 px-3 hidden sm:inline-flex items-center gap-1.5 border border-cardborder rounded-xl text-slate-300 hover:text-white hover:border-emerald-500/50 transition"
+                       title="Linee guida e documentazione ufficiale su Notion">
+                        <span>📚</span> <span class="font-semibold">Notion</span>
+                    </a>
+                    <a href="http://github.com/root/memoria_ai_anti" target="_blank" rel="noopener"
+                       class="btn btn-tonal text-xs py-1.5 px-3 hidden lg:inline-flex items-center gap-1.5 border border-cardborder rounded-xl text-slate-300 hover:text-white hover:border-emerald-500/50 transition"
+                       title="Repository del codice sorgente su GitLab">
+                        <span>🦊</span> <span class="font-semibold">GitLab</span>
+                    </a>
+                    <button type="button" class="btn-settings text-base" title="Alterna tema chiaro / scuro" aria-label="Tema" onclick="toggleTheme()">
+                        <span id="theme-toggle-icon">🌙</span>
+                    </button>
+                    <button type="button" class="btn-settings text-base" title="Impostazioni Provider LLM e Sistema" aria-label="Impostazioni" onclick="switchTab('settings')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <!-- Stats Bar -->
-            <div id="quick-stats" class="hidden md:flex items-center space-x-4 text-xs text-slate-400">
-                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Conversazioni: <span id="stat-convs" class="font-semibold text-slate-200">...</span></div>
-                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400"></span> Fatti (FACT): <span id="stat-facts" class="font-semibold text-slate-200">...</span></div>
-                <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Decisioni: <span id="stat-decisions" class="font-semibold text-slate-200">...</span></div>
-                <div onclick="switchTab('settings')" class="cursor-pointer hidden lg:flex items-center gap-1.5 bg-[#10141d] border border-cardborder px-2.5 py-1 rounded-lg text-xs hover:border-emerald-500/50 transition" title="Clicca per aprire le Impostazioni LLM">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="text-slate-400">LLM:</span>
-                    <span id="header-active-llm" class="font-mono text-emerald-400 font-semibold">Qwen / qwen2.5:3b</span>
-                </div>
-            </div>
-
-            <!-- Tabs Navigation -->
-            <nav class="flex space-x-1">
-                <button onclick="switchTab('ask')" id="tab-btn-ask" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500 text-white transition">🔍 Chiedi</button>
-                <button onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">🧠 Fatti & Entità</button>
-                <button onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚖️ Decisioni</button>
-                <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">💬 Vault Chat</button>
-                <button onclick="switchTab('import')" id="tab-btn-import" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">📥 Ingest & Enrich</button>
-                <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">⚙️ Impostazioni</button>
+            <!-- Centered Tab Navigation (gaskb_style pattern) -->
+            <nav class="tabs tabs-centered mt-2.5 pt-2 border-t border-cardborder/60" aria-label="Sezioni Principali">
+                <button type="button" onclick="switchTab('ask')" id="tab-btn-ask" class="tab-item active">
+                    <span>🔍</span> <span>Chiedi & Cerca</span>
+                </button>
+                <button type="button" onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="tab-item">
+                    <span>🧠</span> <span>Fatti & Entità</span>
+                </button>
+                <button type="button" onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-item">
+                    <span>⚖️</span> <span>Decisioni & Timeline</span>
+                </button>
+                <button type="button" onclick="switchTab('vault')" id="tab-btn-vault" class="tab-item">
+                    <span>💬</span> <span>Conversation Vault</span>
+                </button>
+                <button type="button" onclick="switchTab('import')" id="tab-btn-import" class="tab-item">
+                    <span>📥</span> <span>Ingest & Enrich</span>
+                </button>
+                <button type="button" onclick="switchTab('settings')" id="tab-btn-settings" class="tab-item">
+                    <span>⚙️</span> <span>Impostazioni</span>
+                </button>
             </nav>
         </div>
     </header>
 
     <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+
+        <!-- Project & Notion Reference Banner (Issue #9) -->
+        <section class="glass-panel p-3.5 mb-6 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs border border-cardborder shadow-sm">
+            <div class="flex items-center flex-wrap gap-2.5 text-slate-300">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Homelab Node .220 (Online)
+                </span>
+                <span class="text-slate-600 hidden sm:inline">•</span>
+                <span class="flex items-center gap-1">
+                    <span class="text-slate-400">Knowledge Base:</span>
+                    <a href="https://app.notion.com/p/AI-Things-00000000000000000000000000000000" target="_blank" rel="noopener" class="text-emerald-400 hover:text-emerald-300 font-medium underline flex items-center gap-1">
+                        <span>Notion (AI Things & Memory Vault)</span> ↗
+                    </a>
+                </span>
+                <span class="text-slate-600 hidden md:inline">•</span>
+                <span class="hidden md:flex items-center gap-1 text-slate-400">
+                    <span>Design System:</span>
+                    <a href="https://app.notion.com/p/UI-Design-System-gaskb-style-11111111111111111111111111111111" target="_blank" rel="noopener" class="text-slate-300 hover:text-white font-mono underline">
+                        gaskb-style (M3)
+                    </a>
+                </span>
+            </div>
+
+            <div class="flex items-center flex-wrap gap-3.5 text-slate-400 ml-auto">
+                <div class="flex items-center gap-2 font-mono text-xs">
+                    <span class="text-slate-500">Vault:</span>
+                    <span class="text-white font-bold" id="stat-convs">...</span> <span class="text-slate-500 text-[11px]">chat</span>
+                    <span class="text-slate-600">/</span>
+                    <span class="text-emerald-400 font-bold" id="stat-facts">...</span> <span class="text-slate-500 text-[11px]">fatti</span>
+                    <span class="text-slate-600">/</span>
+                    <span class="text-amber-400 font-bold" id="stat-decisions">...</span> <span class="text-slate-500 text-[11px]">decisioni</span>
+                </div>
+                <div onclick="switchTab('settings')" class="cursor-pointer flex items-center gap-1.5 bg-[#10141d] border border-cardborder px-2.5 py-1 rounded-lg hover:border-emerald-500/40 transition" title="Clicca per cambiare Provider/Modello LLM">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-500">LLM:</span>
+                    <span id="header-active-llm" class="font-mono font-bold text-emerald-400">...</span>
+                </div>
+            </div>
+        </section>
 
         <!-- TAB 1: ASK & SEARCH -->
         <section id="tab-ask" class="tab-content space-y-6">
@@ -556,17 +677,38 @@
             }
         }
 
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark') || html.getAttribute('data-theme') === 'dark';
+            const nextTheme = isDark ? 'light' : 'dark';
+            html.setAttribute('data-theme', nextTheme);
+            if (nextTheme === 'dark') {
+                html.classList.add('dark');
+                const icon = document.getElementById('theme-toggle-icon');
+                if (icon) icon.innerText = '🌙';
+            } else {
+                html.classList.remove('dark');
+                const icon = document.getElementById('theme-toggle-icon');
+                if (icon) icon.innerText = '☀️';
+            }
+            localStorage.setItem('gaskb_theme', nextTheme);
+        }
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('bg-emerald-500', 'text-white');
+            document.querySelectorAll('.tab-item, .tab-btn').forEach(el => {
+                el.classList.remove('active', 'bg-emerald-500', 'text-white');
                 el.classList.add('text-slate-400');
             });
 
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const targetSection = document.getElementById(`tab-${tabId}`);
+            if (targetSection) targetSection.classList.remove('hidden');
+
             const btn = document.getElementById(`tab-btn-${tabId}`);
-            btn.classList.add('bg-emerald-500', 'text-white');
-            btn.classList.remove('text-slate-400');
+            if (btn) {
+                btn.classList.add('active');
+                btn.classList.remove('text-slate-400');
+            }
 
             if (tabId === 'knowledge') loadEntities();
             if (tabId === 'decisions') { loadDecisions(); loadTimeline(); }
@@ -1472,9 +1614,45 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('gaskb_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                const icon = document.getElementById('theme-toggle-icon');
+                if (icon) icon.innerText = '🌙';
+            } else {
+                document.documentElement.classList.remove('dark');
+                const icon = document.getElementById('theme-toggle-icon');
+                if (icon) icon.innerText = '☀️';
+            }
+
             fetchStats();
             loadSettingsSummary();
         });
     </script>
+
+    <!-- Footer with Project & Notion indications (Issue #9) -->
+    <footer class="border-t border-cardborder bg-[#10141d]/80 py-5 mt-10 text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2 font-mono">
+                <span class="text-slate-400 font-bold">Memoria AI Anti</span>
+                <span>•</span>
+                <span>Homelab Node .220</span>
+                <span>•</span>
+                <span class="text-emerald-400">v1.2.0</span>
+            </div>
+            <div class="flex items-center flex-wrap gap-4 text-xs">
+                <a href="https://app.notion.com/p/AI-Things-00000000000000000000000000000000" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+                    <span>📚</span> <span>Documentazione Notion</span>
+                </a>
+                <a href="http://github.com/root/memoria_ai_anti" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+                    <span>🦊</span> <span>GitLab Repository</span>
+                </a>
+                <a href="https://app.notion.com/p/UI-Design-System-gaskb-style-11111111111111111111111111111111" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
+                    <span>🎨</span> <span>gaskb_style (M3)</span>
+                </a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
