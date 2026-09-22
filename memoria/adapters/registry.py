@@ -3,6 +3,7 @@ import zipfile
 from pathlib import Path
 from typing import List, Union
 from memoria.adapters.base import NormalizedConversation, NormalizedMessage, format_iso_timestamp
+from memoria.adapters.antigravity import parse_antigravity
 from memoria.adapters.chatgpt import parse_chatgpt
 from memoria.adapters.claude import parse_claude
 from memoria.adapters.claude_code import parse_claude_code
@@ -10,10 +11,29 @@ from memoria.adapters.gemini import parse_gemini
 from memoria.adapters.markdown import parse_markdown
 
 
+def _is_antigravity_jsonl(file_content_prefix: str) -> bool:
+    """Checks whether the beginning of a JSONL file matches Antigravity format."""
+    return (
+        '"USER_INPUT"' in file_content_prefix
+        or '"PLANNER_RESPONSE"' in file_content_prefix
+        or '"step_index"' in file_content_prefix
+    )
+
+
 def detect_provider(path: Path) -> str:
     """Detects provider type from file or directory structure."""
     if path.is_dir():
-        if list(path.glob("**/*.jsonl")):
+        if (path / "conversation_summaries.db").exists() or (path / "brain").is_dir():
+            return "antigravity"
+        jsonl_files = list(path.glob("**/*.jsonl"))
+        if jsonl_files:
+            try:
+                with open(jsonl_files[0], "r", encoding="utf-8") as f:
+                    sample = f.read(4096)
+                    if _is_antigravity_jsonl(sample):
+                        return "antigravity"
+            except Exception:
+                pass
             return "claude_code"
         if list(path.glob("**/*.md")):
             return "markdown"
@@ -23,13 +43,27 @@ def detect_provider(path: Path) -> str:
     if suffix in (".md", ".markdown"):
         return "markdown"
     if suffix == ".jsonl":
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                sample = f.read(4096)
+                if _is_antigravity_jsonl(sample):
+                    return "antigravity"
+        except Exception:
+            pass
         return "claude_code"
 
     if suffix == ".zip":
         try:
             with zipfile.ZipFile(path, "r") as z:
                 names = z.namelist()
-                if any(n.endswith(".jsonl") for n in names):
+                if any("brain/" in n or "conversation_summaries.db" in n for n in names):
+                    return "antigravity"
+                jsonl_entries = [n for n in names if n.endswith(".jsonl")]
+                if jsonl_entries:
+                    with z.open(jsonl_entries[0]) as f:
+                        prefix = f.read(4096).decode("utf-8", errors="ignore")
+                        if _is_antigravity_jsonl(prefix):
+                            return "antigravity"
                     return "claude_code"
                 if any("conversations.json" in n for n in names):
                     # Check snippet of conversations.json
@@ -100,7 +134,9 @@ def parse_source(source: Union[str, Path], provider: str = "auto") -> List[Norma
     if provider == "auto" or not provider:
         provider = detect_provider(p)
 
-    if provider == "chatgpt":
+    if provider == "antigravity":
+        return parse_antigravity(p)
+    elif provider == "chatgpt":
         return parse_chatgpt(p)
     elif provider == "claude":
         return parse_claude(p)
@@ -114,7 +150,7 @@ def parse_source(source: Union[str, Path], provider: str = "auto") -> List[Norma
         return parse_normalized_json(p)
     else:
         # Try all parsers gracefully
-        for parser in (parse_normalized_json, parse_chatgpt, parse_claude, parse_claude_code, parse_gemini, parse_markdown):
+        for parser in (parse_normalized_json, parse_antigravity, parse_chatgpt, parse_claude, parse_claude_code, parse_gemini, parse_markdown):
             try:
                 res = parser(p)
                 if res:

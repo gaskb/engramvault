@@ -73,6 +73,32 @@ def cmd_sync_claude_code(args, db: Database):
         )
 
 
+def cmd_sync_antigravity(args, db: Database):
+    from memoria.sync.antigravity import AntigravitySyncer
+    syncer = AntigravitySyncer(
+        antigravity_dir=args.antigravity_dir,
+        state_file=args.state_file,
+        remote_url=args.remote,
+        db=db if not args.remote else None,
+    )
+    dest_desc = f"server remoto '{args.remote}'" if args.remote else f"database locale '{db.db_path}'"
+    print(f"Sincronizzazione sessioni Antigravity verso {dest_desc}...")
+    print(f"Sorgente: {syncer.antigravity_dir}")
+
+    res = syncer.sync(dry_run=args.dry_run)
+    if args.dry_run:
+        print(f"[DRY-RUN] Trovate {res['changed_count']} sessioni nuove o modificate:")
+        for f in res.get("files", []):
+            print(f"  - {f}")
+    elif res.get("status") == "up_to_date":
+        print("✓ Nessuna nuova sessione Antigravity da sincronizzare (tutto aggiornato).")
+    else:
+        print(
+            f"✓ Sincronizzazione completata: {res.get('synced_count', 0)} sessioni sincronizzate, "
+            f"{res.get('error_count', 0)} errori."
+        )
+
+
 def cmd_enrich(args, db: Database):
     from memoria.knowledge.enricher import KnowledgeEnricher
     from memoria.llm.client import LLMClient
@@ -197,7 +223,7 @@ def main():
     # ingest
     p_ingest = subparsers.add_parser("ingest", parents=[base_parser], help="Importa conversazioni da file o directory")
     p_ingest.add_argument("path", help="Percorso del file export (JSON/ZIP/JSONL/MD) o cartella")
-    p_ingest.add_argument("--provider", default="auto", choices=["auto", "chatgpt", "claude", "claude_code", "gemini", "markdown", "normalized"])
+    p_ingest.add_argument("--provider", default="auto", choices=["auto", "antigravity", "chatgpt", "claude", "claude_code", "gemini", "markdown", "normalized"])
     p_ingest.set_defaults(func=cmd_ingest)
 
     # watch (Issue #4)
@@ -215,6 +241,13 @@ def main():
     p_sync_claude.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
     p_sync_claude.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
     p_sync_claude.set_defaults(func=cmd_sync_claude_code)
+
+    p_sync_anti = sync_sub.add_parser("antigravity", parents=[base_parser], help="Sincronizza sessioni Antigravity (~/.gemini/antigravity/)")
+    p_sync_anti.add_argument("--remote", default=None, help="URL dell'istanza remota (es. http://localhost:5006)")
+    p_sync_anti.add_argument("--antigravity-dir", default=None, help="Percorso alternativo ~/.gemini/antigravity")
+    p_sync_anti.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
+    p_sync_anti.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
+    p_sync_anti.set_defaults(func=cmd_sync_antigravity)
 
     # enrich (Issue #2)
     p_enrich = subparsers.add_parser("enrich", parents=[base_parser], help="Pipeline batch di estrazione e arricchimento conoscenza")
