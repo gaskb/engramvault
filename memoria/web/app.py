@@ -1,14 +1,16 @@
 import asyncio
+import json
 import logging
 import os
 import shutil
 import tempfile
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, Optional
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -21,6 +23,13 @@ from memoria.knowledge.extractor import guess_category
 from memoria.knowledge.query_planner import QueryPlanner
 from memoria.ingest.pipeline import ingest_source
 from memoria.ingest.watcher import DropFolderWatcher
+from memoria.mcp_server import (
+    MCP_SERVER_INFO,
+    MCP_TOOLS_SCHEMA,
+    build_agent_conversation_response,
+    build_agent_search_response,
+    handle_mcp_jsonrpc,
+)
 from memoria.seed.seed_data import seed_database
 from memoria.settings.manager import SettingsManager
 
@@ -379,4 +388,177 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    # --- Agent API v1 & MCP Server Endpoints (Issue #11) ---
+
+    class AgentSearchRequest(BaseModel):
+        query: str
+        limit: int = 10
+        category: Optional[str] = None
+        provider: Optional[str] = None
+
+    class AgentRememberRequest(BaseModel):
+        record_type: str = "fact"  # "fact" | "decision"
+        subject: Optional[str] = None
+        predicate: str = "owned_by_user"
+        object_value: Optional[str] = None
+        category: Optional[str] = None
+        notes: Optional[str] = None
+        topic: Optional[str] = None
+        decision_text: Optional[str] = None
+        status: str = "ADOPTED"
+
+    @app.get("/api/v1/agent/search")
+    async def agent_search_get(
+        request: Request,
+        q: str = "",
+        query: Optional[str] = None,
+        limit: int = 10,
+        category: Optional[str] = None,
+        provider: Optional[str] = None,
+    ):
+        search_q = (query or q or "").strip()
+        base_url = str(request.base_url).rstrip("/")
+        return build_agent_search_response(
+            db=db,
+            planner=planner,
+            query=search_q,
+            limit=limit,
+            category=category,
+            provider=provider,
+            base_url=base_url,
+        )
+
+    @app.post("/api/v1/agent/search")
+    async def agent_search_post(request: Request, payload: AgentSearchRequest):
+        base_url = str(request.base_url).rstrip("/")
+        return build_agent_search_response(
+            db=db,
+            planner=planner,
+            query=payload.query.strip(),
+            limit=payload.limit,
+            category=payload.category,
+            provider=payload.provider,
+            base_url=base_url,
+        )
+
+    @app.get("/api/v1/agent/conversation/{conv_id}")
+    async def agent_get_conversation(request: Request, conv_id: str, max_messages: int = 40):
+        base_url = str(request.base_url).rstrip("/")
+        res = build_agent_conversation_response(
+            db=db,
+            conv_id=conv_id,
+            max_messages=max_messages,
+            base_url=base_url,
+        )
+        if not res:
+            raise HTTPException(status_code=404, detail=f"Conversazione {conv_id} non trovata")
+        return res
+
+    @app.post("/api/v1/agent/remember")
+    async def agent_remember(payload: AgentRememberRequest):
+        now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        rtype = payload.record_type.lower().strip()
+        if rtype == "decision" or (payload.topic and payload.decision_text):
+            if not payload.topic or not payload.decision_text:
+                raise HTTPException(status_code=400, detail="topic e decision_text richiesti per una decisione")
+            dec = DecisionRecord(
+                id=str(uuid.uuid4()),
+                topic=payload.topic.strip(),
+                decision_text=payload.decision_text.strip(),
+                status=payload.status.upper(),
+                decided_at=now_iso,
+            )
+            dec_id = db.insert_decision(dec)
+            return {
+                "status": "success",
+                "record_type": "decision",
+                "id": dec_id,
+                "topic": dec.topic,
+                "decision_text": dec.decision_text,
+            }
+        else:
+            if not payload.subject or not payload.object_value:
+                raise HTTPException(status_code=400, detail="subject e object_value richiesti per un fatto")
+            cat = payload.category or guess_category(payload.subject)
+            ent_id = db.upsert_entity(payload.subject, cat)
+            stmt = StatementRecord(
+                id=str(uuid.uuid4()),
+                entity_id=ent_id,
+                statement_type="FACT",
+                subject=payload.subject.strip(),
+                predicate=(payload.predicate or "owned_by_user").strip(),
+                object=payload.object_value.strip(),
+                author="agent",
+                confidence=1.0,
+                valid_from=now_iso,
+                is_current=1,
+                notes=payload.notes or "Registrato da Agente AI",
+            )
+            stmt_id = db.insert_statement(stmt)
+            return {
+                "status": "success",
+                "record_type": "fact",
+                "id": stmt_id,
+                "subject": stmt.subject,
+                "predicate": stmt.predicate,
+                "object_value": stmt.object,
+                "category": cat,
+            }
+
+    @app.post("/api/v1/agent/ask")
+    async def agent_ask(payload: QueryRequest):
+        return planner.route_query(payload.query, mode=payload.mode)
+
+    @app.get("/mcp")
+    @app.get("/api/mcp")
+    async def mcp_info():
+        return {
+            "status": "online",
+            "server": MCP_SERVER_INFO,
+            "tools_count": len(MCP_TOOLS_SCHEMA),
+            "tools": MCP_TOOLS_SCHEMA,
+            "endpoints": {
+                "mcp_jsonrpc": "/mcp",
+                "agent_search": "/api/v1/agent/search?q=...",
+                "agent_conversation": "/api/v1/agent/conversation/{conv_id}",
+                "agent_remember": "/api/v1/agent/remember",
+                "agent_ask": "/api/v1/agent/ask",
+                "openapi_docs": "/docs",
+            },
+        }
+
+    @app.post("/mcp")
+    @app.post("/api/mcp")
+    async def mcp_endpoint(request: Request):
+        base_url = str(request.base_url).rstrip("/")
+        try:
+            body = await request.json()
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content={"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}},
+            )
+
+        if isinstance(body, list):
+            responses = []
+            for item in body:
+                r = handle_mcp_jsonrpc(item, db, planner, base_url=base_url)
+                if r is not None:
+                    responses.append(r)
+            if not responses:
+                return Response(status_code=202)
+            resp_payload: Any = responses
+        else:
+            resp_payload = handle_mcp_jsonrpc(body, db, planner, base_url=base_url)
+            if resp_payload is None:
+                return Response(status_code=202)
+
+        accept = request.headers.get("accept", "")
+        if "text/event-stream" in accept and "application/json" not in accept:
+            sse_data = f"event: message\ndata: {json.dumps(resp_payload, ensure_ascii=False)}\n\n"
+            return Response(content=sse_data, media_type="text/event-stream")
+
+        return JSONResponse(content=resp_payload)
+
     return app
+

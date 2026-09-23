@@ -467,3 +467,129 @@ class Database:
             cur = conn.execute("SELECT key, value FROM settings")
             return {row["key"]: row["value"] for row in cur.fetchall()}
 
+    def search_knowledge(
+        self,
+        query: str,
+        limit: int = 15,
+        category: Optional[str] = None,
+        provider: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Searches structured knowledge (statements, decisions, conversation titles) matching query tokens."""
+        import re
+
+        stopwords = {
+            "il", "lo", "la", "i", "gli", "le", "un", "uno", "una", "di", "a", "da", "in",
+            "con", "su", "per", "tra", "fra", "che", "chi", "cui", "non", "più", "quale",
+            "quali", "quanto", "quanti", "dove", "quando", "come", "perché", "ho", "hai",
+            "ha", "abbiamo", "sono", "è", "era", "stato", "del", "della", "dei", "delle",
+            "nel", "nella", "nei", "nelle", "sul", "sulla", "sui", "sulle", "al", "alla",
+            "the", "and", "for", "with", "about", "what", "how", "why", "from",
+        }
+        raw_tokens = re.findall(r"\b[\w\-\.]{2,}\b", (query or "").lower())
+        tokens = [t for t in raw_tokens if t not in stopwords]
+        if not tokens and raw_tokens:
+            tokens = raw_tokens
+
+        with self.get_connection() as conn:
+            # 1. Statements (FACT & CLAIM)
+            s_sql = """
+                SELECT s.*, e.name AS entity_name, e.category AS entity_category,
+                       c.title AS conversation_title, c.provider AS conversation_provider
+                FROM statements s
+                LEFT JOIN entities e ON s.entity_id = e.id
+                LEFT JOIN conversations c ON s.source_conversation_id = c.id
+                WHERE s.is_current = 1
+            """
+            s_params: List[Any] = []
+            if category:
+                s_sql += " AND LOWER(e.category) = LOWER(?)"
+                s_params.append(category)
+            if provider:
+                s_sql += " AND LOWER(c.provider) = LOWER(?)"
+                s_params.append(provider)
+
+            if tokens:
+                token_clauses = []
+                for t in tokens[:8]:
+                    like_val = f"%{t}%"
+                    token_clauses.append(
+                        "(LOWER(s.subject) LIKE ? OR LOWER(s.predicate) LIKE ? OR LOWER(s.object) LIKE ? "
+                        "OR LOWER(COALESCE(s.notes, '')) LIKE ? OR LOWER(COALESCE(e.category, '')) LIKE ?)"
+                    )
+                    s_params.extend([like_val, like_val, like_val, like_val, like_val])
+                s_sql += " AND (" + " OR ".join(token_clauses) + ")"
+
+            s_sql += " ORDER BY CASE WHEN s.statement_type = 'FACT' THEN 0 ELSE 1 END, s.confidence DESC, s.valid_from DESC LIMIT ?"
+            s_params.append(limit)
+            statements = [dict(r) for r in conn.execute(s_sql, s_params).fetchall()]
+
+            # 2. Decisions
+            d_sql = """
+                SELECT d.*, c.title AS conversation_title, c.provider AS conversation_provider
+                FROM decisions d
+                LEFT JOIN conversations c ON d.source_conversation_id = c.id
+                WHERE 1=1
+            """
+            d_params: List[Any] = []
+            if provider:
+                d_sql += " AND LOWER(c.provider) = LOWER(?)"
+                d_params.append(provider)
+            if tokens:
+                d_clauses = []
+                for t in tokens[:8]:
+                    like_val = f"%{t}%"
+                    d_clauses.append(
+                        "(LOWER(d.topic) LIKE ? OR LOWER(d.decision_text) LIKE ? OR LOWER(COALESCE(c.title, '')) LIKE ?)"
+                    )
+                    d_params.extend([like_val, like_val, like_val])
+                d_sql += " AND (" + " OR ".join(d_clauses) + ")"
+            d_sql += " ORDER BY d.decided_at DESC LIMIT ?"
+            d_params.append(limit)
+            decisions = [dict(r) for r in conn.execute(d_sql, d_params).fetchall()]
+
+            # 3. Matching conversation titles
+            c_sql = "SELECT id, provider, external_ref, title, created_at FROM conversations WHERE 1=1"
+            c_params: List[Any] = []
+            if provider:
+                c_sql += " AND LOWER(provider) = LOWER(?)"
+                c_params.append(provider)
+            if tokens:
+                c_clauses = []
+                for t in tokens[:8]:
+                    c_clauses.append("LOWER(title) LIKE ?")
+                    c_params.append(f"%{t}%")
+                c_sql += " AND (" + " OR ".join(c_clauses) + ")"
+            c_sql += " ORDER BY created_at DESC LIMIT ?"
+            c_params.append(min(limit, 10))
+            conversations = [dict(r) for r in conn.execute(c_sql, c_params).fetchall()]
+
+            return {
+                "tokens": tokens,
+                "statements": statements,
+                "decisions": decisions,
+                "conversations": conversations,
+            }
+
+    def get_conversation_knowledge(self, conv_id: str) -> Dict[str, Any]:
+        """Returns all statements and decisions linked to a specific conversation."""
+        with self.get_connection() as conn:
+            s_cur = conn.execute(
+                """
+                SELECT s.*, e.name AS entity_name, e.category AS entity_category
+                FROM statements s
+                LEFT JOIN entities e ON s.entity_id = e.id
+                WHERE s.source_conversation_id = ?
+                ORDER BY s.statement_type ASC, s.valid_from DESC
+                """,
+                (conv_id,),
+            )
+            d_cur = conn.execute(
+                "SELECT * FROM decisions WHERE source_conversation_id = ? ORDER BY decided_at DESC",
+                (conv_id,),
+            )
+            return {
+                "statements": [dict(r) for r in s_cur.fetchall()],
+                "decisions": [dict(r) for r in d_cur.fetchall()],
+            }
+
+
