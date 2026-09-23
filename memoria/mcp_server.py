@@ -15,7 +15,7 @@ import urllib.request
 import uuid
 from typing import Any, Dict, List, Optional
 
-from memoria.config import DEFAULT_DB_PATH
+from memoria.config import API_VERSION, DEFAULT_DB_PATH
 from memoria.db.engine import Database
 from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.knowledge.extractor import guess_category
@@ -25,7 +25,7 @@ DEFAULT_REMOTE_URL = os.environ.get("MEMORIA_API_URL", "http://localhost:5006").
 
 MCP_SERVER_INFO = {
     "name": "memoria-ai-mcp",
-    "version": "1.1.0",
+    "version": API_VERSION,
 }
 
 MCP_INSTRUCTIONS = (

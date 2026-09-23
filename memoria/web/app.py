@@ -15,7 +15,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from memoria.config import DEFAULT_DB_PATH, DEFAULT_INCOMING_DIR, WATCH_INTERVAL, WATCH_ENABLED
+from memoria.config import (
+    API_VERSION,
+    APP_VERSION,
+    DEFAULT_DB_PATH,
+    DEFAULT_INCOMING_DIR,
+    UI_VERSION,
+    WATCH_ENABLED,
+    WATCH_INTERVAL,
+)
 from memoria.db.engine import Database
 from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.knowledge.enricher import KnowledgeEnricher
@@ -145,6 +153,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     app = FastAPI(
         title="Memoria AI Anti",
         description="Personal AI Conversation Vault & Knowledge Layer",
+        version=API_VERSION,
         lifespan=lifespan,
     )
     if STATIC_DIR.exists():
@@ -158,12 +167,22 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         return templates.TemplateResponse(
             request=request,
             name="index.html",
-            context={"stats": stats, "db_name": db.db_path.name},
+            context={
+                "stats": stats,
+                "db_name": db.db_path.name,
+                "app_version": APP_VERSION,
+                "ui_version": UI_VERSION,
+                "api_version": API_VERSION,
+            },
         )
 
     @app.get("/api/stats")
     async def get_stats():
-        return db.get_stats()
+        s = db.get_stats()
+        s["app_version"] = APP_VERSION
+        s["ui_version"] = UI_VERSION
+        s["api_version"] = API_VERSION
+        return s
 
     @app.post("/api/query")
     async def run_query(payload: QueryRequest):

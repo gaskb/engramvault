@@ -227,9 +227,9 @@
                         <span class="text-white">Memoria AI</span>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">Anti</span>
                     </h1>
-                    <div class="version-badges" title="Versioni attive: Frontend e Backend separati">
-                        <span class="version-badge"><span class="version-badge-label">UI</span> v1.2.0</span>
-                        <span class="version-badge"><span class="version-badge-label">API</span> v1.2.0</span>
+                    <div class="version-badges" title="Versioni attive: Frontend (UI) e Backend (API) separati">
+                        <span class="version-badge"><span class="version-badge-label">UI</span> v{{ ui_version or '1.3.1' }}</span>
+                        <span class="version-badge"><span class="version-badge-label">API</span> v{{ api_version or '1.3.0' }}</span>
                         <span class="version-badge"><span class="version-badge-label">NODE</span> .220</span>
                     </div>
                 </div>
@@ -1753,7 +1753,7 @@
                 <span>•</span>
                 <span>Homelab Node .220</span>
                 <span>•</span>
-                <span class="text-emerald-400">v1.2.0</span>
+                <span class="text-emerald-400">UI v{{ ui_version or '1.3.1' }} / API v{{ api_version or '1.3.0' }}</span>
             </div>
             <div class="flex items-center flex-wrap gap-4 text-xs">
                 <a href="https://app.notion.com/p/AI-Things-00000000000000000000000000000000" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">

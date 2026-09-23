@@ -1,6 +1,11 @@
 import os
 from pathlib import Path
 
+# Versioning (Semantic Versioning - Dual UI / API)
+APP_VERSION = "1.3.1"
+UI_VERSION = "1.3.1"
+API_VERSION = "1.3.0"
+
 DEFAULT_DATA_DIR = Path(os.getenv("MEMORIA_DATA_DIR", Path.home() / ".memoria"))
 DEFAULT_DB_PATH = Path(os.getenv("MEMORIA_DB_PATH", DEFAULT_DATA_DIR / "vault.db"))
 
