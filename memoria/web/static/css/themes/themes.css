@@ -1,0 +1,55 @@
+/* Memoria AI — Multi-Theme Engine Semantic CSS Variables (Issue #20) */
+:root {
+  color-scheme: dark light;
+  --theme-primary: #10b981;
+  --theme-primary-rgb: 16, 185, 129;
+  --theme-primary-hover: #059669;
+  --theme-secondary: #6366f1;
+  --theme-secondary-rgb: 99, 102, 241;
+  --theme-bg: #0f1117;
+  --theme-surface: #10141d;
+  --theme-card: #181d27;
+  --theme-border: #262f40;
+  --theme-text: #f1f5f9;
+  --theme-muted: #94a3b8;
+}
+
+html[data-palette="emerald"] {
+  --theme-primary: #10b981;
+  --theme-primary-rgb: 16, 185, 129;
+  --theme-primary-hover: #059669;
+  --theme-secondary: #6366f1;
+  --theme-secondary-rgb: 99, 102, 241;
+}
+
+html[data-palette="amber"] {
+  --theme-primary: #f59e0b;
+  --theme-primary-rgb: 245, 158, 11;
+  --theme-primary-hover: #d97706;
+  --theme-secondary: #ea580c;
+  --theme-secondary-rgb: 234, 88, 12;
+}
+
+html[data-palette="indigo"] {
+  --theme-primary: #6366f1;
+  --theme-primary-rgb: 99, 102, 241;
+  --theme-primary-hover: #4f46e5;
+  --theme-secondary: #06b6d4;
+  --theme-secondary-rgb: 6, 182, 212;
+}
+
+html[data-palette="ruby"] {
+  --theme-primary: #f43f5e;
+  --theme-primary-rgb: 244, 63, 94;
+  --theme-primary-hover: #e11d48;
+  --theme-secondary: #a855f7;
+  --theme-secondary-rgb: 168, 85, 247;
+}
+
+html[data-palette="slate"] {
+  --theme-primary: #38bdf8;
+  --theme-primary-rgb: 56, 189, 248;
+  --theme-primary-hover: #0284c7;
+  --theme-secondary: #94a3b8;
+  --theme-secondary-rgb: 148, 163, 184;
+}

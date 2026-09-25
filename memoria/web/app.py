@@ -48,8 +48,15 @@ from memoria.mcp_server import (
     handle_mcp_jsonrpc,
 )
 from memoria.search.embeddings import reindex_database_embeddings
+from memoria.security.auth import (
+    COOKIE_NAME,
+    SecurityManager,
+    verify_agent_request,
+    verify_web_session,
+)
 from memoria.seed.seed_data import seed_database
 from memoria.settings.manager import SettingsManager
+from memoria.themes import ThemeManager
 
 logger = logging.getLogger("memoria.web")
 TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -126,6 +133,8 @@ class EnrichStartRequest(BaseModel):
 def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     db = Database(db_path)
     settings_mgr = SettingsManager(db)
+    security_mgr = SecurityManager(db)
+    theme_mgr = ThemeManager(db)
     planner = QueryPlanner(db)
     watcher = DropFolderWatcher(db, incoming_dir=DEFAULT_INCOMING_DIR, poll_interval=WATCH_INTERVAL)
     enricher = KnowledgeEnricher(db)
@@ -172,11 +181,118 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
 
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+    @app.get("/login", response_class=HTMLResponse)
+    async def login_page(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "app_version": APP_VERSION,
+                "api_version": API_VERSION,
+                "mcp_version": MCP_PROTOCOL_VERSION,
+            },
+        )
+
+    @app.post("/api/auth/login")
+    async def auth_login(payload: Dict[str, Any]):
+        password = str(payload.get("password", ""))
+        if not security_mgr.verify_web_password(password):
+            raise HTTPException(status_code=401, detail="Invalid password")
+        cookie_val = security_mgr.create_session_cookie_value()
+        resp = JSONResponse({"status": "success"})
+        resp.set_cookie(
+            key=COOKIE_NAME,
+            value=cookie_val,
+            httponly=True,
+            samesite="lax",
+            max_age=86400 * 30,
+        )
+        return resp
+
+    @app.post("/api/auth/logout")
+    async def auth_logout():
+        resp = JSONResponse({"status": "success"})
+        resp.delete_cookie(key=COOKIE_NAME)
+        return resp
+
+    @app.get("/api/security/status")
+    async def get_security_status():
+        return security_mgr.get_status()
+
+    @app.post("/api/security/config")
+    async def update_security_config(payload: Dict[str, Any]):
+        return security_mgr.update_config(
+            api_token_required=payload.get("api_token_required"),
+            custom_api_token=payload.get("custom_api_token"),
+            web_password=payload.get("web_password"),
+            clear_web_password=bool(payload.get("clear_web_password", False)),
+        )
+
+    @app.post("/api/security/token/generate")
+    async def generate_security_token():
+        tok = security_mgr.generate_new_api_token()
+        return {"status": "success", "api_token": tok, **security_mgr.get_status()}
+
+    @app.get("/api/themes")
+    async def get_themes():
+        return theme_mgr.get_active_theme_info()
+
+    @app.post("/api/themes/active")
+    async def set_active_theme(payload: Dict[str, Any]):
+        palette_id = str(payload.get("palette", "emerald"))
+        mode = payload.get("mode")
+        return theme_mgr.set_active_theme(palette_id, mode)
+
+    @app.post("/api/themes")
+    async def create_custom_theme(payload: Dict[str, Any]):
+        return theme_mgr.save_custom_theme(
+            name=str(payload.get("name", "Custom Theme")),
+            primary=str(payload.get("primary", "#10b981")),
+            secondary=str(payload.get("secondary", "#6366f1")),
+            dark_bg=str(payload.get("dark_bg", "#0f1117")),
+            dark_card=str(payload.get("dark_card", "#181d27")),
+            light_bg=str(payload.get("light_bg", "#f8fafc")),
+            light_card=str(payload.get("light_card", "#ffffff")),
+            theme_id=payload.get("id"),
+        )
+
+    @app.delete("/api/themes/{theme_id}")
+    async def delete_custom_theme(theme_id: str):
+        return theme_mgr.delete_custom_theme(theme_id)
+
+    @app.get("/api/onboarding/mcp-config")
+    async def get_onboarding_mcp_config(request: Request):
+        base_url = str(request.base_url).rstrip("/")
+        sec = security_mgr.get_status()
+        mcp_url = f"{base_url}/mcp"
+        headers: Dict[str, str] = {}
+        if sec.get("api_token_required") and sec.get("api_token"):
+            headers["Authorization"] = f"Bearer {sec['api_token']}"
+        server_entry: Dict[str, Any] = {"serverUrl": mcp_url}
+        if headers:
+            server_entry["headers"] = headers
+        return {
+            "mcp_url": mcp_url,
+            "api_token_required": sec.get("api_token_required"),
+            "config": {"mcpServers": {"memoria": server_entry}},
+        }
+
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request, lang: Optional[str] = None):
+        if not verify_web_session(request, db):
+            return templates.TemplateResponse(
+                request=request,
+                name="login.html",
+                context={
+                    "app_version": APP_VERSION,
+                    "api_version": API_VERSION,
+                    "mcp_version": MCP_PROTOCOL_VERSION,
+                },
+            )
         stats = db.get_stats()
         active_lang = (lang or db.get_setting("ui_language") or DEFAULT_LANG or "en").lower()[:2]
         bundle = get_locale_bundle(active_lang)
+        theme_info = theme_mgr.get_active_theme_info()
         return templates.TemplateResponse(
             request=request,
             name="index.html",
@@ -196,6 +312,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
                 "repo_url": REPO_URL,
                 "repo_label": REPO_LABEL,
                 "design_system_url": DESIGN_SYSTEM_URL,
+                "theme_info": theme_info,
             },
         )
 
@@ -510,6 +627,14 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         decision_text: Optional[str] = None
         status: str = "ADOPTED"
 
+    def _require_agent_auth(request: Request) -> None:
+        if not verify_agent_request(request, db):
+            raise HTTPException(
+                status_code=401,
+                detail="Unauthorized: valid Authorization: Bearer <MEMORIA_API_TOKEN> required.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     @app.get("/api/v1/agent/search")
     async def agent_search_get(
         request: Request,
@@ -519,6 +644,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         category: Optional[str] = None,
         provider: Optional[str] = None,
     ):
+        _require_agent_auth(request)
         search_q = (query or q or "").strip()
         base_url = str(request.base_url).rstrip("/")
         return build_agent_search_response(
@@ -533,6 +659,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
 
     @app.post("/api/v1/agent/search")
     async def agent_search_post(request: Request, payload: AgentSearchRequest):
+        _require_agent_auth(request)
         base_url = str(request.base_url).rstrip("/")
         return build_agent_search_response(
             db=db,
@@ -546,6 +673,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
 
     @app.get("/api/v1/agent/conversation/{conv_id}")
     async def agent_get_conversation(request: Request, conv_id: str, max_messages: int = 40):
+        _require_agent_auth(request)
         base_url = str(request.base_url).rstrip("/")
         res = build_agent_conversation_response(
             db=db,
@@ -558,7 +686,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         return res
 
     @app.post("/api/v1/agent/remember")
-    async def agent_remember(payload: AgentRememberRequest):
+    async def agent_remember(request: Request, payload: AgentRememberRequest):
+        _require_agent_auth(request)
         now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         rtype = payload.record_type.lower().strip()
         if rtype == "decision" or (payload.topic and payload.decision_text):
@@ -609,7 +738,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             }
 
     @app.post("/api/v1/agent/ask")
-    async def agent_ask(payload: QueryRequest):
+    async def agent_ask(request: Request, payload: QueryRequest):
+        _require_agent_auth(request)
         return planner.route_query(payload.query, mode=payload.mode)
 
     @app.get("/mcp")
@@ -633,6 +763,15 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     @app.post("/mcp")
     @app.post("/api/mcp")
     async def mcp_endpoint(request: Request):
+        if not verify_agent_request(request, db):
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32001, "message": "Unauthorized: invalid or missing Bearer token"},
+                },
+            )
         base_url = str(request.base_url).rstrip("/")
         try:
             body = await request.json()

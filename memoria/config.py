@@ -2,10 +2,15 @@ import os
 from pathlib import Path
 
 # Versioning (Release Version + API Contract Version + MCP Protocol Version)
-APP_VERSION = "1.5.1"
-UI_VERSION = "1.5.1"
+APP_VERSION = "1.6.0"
+UI_VERSION = "1.6.0"
 API_VERSION = "v1"
 MCP_PROTOCOL_VERSION = "2.0"
+
+# Security & Authentication (Issue #15)
+API_TOKEN = os.getenv("MEMORIA_API_TOKEN", "").strip()
+WEB_PASSWORD = os.getenv("MEMORIA_WEB_PASSWORD", "").strip()
+DEFAULT_THEME_PALETTE = os.getenv("MEMORIA_DEFAULT_THEME", "emerald").lower()
 
 # Default Language & Instance White-Labeling (Issues #13 & #16)
 DEFAULT_LANG = os.getenv("MEMORIA_DEFAULT_LANG", "en").lower()

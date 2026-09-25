@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="{{ default_lang or 'en' }}" class="dark" data-theme="dark">
+<html lang="{{ default_lang or 'en' }}" class="dark" data-theme="{{ theme_info.active_mode if theme_info else 'dark' }}" data-palette="{{ theme_info.active_palette if theme_info else 'emerald' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
     <title>Memoria AI — Personal Vault & Knowledge Layer</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
-    <!-- gaskb_style Design System -->
+    <!-- gaskb_style Design System & Multi-Theme Engine (Issue #20) -->
     <link rel="stylesheet" href="/static/css/gaskb.css">
-    <link id="active-theme-link" rel="stylesheet" href="/static/css/themes/emerald.css">
+    <link rel="stylesheet" href="/static/css/themes/themes.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -21,8 +22,8 @@
                         darkbg: 'var(--memoria-bg)',
                         cardbg: 'var(--memoria-card-bg)',
                         cardborder: 'var(--memoria-card-border)',
-                        accent: '#10b981',
-                        accenthover: '#059669',
+                        accent: 'var(--theme-primary)',
+                        accenthover: 'var(--theme-primary-hover)',
                     }
                 }
             }
@@ -30,11 +31,16 @@
     </script>
     <style>
         :root, [data-theme="dark"] {
+            --theme-primary: #10b981;
+            --theme-primary-rgb: 16, 185, 129;
+            --theme-primary-hover: #059669;
+            --theme-secondary: #6366f1;
+            --theme-secondary-rgb: 99, 102, 241;
             --memoria-bg: #0c0f17;
             --memoria-card-bg: #161b26;
             --memoria-inner-bg: #10141d;
             --memoria-card-border: #232d3f;
-            --memoria-glass-bg: rgba(22, 27, 38, 0.85);
+            --memoria-glass-bg: rgba(22, 27, 38, 0.88);
             --memoria-header-bg: rgba(16, 20, 29, 0.95);
             --memoria-text-primary: #f8fafc;
             --memoria-text-secondary: #cbd5e1;
@@ -51,6 +57,23 @@
             --memoria-text-primary: #0f172a;
             --memoria-text-secondary: #334155;
             --memoria-text-muted: #64748b;
+        }
+
+        /* Semantic Theme Bindings for Primary & Secondary Accents (Issue #20) */
+        .bg-emerald-600, .bg-emerald-500 {
+            background-color: var(--theme-primary) !important;
+        }
+        .hover\:bg-emerald-500:hover, .hover\:bg-emerald-600:hover {
+            background-color: var(--theme-primary-hover) !important;
+        }
+        .text-emerald-400, .text-emerald-300 {
+            color: var(--theme-primary) !important;
+        }
+        .border-emerald-500\/30, .border-emerald-500\/40, .border-emerald-500\/20 {
+            border-color: rgba(var(--theme-primary-rgb), 0.38) !important;
+        }
+        .bg-emerald-500\/20, .bg-emerald-500\/15, .bg-emerald-500\/10 {
+            background-color: rgba(var(--theme-primary-rgb), 0.16) !important;
         }
 
         body {
@@ -103,7 +126,6 @@
             color: #94a3b8 !important;
         }
 
-        /* Typography Contrast Overrides in Light Mode (preserving white text on solid colored buttons) */
         [data-theme="light"] .text-white:not(.bg-emerald-600):not(.bg-indigo-600):not(.bg-amber-600):not(.bg-rose-600):not(.bg-blue-600) {
             color: #0f172a !important;
         }
@@ -119,19 +141,14 @@
         [data-theme="light"] .text-slate-300 { color: #334155 !important; }
         [data-theme="light"] .text-slate-400 { color: #475569 !important; }
         [data-theme="light"] .text-slate-500 { color: #64748b !important; }
-        [data-theme="light"] .text-emerald-400 { color: #059669 !important; }
-        [data-theme="light"] .text-emerald-300 { color: #047857 !important; }
         [data-theme="light"] .text-indigo-400,
         [data-theme="light"] .text-indigo-300 { color: #4f46e5 !important; }
         [data-theme="light"] .text-amber-400,
         [data-theme="light"] .text-amber-300 { color: #d97706 !important; }
 
-        .badge-fact { background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .badge-claim { background-color: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-fact { background-color: rgba(var(--theme-primary-rgb), 0.15); color: var(--theme-primary); border: 1px solid rgba(var(--theme-primary-rgb), 0.35); }
+        .badge-claim { background-color: rgba(var(--theme-secondary-rgb), 0.15); color: #818cf8; border: 1px solid rgba(var(--theme-secondary-rgb), 0.3); }
         .badge-decision { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        [data-theme="light"] .badge-fact { background-color: #ecfdf5; color: #047857; border-color: #6ee7b7; }
-        [data-theme="light"] .badge-claim { background-color: #eef2ff; color: #4338ca; border-color: #a5b4fc; }
-        [data-theme="light"] .badge-decision { background-color: #fffbeb; color: #b45309; border-color: #fcd34d; }
 
         /* gaskb_style tab adjustments */
         .tabs.tabs-centered {
@@ -160,47 +177,36 @@
         }
         .tab-item:hover {
             color: var(--memoria-text-primary);
-            background-color: rgba(16, 185, 129, 0.08);
+            background-color: rgba(var(--theme-primary-rgb), 0.08);
         }
         .tab-item.active {
-            background-color: rgba(16, 185, 129, 0.18);
-            color: #34d399;
-            border-color: rgba(16, 185, 129, 0.4);
+            background-color: rgba(var(--theme-primary-rgb), 0.18);
+            color: var(--theme-primary);
+            border-color: rgba(var(--theme-primary-rgb), 0.45);
             font-weight: 600;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
-        }
-        [data-theme="light"] .tab-item.active {
-            background-color: #ecfdf5;
-            color: #047857;
-            border-color: #34d399;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
+            box-shadow: 0 0 12px rgba(var(--theme-primary-rgb), 0.15);
         }
 
         /* Markdown formatting for query responses */
         .markdown-content h1 { font-size: 1.25rem; font-weight: 700; color: var(--memoria-text-primary); margin-top: 1.1rem; margin-bottom: 0.5rem; }
         .markdown-content h2 { font-size: 1.1rem; font-weight: 700; color: var(--memoria-text-primary); margin-top: 1rem; margin-bottom: 0.4rem; border-bottom: 1px solid var(--memoria-card-border); padding-bottom: 0.25rem; }
         .markdown-content h3 { font-size: 0.95rem; font-weight: 600; color: #818cf8; margin-top: 0.85rem; margin-bottom: 0.3rem; }
-        [data-theme="light"] .markdown-content h3 { color: #4338ca; }
-        .markdown-content h4 { font-size: 0.875rem; font-weight: 600; color: #34d399; margin-top: 0.6rem; margin-bottom: 0.25rem; }
-        [data-theme="light"] .markdown-content h4 { color: #047857; }
+        .markdown-content h4 { font-size: 0.875rem; font-weight: 600; color: var(--theme-primary); margin-top: 0.6rem; margin-bottom: 0.25rem; }
         .markdown-content p { margin-bottom: 0.75rem; line-height: 1.6; }
         .markdown-content ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
         .markdown-content ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
         .markdown-content li { margin-bottom: 0.35rem; line-height: 1.55; }
         .markdown-content strong { color: var(--memoria-text-primary); font-weight: 600; }
         .markdown-content em { color: var(--memoria-text-secondary); font-style: italic; }
-        .markdown-content blockquote { border-left: 3px solid #818cf8; padding-left: 0.75rem; color: var(--memoria-text-muted); margin: 0.75rem 0; font-style: italic; }
+        .markdown-content blockquote { border-left: 3px solid var(--theme-primary); padding-left: 0.75rem; color: var(--memoria-text-muted); margin: 0.75rem 0; font-style: italic; }
         .markdown-content hr { border-color: var(--memoria-card-border); margin: 1.25rem 0; }
         .markdown-content table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.8rem; }
         .markdown-content th, .markdown-content td { border: 1px solid var(--memoria-card-border); padding: 0.4rem 0.6rem; text-align: left; }
         .markdown-content th { background-color: var(--memoria-card-bg); color: var(--memoria-text-primary); font-weight: 600; }
-        .markdown-content code { background-color: var(--memoria-inner-bg); color: #6366f1; padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.85em; }
+        .markdown-content code { background-color: var(--memoria-inner-bg); color: var(--theme-primary); padding: 0.1rem 0.35rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.85em; }
         .markdown-content pre { background-color: var(--memoria-inner-bg); border: 1px solid var(--memoria-card-border); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75rem 0; }
-        .markdown-content a { color: #6366f1; text-decoration: underline; text-underline-offset: 2px; }
-        .markdown-content a:hover { color: #4f46e5; }
-        .markdown-content .citation-link { color: #34d399; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.15rem 0.45rem; border-radius: 0.375rem; font-size: 0.82em; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.15s; vertical-align: baseline; margin: 0 0.15rem; }
-        [data-theme="light"] .markdown-content .citation-link { color: #047857; background: #ecfdf5; border-color: #6ee7b7; }
-        .markdown-content .citation-link:hover { background: rgba(16, 185, 129, 0.25); border-color: #34d399; color: var(--memoria-text-primary); text-decoration: none; }
+        .markdown-content a { color: var(--theme-primary); text-decoration: underline; text-underline-offset: 2px; }
+        .markdown-content .citation-link { color: var(--theme-primary); background: rgba(var(--theme-primary-rgb), 0.12); border: 1px solid rgba(var(--theme-primary-rgb), 0.35); padding: 0.15rem 0.45rem; border-radius: 0.375rem; font-size: 0.82em; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.15s; vertical-align: baseline; margin: 0 0.15rem; }
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 min-h-screen flex flex-col">
@@ -230,17 +236,43 @@
                     </h1>
                 </div>
 
-                <!-- Actions: Language Switcher, Theme & Settings -->
-                <div class="header-actions">
+                <!-- Actions: Quickstart Wizard, Language Switcher, Multi-Theme Picker & Settings -->
+                <div class="header-actions relative">
+                    <button type="button" onclick="toggleOnboardingBanner(true)" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-semibold transition" title="60-Second Quickstart & MCP Setup">
+                        <span data-i18n="quickstart_btn">{{ i18n.get('quickstart_btn', '🚀 Quickstart & MCP') }}</span>
+                    </button>
+
                     <select id="lang-selector" onchange="changeLanguage(this.value)" title="Interface & Prompt Language"
                             class="bg-[#10141d] border border-cardborder rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
                         {% for loc in available_locales %}
                         <option value="{{ loc.code }}" {% if loc.code == default_lang %}selected{% endif %}>{{ loc.flag }} {{ loc.code.upper() }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" class="btn-settings text-base" title="Toggle Dark / Light Theme" aria-label="Theme" onclick="toggleTheme()">
-                        <span id="theme-toggle-icon">🌙</span>
-                    </button>
+
+                    <!-- Multi-Theme Popover Trigger (Issue #20) -->
+                    <div class="relative">
+                        <button type="button" onclick="toggleThemeMenu()" class="btn-settings text-xs px-2.5 py-1.5 flex items-center gap-1" title="Select Theme Palette & Mode">
+                            <span id="theme-toggle-icon">🌙</span>
+                            <span class="hidden lg:inline" data-i18n="theme_btn_label">{{ i18n.get('theme_btn_label', '🎨 Theme') }}</span>
+                        </button>
+                        <div id="theme-popover-menu" class="hidden absolute right-0 mt-2 w-64 rounded-2xl glass-panel shadow-2xl p-3 z-50 space-y-2.5 text-xs">
+                            <div class="flex items-center justify-between border-b border-cardborder pb-2">
+                                <span class="font-bold text-white">🎨 Theme & Mode</span>
+                                <button type="button" onclick="toggleTheme()" class="px-2 py-1 rounded-lg bg-[#10141d] border border-cardborder text-slate-300 hover:text-white text-[11px]">
+                                    ☀️/🌙 Mode
+                                </button>
+                            </div>
+                            <div id="theme-presets-list" class="grid grid-cols-1 gap-1.5">
+                                <!-- Populated dynamically by loadThemes() -->
+                            </div>
+                            <div class="pt-1.5 border-t border-cardborder flex justify-between gap-1">
+                                <button type="button" onclick="openCustomThemeModal()" class="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition" data-i18n="theme_create_btn">
+                                    {{ i18n.get('theme_create_btn', '+ Create Custom Theme') }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="button" class="btn-settings text-base" title="Settings" aria-label="Settings" onclick="switchTab('settings')">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
@@ -276,6 +308,65 @@
 
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+
+        <!-- First-Run Onboarding & MCP Quickstart Wizard (Issue #17) -->
+        <div id="onboarding-wizard-banner" class="{% if stats.conversations > 0 %}hidden{% endif %} mb-5 glass-panel rounded-2xl p-5 border border-emerald-500/30 space-y-4">
+            <div class="flex items-start justify-between gap-3 border-b border-cardborder pb-3">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center gap-2" data-i18n="onboarding_title">
+                        {{ i18n.get('onboarding_title', '🚀 Welcome to Memoria AI — 60-Second Quickstart & MCP Setup') }}
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5" data-i18n="onboarding_subtitle">
+                        {{ i18n.get('onboarding_subtitle', 'Follow these 3 steps to populate your Vault and connect your AI coding agents (Antigravity, Claude Code, Claude Desktop, Cursor).') }}
+                    </p>
+                </div>
+                <button type="button" onclick="toggleOnboardingBanner(false)" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded-lg bg-[#10141d]">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <!-- Step 1 -->
+                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                    <div>
+                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step1_title">{{ i18n.get('onboarding_step1_title', '1. AI Provider & Embeddings') }}</div>
+                        <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step1_desc">
+                            {{ i18n.get('onboarding_step1_desc', 'Configure your preferred LLM provider (or local Ollama) in Settings. Multilingual 384-dim semantic vectors work out-of-the-box with zero config.') }}
+                        </p>
+                    </div>
+                    <button type="button" onclick="switchTab('settings')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition">
+                        ⚙️ Open AI Settings
+                    </button>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                    <div>
+                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step2_title">{{ i18n.get('onboarding_step2_title', '2. Populate Vault (Import or Demo)') }}</div>
+                        <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step2_desc">
+                            {{ i18n.get('onboarding_step2_desc', 'Drop your ChatGPT/Claude/Gemini export in the Ingest tab, or load the curated Demo Dataset in 1 click to test Hybrid Search & Knowledge Curation immediately.') }}
+                        </p>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <button type="button" onclick="loadDemoDatasetFromWizard()" id="btn-onboarding-demo" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow" data-i18n="onboarding_load_demo_btn">
+                            {{ i18n.get('onboarding_load_demo_btn', '✨ Load Demo Dataset (6 Chats + Facts/Decisions)') }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                    <div>
+                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step3_title">{{ i18n.get('onboarding_step3_title', '3. Connect AI Agents via MCP') }}</div>
+                        <p class="text-slate-300 leading-relaxed mb-1.5" data-i18n="onboarding_step3_desc">
+                            {{ i18n.get('onboarding_step3_desc', 'Copy this ready-to-use mcp_config.json snippet into Google Antigravity, Claude Code, Claude Desktop, or Cursor:') }}
+                        </p>
+                        <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "memoria": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
+                    </div>
+                    <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition" data-i18n="onboarding_copy_mcp_btn">
+                        {{ i18n.get('onboarding_copy_mcp_btn', '📋 Copy MCP Config JSON') }}
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Clean Status & Agent API Banner -->
         <section class="glass-panel p-3.5 mb-6 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs border border-cardborder shadow-sm">
@@ -700,9 +791,95 @@
 
                 <div id="jev-test-output" class="hidden p-3 rounded-xl bg-[#10141d] border border-indigo-500/30 text-xs font-mono text-slate-300"></div>
             </div>
+
+            <!-- Card 4: Security, API Bearer Token & Optional Web UI Password (Issue #15) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-5 border border-emerald-500/20">
+                <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span data-i18n="sec_title">{{ i18n.get('sec_title', '🔐 Security, API Bearer Token & Web Password') }}</span>
+                            <span id="sec-status-badge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Open LAN Mode</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="sec_desc">{{ i18n.get('sec_desc', 'Protect remote Agent API (/api/v1/agent/*) and MCP (/mcp) endpoints with a Bearer Token, and optionally require a password for Web UI access.') }}</p>
+                    </div>
+                    <button type="button" onclick="saveSecuritySettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+                        <span data-i18n="sec_save_btn">{{ i18n.get('sec_save_btn', '💾 Save Security Settings') }}</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end text-xs">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-[#10141d] border border-cardborder">
+                        <input type="checkbox" id="sec-require-token-toggle" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+                        <label for="sec-require-token-toggle" class="font-semibold text-white cursor-pointer select-none" data-i18n="sec_require_token_label">
+                            {{ i18n.get('sec_require_token_label', 'Enforce Bearer Token on /api/v1/agent/* & /mcp') }}
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1" data-i18n="sec_token_label">{{ i18n.get('sec_token_label', 'Active API / MCP Bearer Token:') }}</label>
+                        <div class="flex gap-1.5">
+                            <input type="text" id="sec-api-token-input" readonly class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
+                            <button type="button" onclick="copyApiToken()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 whitespace-nowrap" data-i18n="sec_copy_token_btn">{{ i18n.get('sec_copy_token_btn', '📋 Copy Token') }}</button>
+                            <button type="button" onclick="regenerateApiToken()" class="px-2.5 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-white whitespace-nowrap" data-i18n="sec_regen_token_btn">{{ i18n.get('sec_regen_token_btn', '🔄 Regenerate Token') }}</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1" data-i18n="sec_web_pw_label">{{ i18n.get('sec_web_pw_label', 'Optional Web UI Password (leave blank to keep current):') }}</label>
+                        <div class="flex gap-1.5">
+                            <input type="password" id="sec-web-password-input" placeholder="Set password to enable Web Login..." class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white">
+                            <button type="button" onclick="clearWebPassword()" class="px-2.5 py-2 rounded-xl bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 whitespace-nowrap" title="Disable Web Password">Disable PW</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
+
+    <!-- Modal: Custom Theme Studio (Issue #20) -->
+    <div id="custom-theme-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardbg border border-cardborder rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
+            <div class="flex justify-between items-center border-b border-cardborder pb-3">
+                <h3 class="text-base font-bold text-white" data-i18n="theme_studio_title">{{ i18n.get('theme_studio_title', '🎨 Multi-Theme Engine & Custom Studio') }}</h3>
+                <button onclick="closeModal('custom-theme-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form onsubmit="saveCustomTheme(event)" class="space-y-3">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Theme Name:</label>
+                    <input type="text" id="custom-theme-name" required value="Cyber Ocean" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Primary Accent:</label>
+                        <input type="color" id="custom-theme-primary" value="#06b6d4" oninput="previewCustomTheme()" class="w-full h-10 rounded-xl cursor-pointer bg-[#10141d] border border-cardborder p-1">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Secondary Accent:</label>
+                        <input type="color" id="custom-theme-secondary" value="#3b82f6" oninput="previewCustomTheme()" class="w-full h-10 rounded-xl cursor-pointer bg-[#10141d] border border-cardborder p-1">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Dark Background:</label>
+                        <input type="color" id="custom-theme-bg" value="#09111e" oninput="previewCustomTheme()" class="w-full h-10 rounded-xl cursor-pointer bg-[#10141d] border border-cardborder p-1">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-semibold mb-1">Dark Surface:</label>
+                        <input type="color" id="custom-theme-card" value="#122036" oninput="previewCustomTheme()" class="w-full h-10 rounded-xl cursor-pointer bg-[#10141d] border border-cardborder p-1">
+                    </div>
+                </div>
+                <div class="pt-2 flex flex-wrap justify-between items-center gap-2 border-t border-cardborder">
+                    <div class="flex gap-1.5">
+                        <button type="button" onclick="exportCustomThemeJson()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200" data-i18n="theme_export_btn">{{ i18n.get('theme_export_btn', '⬇️ Export JSON') }}</button>
+                        <button type="button" onclick="importCustomThemeJson()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200" data-i18n="theme_import_btn">{{ i18n.get('theme_import_btn', '⬆️ Import JSON') }}</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeModal('custom-theme-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" data-i18n="theme_save_btn">{{ i18n.get('theme_save_btn', '💾 Save & Apply Theme') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Modal: View Full Conversation -->
     <div id="conv-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -836,6 +1013,9 @@
                 if (icon) icon.innerText = '☀️';
             }
             localStorage.setItem('gaskb_theme', nextTheme);
+            if (window.activeThemeObj) {
+                applyThemeVariables(window.activeThemeObj, nextTheme);
+            }
         }
 
         function switchTab(tabId) {
@@ -1932,6 +2112,308 @@
             }
         }
 
+        // --- Multi-Theme Engine & Custom Theme Studio (Issue #20) ---
+        window.allThemesCatalog = [];
+        window.activeThemeObj = null;
+
+        function hexToRgbStr(hex) {
+            const h = (hex || '#10b981').replace('#', '');
+            if (h.length !== 6) return '16, 185, 129';
+            const r = parseInt(h.slice(0, 2), 16) || 16;
+            const g = parseInt(h.slice(2, 4), 16) || 185;
+            const b = parseInt(h.slice(4, 6), 16) || 129;
+            return `${r}, ${g}, ${b}`;
+        }
+
+        function applyThemeVariables(themeObj, mode) {
+            if (!themeObj) return;
+            window.activeThemeObj = themeObj;
+            const root = document.documentElement;
+            const activeMode = mode || root.getAttribute('data-theme') || 'dark';
+            root.setAttribute('data-palette', themeObj.id || 'emerald');
+            root.style.setProperty('--theme-primary', themeObj.primary || '#10b981');
+            root.style.setProperty('--theme-primary-rgb', themeObj.primary_rgb || hexToRgbStr(themeObj.primary));
+            root.style.setProperty('--theme-primary-hover', themeObj.primary_hover || themeObj.primary || '#059669');
+            root.style.setProperty('--theme-secondary', themeObj.secondary || '#6366f1');
+            root.style.setProperty('--theme-secondary-rgb', themeObj.secondary_rgb || hexToRgbStr(themeObj.secondary));
+
+            if (activeMode === 'dark') {
+                root.style.setProperty('--memoria-bg', themeObj.dark_bg || '#0c0f17');
+                root.style.setProperty('--memoria-inner-bg', themeObj.dark_surface || themeObj.dark_bg || '#10141d');
+                root.style.setProperty('--memoria-card-bg', themeObj.dark_card || '#161b26');
+                root.style.setProperty('--memoria-glass-bg', themeObj.dark_card || 'rgba(22, 27, 38, 0.88)');
+            } else {
+                root.style.setProperty('--memoria-bg', themeObj.light_bg || '#f4f7fb');
+                root.style.setProperty('--memoria-inner-bg', themeObj.light_surface || '#f8fafc');
+                root.style.setProperty('--memoria-card-bg', themeObj.light_card || '#ffffff');
+                root.style.setProperty('--memoria-glass-bg', 'rgba(255, 255, 255, 0.94)');
+            }
+        }
+
+        function toggleThemeMenu() {
+            const menu = document.getElementById('theme-popover-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        async function loadThemes() {
+            try {
+                const res = await fetch('/api/themes');
+                if (!res.ok) return;
+                const data = await res.json();
+                window.allThemesCatalog = data.themes || [];
+                const savedPalette = localStorage.getItem('memoria_palette') || data.active_palette || 'emerald';
+                const savedMode = localStorage.getItem('gaskb_theme') || data.active_mode || 'dark';
+                const currentTheme = window.allThemesCatalog.find(t => t.id === savedPalette) || data.theme;
+                applyThemeVariables(currentTheme, savedMode);
+                renderThemeMenu(savedPalette);
+            } catch (e) {
+                console.warn('Error loading themes:', e);
+            }
+        }
+
+        function renderThemeMenu(activeId) {
+            const list = document.getElementById('theme-presets-list');
+            if (!list) return;
+            list.innerHTML = '';
+            window.allThemesCatalog.forEach(t => {
+                const isSelected = t.id === activeId;
+                const row = document.createElement('div');
+                row.className = `flex items-center justify-between px-2.5 py-1.5 rounded-xl cursor-pointer transition ${isSelected ? 'bg-emerald-500/20 border border-emerald-500/40 text-white font-semibold' : 'hover:bg-[#10141d] text-slate-300'}`;
+                row.innerHTML = `
+                    <div class="flex items-center gap-2 flex-1" onclick="selectThemePalette('${t.id}')">
+                        <span class="w-3.5 h-3.5 rounded-full inline-block border border-white/20" style="background:${t.primary}"></span>
+                        <span>${t.icon || '🎨'} ${t.name}</span>
+                    </div>
+                    ${!t.builtin ? `<button type="button" onclick="deleteCustomTheme('${t.id}')" class="text-slate-500 hover:text-rose-400 text-xs px-1" title="Delete custom theme">✕</button>` : ''}
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function selectThemePalette(paletteId) {
+            localStorage.setItem('memoria_palette', paletteId);
+            const t = window.allThemesCatalog.find(x => x.id === paletteId);
+            const mode = document.documentElement.getAttribute('data-theme') || 'dark';
+            if (t) applyThemeVariables(t, mode);
+            renderThemeMenu(paletteId);
+            try {
+                await fetch('/api/themes/active', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ palette: paletteId, mode })
+                });
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        function openCustomThemeModal() {
+            document.getElementById('theme-popover-menu')?.classList.add('hidden');
+            document.getElementById('custom-theme-modal')?.classList.remove('hidden');
+        }
+
+        function previewCustomTheme() {
+            const primary = document.getElementById('custom-theme-primary')?.value || '#06b6d4';
+            const secondary = document.getElementById('custom-theme-secondary')?.value || '#3b82f6';
+            const dark_bg = document.getElementById('custom-theme-bg')?.value || '#09111e';
+            const dark_card = document.getElementById('custom-theme-card')?.value || '#122036';
+            applyThemeVariables({
+                id: 'preview',
+                primary,
+                primary_rgb: hexToRgbStr(primary),
+                secondary,
+                secondary_rgb: hexToRgbStr(secondary),
+                dark_bg,
+                dark_surface: dark_bg,
+                dark_card,
+                light_bg: '#f8fafc',
+                light_card: '#ffffff'
+            });
+        }
+
+        async function saveCustomTheme(e) {
+            e.preventDefault();
+            const name = document.getElementById('custom-theme-name')?.value || 'Custom Theme';
+            const primary = document.getElementById('custom-theme-primary')?.value || '#06b6d4';
+            const secondary = document.getElementById('custom-theme-secondary')?.value || '#3b82f6';
+            const dark_bg = document.getElementById('custom-theme-bg')?.value || '#09111e';
+            const dark_card = document.getElementById('custom-theme-card')?.value || '#122036';
+            try {
+                const res = await fetch('/api/themes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, primary, secondary, dark_bg, dark_card })
+                });
+                const data = await res.json();
+                localStorage.setItem('memoria_palette', data.active_palette);
+                closeModal('custom-theme-modal');
+                await loadThemes();
+            } catch (err) {
+                alert('Error saving theme: ' + err);
+            }
+        }
+
+        async function deleteCustomTheme(themeId) {
+            try {
+                await fetch(`/api/themes/${themeId}`, { method: 'DELETE' });
+                localStorage.setItem('memoria_palette', 'emerald');
+                await loadThemes();
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        function exportCustomThemeJson() {
+            const payload = {
+                name: document.getElementById('custom-theme-name')?.value || 'Custom Theme',
+                primary: document.getElementById('custom-theme-primary')?.value || '#06b6d4',
+                secondary: document.getElementById('custom-theme-secondary')?.value || '#3b82f6',
+                dark_bg: document.getElementById('custom-theme-bg')?.value || '#09111e',
+                dark_card: document.getElementById('custom-theme-card')?.value || '#122036'
+            };
+            navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+            alert('✅ Custom Theme JSON copied to clipboard!');
+        }
+
+        function importCustomThemeJson() {
+            const raw = prompt('Paste Custom Theme JSON:');
+            if (!raw) return;
+            try {
+                const obj = JSON.parse(raw);
+                if (obj.name) document.getElementById('custom-theme-name').value = obj.name;
+                if (obj.primary) document.getElementById('custom-theme-primary').value = obj.primary;
+                if (obj.secondary) document.getElementById('custom-theme-secondary').value = obj.secondary;
+                if (obj.dark_bg) document.getElementById('custom-theme-bg').value = obj.dark_bg;
+                if (obj.dark_card) document.getElementById('custom-theme-card').value = obj.dark_card;
+                previewCustomTheme();
+            } catch (e) {
+                alert('Invalid JSON: ' + e);
+            }
+        }
+
+        // --- Security & Authentication (Issue #15) ---
+        async function loadSecuritySettings() {
+            try {
+                const res = await fetch('/api/security/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                const reqToggle = document.getElementById('sec-require-token-toggle');
+                const tokInput = document.getElementById('sec-api-token-input');
+                const badge = document.getElementById('sec-status-badge');
+                if (reqToggle) reqToggle.checked = !!data.api_token_required;
+                if (tokInput) tokInput.value = data.api_token || '';
+                if (badge) {
+                    if (data.api_token_required || data.web_password_enabled) {
+                        badge.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono';
+                        badge.innerText = `Protected (Bearer=${data.api_token_required ? 'ON' : 'OFF'} · WebPW=${data.web_password_enabled ? 'ON' : 'OFF'})`;
+                    } else {
+                        badge.className = 'text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono';
+                        badge.innerText = 'Open LAN Mode';
+                    }
+                }
+                await loadMcpOnboardingConfig();
+            } catch (e) {
+                console.warn('Error loading security settings:', e);
+            }
+        }
+
+        async function saveSecuritySettings() {
+            const api_token_required = document.getElementById('sec-require-token-toggle')?.checked || false;
+            const web_password = document.getElementById('sec-web-password-input')?.value || '';
+            try {
+                await fetch('/api/security/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_token_required, web_password })
+                });
+                const pwField = document.getElementById('sec-web-password-input');
+                if (pwField) pwField.value = '';
+                await loadSecuritySettings();
+                alert('✅ Security settings updated!');
+            } catch (e) {
+                alert('Error saving security settings: ' + e);
+            }
+        }
+
+        async function clearWebPassword() {
+            await fetch('/api/security/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clear_web_password: true })
+            });
+            await loadSecuritySettings();
+            alert('✅ Web UI password removed (Open LAN access restored).');
+        }
+
+        async function regenerateApiToken() {
+            const res = await fetch('/api/security/token/generate', { method: 'POST' });
+            if (res.ok) {
+                await loadSecuritySettings();
+            }
+        }
+
+        function copyApiToken() {
+            const tok = document.getElementById('sec-api-token-input')?.value || '';
+            if (tok) {
+                navigator.clipboard.writeText(tok);
+                alert('✅ Bearer Token copied to clipboard!');
+            }
+        }
+
+        // --- First-Run Onboarding & MCP Configurator (Issue #17) ---
+        function toggleOnboardingBanner(show) {
+            const el = document.getElementById('onboarding-wizard-banner');
+            if (!el) return;
+            if (show === true) el.classList.remove('hidden');
+            else if (show === false) el.classList.add('hidden');
+            else el.classList.toggle('hidden');
+        }
+
+        async function loadMcpOnboardingConfig() {
+            try {
+                const res = await fetch('/api/onboarding/mcp-config');
+                if (!res.ok) return;
+                const data = await res.json();
+                const pre = document.getElementById('onboarding-mcp-snippet');
+                if (pre && data.config) {
+                    pre.innerText = JSON.stringify(data.config, null, 2);
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        function copyMcpConfigSnippet() {
+            const pre = document.getElementById('onboarding-mcp-snippet');
+            if (pre) {
+                navigator.clipboard.writeText(pre.innerText);
+                alert('✅ MCP Configuration JSON copied to clipboard!');
+            }
+        }
+
+        async function loadDemoDatasetFromWizard() {
+            const btn = document.getElementById('btn-onboarding-demo');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = '⏳ Seeding Demo Dataset...';
+            }
+            try {
+                const res = await fetch('/api/seed', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    await fetchStats();
+                    alert(`✅ Loaded Demo Dataset (${data.seeded_conversations || 6} conversations, verified Facts & Decisions)!`);
+                }
+            } catch (e) {
+                alert('Error loading demo dataset: ' + e);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = tr('onboarding_load_demo_btn', '✨ Load Demo Dataset (6 Chats + Facts/Decisions)');
+                }
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('gaskb_theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -1946,9 +2428,11 @@
             }
 
             initI18n();
+            loadThemes();
             fetchStats();
             loadSettingsSummary();
             loadJevSettings();
+            loadSecuritySettings();
         });
     </script>
 
