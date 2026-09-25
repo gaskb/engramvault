@@ -1,8 +1,11 @@
+import logging
 import re
 from typing import List, Dict, Any, Optional
 from memoria.db.engine import Database
 from memoria.search.embeddings import EmbeddingEngine
 from memoria.config import RRF_K, BM25_WEIGHT, VEC_WEIGHT
+
+logger = logging.getLogger("memoria.search.hybrid")
 
 try:
     import numpy as np
@@ -95,7 +98,8 @@ class HybridSearcher:
                     d["bm25_rank"] = idx + 1
                     results.append(d)
                 return results
-            except Exception:
+            except Exception as exc:
+                logger.debug("FTS5 search warning for query '%s': %s", fts_query, exc)
                 return []
 
     def search_vector(

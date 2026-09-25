@@ -13,7 +13,7 @@ from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from memoria.config import (
     API_VERSION,
@@ -34,7 +34,7 @@ from memoria.config import (
     WATCH_ENABLED,
     WATCH_INTERVAL,
 )
-from memoria.db.engine import Database
+from memoria.db.engine import Database, utc_now_iso
 from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.i18n import get_available_locales, get_locale_bundle, load_all_locales
 from memoria.knowledge.enricher import KnowledgeEnricher
@@ -94,36 +94,47 @@ class TestProviderRequest(BaseModel):
     model: Optional[str] = None
 
 
+class AuthLoginRequest(BaseModel):
+    password: str = Field(default="", max_length=256)
+
+
+class UpdateSecurityConfigRequest(BaseModel):
+    api_token_required: Optional[bool] = None
+    custom_api_token: Optional[str] = Field(default=None, max_length=256)
+    web_password: Optional[str] = Field(default=None, max_length=256)
+    clear_web_password: bool = False
+
+
 class CreateStatementRequest(BaseModel):
-    subject: str
-    predicate: str
-    object: str
-    statement_type: str = "FACT"
-    notes: Optional[str] = None
-    entity_category: Optional[str] = None
+    subject: str = Field(..., min_length=1, max_length=512)
+    predicate: str = Field(..., min_length=1, max_length=256)
+    object: str = Field(..., min_length=1, max_length=4000)
+    statement_type: str = Field(default="FACT", max_length=32)
+    notes: Optional[str] = Field(default=None, max_length=2000)
+    entity_category: Optional[str] = Field(default=None, max_length=128)
 
 
 class UpdateStatementRequest(BaseModel):
-    statement_type: Optional[str] = None
+    statement_type: Optional[str] = Field(default=None, max_length=32)
     is_current: Optional[int] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=2000)
 
 
 class CreateDecisionRequest(BaseModel):
-    topic: str
-    decision_text: str
-    status: str = "ADOPTED"
-    decided_at: Optional[str] = None
+    topic: str = Field(..., min_length=1, max_length=512)
+    decision_text: str = Field(..., min_length=1, max_length=4000)
+    status: str = Field(default="ADOPTED", max_length=32)
+    decided_at: Optional[str] = Field(default=None, max_length=64)
 
 
 class UpdateDecisionRequest(BaseModel):
-    status: Optional[str] = None
-    decision_text: Optional[str] = None
+    status: Optional[str] = Field(default=None, max_length=32)
+    decision_text: Optional[str] = Field(default=None, max_length=4000)
 
 
 class UpdateEntityRequest(BaseModel):
-    name: Optional[str] = None
-    category: Optional[str] = None
+    name: Optional[str] = Field(default=None, max_length=512)
+    category: Optional[str] = Field(default=None, max_length=128)
 
 
 class EnrichStartRequest(BaseModel):
@@ -173,15 +184,35 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         enricher.stop()
 
     app = FastAPI(
-        title="Memoria AI Anti",
-        description="Personal AI Conversation Vault & Knowledge Layer",
+        title=f"{APP_TITLE} — {APP_SUBTITLE}",
+        description="Personal AI Conversation Vault & Epistemic Knowledge Layer",
         version=API_VERSION,
         lifespan=lifespan,
     )
+    app.state.security_mgr = security_mgr
     if STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+    @app.middleware("http")
+    async def protect_security_and_mutations(request: Request, call_next):
+        path = request.url.path
+        method = request.method.upper()
+        # Agent & MCP endpoints handle their own Bearer check via _require_agent_auth
+        if path.startswith("/api/v1/agent") or path.startswith("/mcp") or path.startswith("/api/auth/"):
+            return await call_next(request)
+        # When Web Password is enabled, protect all /api/security/* and mutating /api/* routes (S-04 & S-05)
+        if security_mgr.is_web_password_enabled():
+            if path.startswith("/api/security") or (
+                path.startswith("/api/") and method in ("POST", "PUT", "PATCH", "DELETE")
+            ):
+                if not security_mgr.is_request_authorized(request):
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": "Unauthorized: valid Web Session or Bearer Token required."},
+                    )
+        return await call_next(request)
 
     @app.get("/login", response_class=HTMLResponse)
     async def login_page(request: Request):
@@ -196,8 +227,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         )
 
     @app.post("/api/auth/login")
-    async def auth_login(payload: Dict[str, Any]):
-        password = str(payload.get("password", ""))
+    async def auth_login(payload: AuthLoginRequest):
+        password = str(payload.password or "")
         if not security_mgr.verify_web_password(password):
             raise HTTPException(status_code=401, detail="Invalid password")
         cookie_val = security_mgr.create_session_cookie_value()
@@ -222,12 +253,12 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         return security_mgr.get_status()
 
     @app.post("/api/security/config")
-    async def update_security_config(payload: Dict[str, Any]):
+    async def update_security_config(payload: UpdateSecurityConfigRequest):
         return security_mgr.update_config(
-            api_token_required=payload.get("api_token_required"),
-            custom_api_token=payload.get("custom_api_token"),
-            web_password=payload.get("web_password"),
-            clear_web_password=bool(payload.get("clear_web_password", False)),
+            api_token_required=payload.api_token_required,
+            custom_api_token=payload.custom_api_token,
+            web_password=payload.web_password,
+            clear_web_password=bool(payload.clear_web_password),
         )
 
     @app.post("/api/security/token/generate")
@@ -456,7 +487,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     async def create_statement(payload: CreateStatementRequest):
         cat = payload.entity_category or guess_category(payload.subject)
         ent_id = db.upsert_entity(payload.subject, cat)
-        now_iso = "now"
+        now_iso = utc_now_iso()
         stmt = StatementRecord(
             id=str(uuid.uuid4()),
             entity_id=ent_id,
@@ -502,7 +533,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             topic=payload.topic.strip(),
             decision_text=payload.decision_text.strip(),
             status=status_val,
-            decided_at=payload.decided_at or "now",
+            decided_at=payload.decided_at or utc_now_iso(),
         )
         dec_id = db.insert_decision(dec)
         return {"status": "success", "decision_id": dec_id, "stats": db.get_stats()}
@@ -615,21 +646,21 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     # --- Agent API v1 & MCP Server Endpoints (Issue #11) ---
 
     class AgentSearchRequest(BaseModel):
-        query: str
-        limit: int = 10
-        category: Optional[str] = None
-        provider: Optional[str] = None
+        query: str = Field(..., max_length=2000)
+        limit: int = Field(default=10, ge=1, le=100)
+        category: Optional[str] = Field(default=None, max_length=128)
+        provider: Optional[str] = Field(default=None, max_length=128)
 
     class AgentRememberRequest(BaseModel):
-        record_type: str = "fact"  # "fact" | "decision"
-        subject: Optional[str] = None
-        predicate: str = "owned_by_user"
-        object_value: Optional[str] = None
-        category: Optional[str] = None
-        notes: Optional[str] = None
-        topic: Optional[str] = None
-        decision_text: Optional[str] = None
-        status: str = "ADOPTED"
+        record_type: str = Field(default="fact", max_length=32)  # "fact" | "decision"
+        subject: Optional[str] = Field(default=None, max_length=512)
+        predicate: str = Field(default="owned_by_user", max_length=256)
+        object_value: Optional[str] = Field(default=None, max_length=4000)
+        category: Optional[str] = Field(default=None, max_length=128)
+        notes: Optional[str] = Field(default=None, max_length=2000)
+        topic: Optional[str] = Field(default=None, max_length=512)
+        decision_text: Optional[str] = Field(default=None, max_length=4000)
+        status: str = Field(default="ADOPTED", max_length=32)
 
     def _require_agent_auth(request: Request) -> None:
         if not verify_agent_request(request, db):

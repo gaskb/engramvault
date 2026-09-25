@@ -148,14 +148,20 @@ class LLMClient:
             temperature=0.1,
             max_tokens=1000,
         )
-        if res:
-            try:
-                clean = res.strip()
-                if clean.startswith("```"):
-                    clean = clean.split("\n", 1)[-1]
-                if clean.endswith("```"):
-                    clean = clean.rsplit("```", 1)[0]
-                return json.loads(clean.strip())
-            except Exception:
-                return None
+        return parse_llm_json(res)
+
+
+def parse_llm_json(raw: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Parses JSON returned by an LLM, stripping optional Markdown code fences (Q-02)."""
+    if not raw:
+        return None
+    try:
+        clean = raw.strip()
+        if clean.startswith("```"):
+            clean = clean.split("\n", 1)[-1]
+        if clean.endswith("```"):
+            clean = clean.rsplit("```", 1)[0]
+        return json.loads(clean.strip())
+    except Exception as exc:
+        logger.debug("Failed to parse LLM JSON response: %s", exc)
         return None

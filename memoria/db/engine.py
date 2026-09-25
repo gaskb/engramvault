@@ -1,5 +1,7 @@
+from datetime import datetime, timezone
 import json
 import sqlite3
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -16,6 +18,12 @@ from memoria.db.models import (
 )
 
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+_thread_local = threading.local()
+
+
+def utc_now_iso() -> str:
+    """Returns current UTC timestamp in ISO-8601 format (YYYY-MM-DDTHH:MM:SSZ)."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 class Database:
@@ -25,10 +33,27 @@ class Database:
         self._init_db()
 
     def get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self.db_path))
+        conns: Dict[str, sqlite3.Connection] = getattr(_thread_local, "conns", None)
+        if conns is None:
+            conns = {}
+            _thread_local.conns = conns
+
+        key = str(self.db_path.resolve())
+        conn = conns.get(key)
+        if conn is not None:
+            try:
+                conn.execute("SELECT 1")
+                return conn
+            except sqlite3.Error:
+                conns.pop(key, None)
+
+        conn = sqlite3.connect(str(self.db_path), timeout=10.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
         conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute("PRAGMA synchronous = NORMAL;")
+        conn.execute("PRAGMA busy_timeout = 5000;")
+        conns[key] = conn
         return conn
 
     def _init_db(self):
@@ -130,13 +155,13 @@ class Database:
                 return row["id"]
 
             entity_id = str(uuid.uuid4())
-            now_iso = sqlite3.datetime.datetime.now(sqlite3.timezone.utc).isoformat() if hasattr(sqlite3, 'timezone') else "now"
+            now_iso = utc_now_iso()
             conn.execute(
                 """
                 INSERT INTO entities (id, name, category, normalized_name, created_at)
-                VALUES (?, ?, ?, ?, datetime('now'))
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (entity_id, name.strip(), category.strip(), norm_name)
+                (entity_id, name.strip(), category.strip(), norm_name, now_iso)
             )
             conn.commit()
             return entity_id
@@ -419,7 +444,7 @@ class Database:
                     pass
 
             meta["enriched"] = True
-            meta["enriched_at"] = sqlite3.datetime.datetime.now(sqlite3.timezone.utc).isoformat() if hasattr(sqlite3, 'timezone') else "now"
+            meta["enriched_at"] = utc_now_iso()
             meta["extractor_model"] = model_name
             meta["extracted_count"] = extracted_count
 

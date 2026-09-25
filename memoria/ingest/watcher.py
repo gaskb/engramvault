@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from memoria.config import DEFAULT_INCOMING_DIR, WATCH_INTERVAL
 from memoria.db.engine import Database
 from memoria.ingest.pipeline import ingest_source
@@ -110,8 +110,8 @@ class DropFolderWatcher:
                     # Write error reason file
                     err_file = failed_name.with_suffix(".err.txt")
                     err_file.write_text(str(e), encoding="utf-8")
-                except Exception:
-                    pass
+                except Exception as rename_err:
+                    logger.warning("Impossibile rinominare il file fallito %s: %s", item.name, rename_err)
                 results.append({
                     "status": "error",
                     "file_name": item.name,

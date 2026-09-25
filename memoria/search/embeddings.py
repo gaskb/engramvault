@@ -1,6 +1,7 @@
 import array
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -9,6 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from memoria.config import EMBEDDING_BACKEND, EMBEDDING_MODEL
 
+logger = logging.getLogger("memoria.search.embeddings")
 EMBEDDING_DIM = 384
 
 # Multilingual semantic concept clusters for zero-dependency cross-lingual & conceptual matching
@@ -101,8 +103,8 @@ class EmbeddingEngine:
                 self.active_backend = "fastembed"
                 self.model_name = target_model
                 return
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("FastEmbed initialization skipped or unavailable: %s", exc)
 
         self.active_backend = "native"
         if not self.model_name or self.model_name == "default":
@@ -120,7 +122,7 @@ class EmbeddingEngine:
     def _embed_via_api(self, text: str) -> Optional[List[float]]:
         """Calls external embedding endpoint (Gemini, Ollama, or OpenAI-compatible)."""
         try:
-            # 1. Google Gemini Native Embedding API
+            # 1. Google Gemini Native Embedding API (S-01: pass API key via x-goog-api-key header)
             if self.active_backend == "gemini" or "generativelanguage.googleapis.com" in self.api_url:
                 key = self.api_key or os.getenv("GEMINI_API_KEY", "")
                 if not key:
@@ -128,7 +130,7 @@ class EmbeddingEngine:
                 model = self.model_name if self.model_name != "default" else "text-embedding-004"
                 if not model.startswith("models/"):
                     model = f"models/{model}"
-                url = f"https://generativelanguage.googleapis.com/v1beta/{model}:embedContent?key={key}"
+                url = f"https://generativelanguage.googleapis.com/v1beta/{model}:embedContent"
                 payload = {
                     "model": model,
                     "content": {"parts": [{"text": text[:4000]}]},
@@ -137,7 +139,10 @@ class EmbeddingEngine:
                 req = urllib.request.Request(
                     url,
                     data=json.dumps(payload).encode("utf-8"),
-                    headers={"Content-Type": "application/json"},
+                    headers={
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": key,
+                    },
                     method="POST",
                 )
                 with urllib.request.urlopen(req, timeout=8) as resp:
@@ -165,7 +170,8 @@ class EmbeddingEngine:
                 arr = data.get("data", [])
                 if arr and "embedding" in arr[0]:
                     return _project_to_dim(arr[0]["embedding"], EMBEDDING_DIM)
-        except Exception:
+        except Exception as exc:
+            logger.debug("External embedding API call failed, falling back to local vector: %s", exc)
             return None
         return None
 
