@@ -48,6 +48,11 @@
     "btn_reindex_embeddings": "🔄 Ricalcola Embedding del Vault",
     "settings_title": "Impostazioni Provider LLM, Embedding e Lingua",
     "settings_subtitle": "Configura chiavi API, modello LLM attivo, motore di embedding semantico e lingua dell'interfaccia.",
+    "jev_title": "⚡ Motore Decisionale Rapido System 1 (Opzionale — TypeSafe Jev / OpenRouter)",
+    "jev_subtitle": "Accelera il routing delle query (Choice), il filtro anti-rumore sull'arricchimento (Noul) e il reranking dei chunk (Score) in ~100ms con fallback locale automatico quando spento o offline.",
+    "jev_enable_label": "Abilita Motore System 1 (Jev / OpenRouter)",
+    "jev_btn_save": "Salva Impostazioni Jev",
+    "jev_btn_test": "⚡ Testa Router System 1",
     "btn_refresh_all_models": "🔄 Aggiorna Modelli di Tutti i Provider",
     "btn_save_settings": "Salva Impostazioni Globali"
   },

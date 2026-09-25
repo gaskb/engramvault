@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from memoria.config import DEFAULT_LANG
 from memoria.db.engine import Database
 from memoria.llm.client import LLMClient
+from memoria.llm.jev import JevSystemOneEngine
 from memoria.search.hybrid import HybridSearcher
 
 
@@ -24,10 +25,12 @@ class QueryPlanner:
         db: Database,
         searcher: Optional[HybridSearcher] = None,
         llm: Optional[LLMClient] = None,
+        jev: Optional[JevSystemOneEngine] = None,
     ):
         self.db = db
         self.searcher = searcher or HybridSearcher(db)
         self._llm = llm
+        self.jev = jev or JevSystemOneEngine(db=db)
 
     @property
     def llm(self) -> LLMClient:
@@ -38,51 +41,22 @@ class QueryPlanner:
         return SettingsManager(self.db).get_llm_client()
 
     def route_query(self, query: str, mode: str = "auto", lang: str = DEFAULT_LANG) -> Dict[str, Any]:
-        """Routes user query into Extractive, Structured, or Synthetic execution."""
-        q_lower = query.lower()
+        """Routes user query into Extractive, Structured, or Synthetic execution (via System 1 Jev or local heuristics)."""
         eff_lang = _detect_query_lang(query, fallback=lang)
+        route_decision = self.jev.route_query_decision(query)
 
         if mode == "auto":
-            if any(
-                k in q_lower
-                for k in (
-                    "dove ho parlato",
-                    "quando ho detto",
-                    "citami",
-                    "trova la chat",
-                    "cerca",
-                    "where did i mention",
-                    "when did i say",
-                    "find the chat",
-                )
-            ):
-                mode = "extractive"
-            elif any(
-                k in q_lower
-                for k in (
-                    "cosa possiedo",
-                    "quali ho",
-                    "elenco delle",
-                    "quali cassette possiedo",
-                    "che setup",
-                    "decisioni prese",
-                    "cosa ho deciso",
-                    "what do i own",
-                    "list my",
-                    "what equipment",
-                    "what decisions",
-                )
-            ):
-                mode = "structured"
-            else:
-                mode = "synthetic"
+            mode = route_decision.get("mode", "synthetic")
 
         if mode == "structured":
-            return self.execute_structured(query, lang=eff_lang)
+            res = self.execute_structured(query, lang=eff_lang)
         elif mode == "synthetic":
-            return self.execute_synthetic(query, lang=eff_lang)
+            res = self.execute_synthetic(query, lang=eff_lang, route_decision=route_decision)
         else:
-            return self.execute_extractive(query, lang=eff_lang)
+            res = self.execute_extractive(query, lang=eff_lang)
+
+        res["system_one_routing"] = route_decision
+        return res
 
     def execute_extractive(self, query: str, limit: int = 8, lang: str = DEFAULT_LANG) -> Dict[str, Any]:
         hits = self.searcher.hybrid_search(query, limit=limit)
@@ -153,7 +127,12 @@ class QueryPlanner:
             "answer": answer,
         }
 
-    def execute_synthetic(self, query: str, lang: str = DEFAULT_LANG) -> Dict[str, Any]:
+    def execute_synthetic(
+        self,
+        query: str,
+        lang: str = DEFAULT_LANG,
+        route_decision: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Domain-agnostic multi-hop synthesis across:
         1. User inventory (`FACT`) filtered dynamically by query categories/entities
@@ -162,10 +141,18 @@ class QueryPlanner:
         """
         q_lower = query.lower()
         is_it = lang == "it"
+        decision = route_decision or self.jev.route_query_decision(query)
 
         owned_stmts = self.db.get_statements(predicate="owned_by_user", is_current=1)
+        target_cat = decision.get("category", "all")
+        if target_cat and target_cat != "all":
+            cat_filtered = [s for s in owned_stmts if s.get("entity_category") == target_cat]
+            if cat_filtered:
+                owned_stmts = cat_filtered
+
         all_claims = self.db.get_statements(statement_type="CLAIM")
-        hits = self.searcher.hybrid_search(query, limit=8)
+        raw_hits = self.searcher.hybrid_search(query, limit=12)
+        hits = self.jev.rerank_chunks(query, raw_hits, top_k=8)
 
         if self.llm.is_configured():
             llm_response = self.llm.synthesize_answer(query, owned_stmts, hits, lang=lang)

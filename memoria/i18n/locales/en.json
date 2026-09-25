@@ -48,6 +48,11 @@
     "btn_reindex_embeddings": "🔄 Re-Index Vault Embeddings",
     "settings_title": "LLM Providers, Embeddings & Language Settings",
     "settings_subtitle": "Configure API keys, active LLM model, semantic embeddings backend, and interface language.",
+    "jev_title": "⚡ System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter)",
+    "jev_subtitle": "Accelerates query routing (Choice), batch enrichment noise filtering (Noul), and chunk reranking (Score) in ~100ms with automatic local fallback when disabled or offline.",
+    "jev_enable_label": "Enable System 1 Engine (Jev / OpenRouter)",
+    "jev_btn_save": "Save Jev Settings",
+    "jev_btn_test": "⚡ Test System 1 Router",
     "btn_refresh_all_models": "🔄 Refresh Models for All Providers",
     "btn_save_settings": "Save Global Settings"
   },

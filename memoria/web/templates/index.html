@@ -697,6 +697,50 @@
                     <!-- Populated dynamically by JavaScript -->
                 </div>
             </div>
+
+            <!-- Card 3: Optional System 1 Fast Decision Engine (Issue #18: TypeSafe Jev / OpenRouter) -->
+            <div class="glass-panel p-6 rounded-2xl space-y-5 border border-indigo-500/20">
+                <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <span data-i18n="jev_title">{{ i18n.get('jev_title', '⚡ System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter)') }}</span>
+                            <span id="jev-status-badge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Disabled (Local Fallback)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="jev_subtitle">{{ i18n.get('jev_subtitle', 'Accelerates query routing (Choice), batch enrichment noise filtering (Noul), and chunk reranking (Score) in ~100ms with automatic local fallback when disabled or offline.') }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="testJevRouter()" id="btn-test-jev" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
+                            <span data-i18n="jev_btn_test">{{ i18n.get('jev_btn_test', '⚡ Test System 1 Router') }}</span>
+                        </button>
+                        <button type="button" onclick="saveJevSettings()" id="btn-save-jev" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+                            <span data-i18n="jev_btn_save">{{ i18n.get('jev_btn_save', 'Save Jev Settings') }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-[#10141d] border border-cardborder">
+                        <input type="checkbox" id="jev-enabled-toggle" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+                        <label for="jev-enabled-toggle" class="text-xs font-semibold text-white cursor-pointer select-none" data-i18n="jev_enable_label">
+                            {{ i18n.get('jev_enable_label', 'Enable System 1 Engine (Jev / OpenRouter)') }}
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">System 1 Model ID:</label>
+                        <input type="text" id="jev-model-input" value="typesafe/jev-1.13" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Gatekeeper Noul Threshold (0..1):</label>
+                        <input type="number" step="0.05" min="0.1" max="0.95" id="jev-threshold-input" value="0.55" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Dedicated API Key (optional, defaults to OpenRouter):</label>
+                        <input type="password" id="jev-apikey-input" placeholder="Uses configured OpenRouter key if empty" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
+                    </div>
+                </div>
+
+                <div id="jev-test-output" class="hidden p-3 rounded-xl bg-[#10141d] border border-indigo-500/30 text-xs font-mono text-slate-300"></div>
+            </div>
         </section>
 
     </main>
@@ -1834,6 +1878,79 @@
             }
         }
 
+        async function loadJevSettings() {
+            try {
+                const res = await fetch('/api/jev/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                const toggle = document.getElementById('jev-enabled-toggle');
+                const modelInput = document.getElementById('jev-model-input');
+                const threshInput = document.getElementById('jev-threshold-input');
+                const badge = document.getElementById('jev-status-badge');
+                if (toggle) toggle.checked = !!data.enabled;
+                if (modelInput && data.model) modelInput.value = data.model;
+                if (threshInput && data.threshold !== undefined) threshInput.value = data.threshold;
+                if (badge) {
+                    if (data.active) {
+                        badge.className = "text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono";
+                        badge.innerText = `Active (${data.model})`;
+                    } else if (data.enabled && !data.api_key_configured) {
+                        badge.className = "text-[11px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 font-mono";
+                        badge.innerText = "Enabled (Missing OpenRouter/Jev Key → Local Fallback)";
+                    } else {
+                        badge.className = "text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono";
+                        badge.innerText = "Disabled (Zero-Latency Local Fallback)";
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to load Jev settings", e);
+            }
+        }
+
+        async function saveJevSettings() {
+            const enabled = document.getElementById('jev-enabled-toggle')?.checked || false;
+            const model = document.getElementById('jev-model-input')?.value || 'typesafe/jev-1.13';
+            const threshold = parseFloat(document.getElementById('jev-threshold-input')?.value || '0.55');
+            const api_key = document.getElementById('jev-apikey-input')?.value || '';
+            try {
+                await fetch('/api/jev/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled, model, threshold, api_key })
+                });
+                await loadJevSettings();
+                const out = document.getElementById('jev-test-output');
+                if (out) {
+                    out.classList.remove('hidden');
+                    out.innerText = `✅ Jev System 1 configuration saved (enabled=${enabled}, model=${model}, threshold=${threshold}).`;
+                }
+            } catch (e) {
+                alert('Error saving Jev settings: ' + e);
+            }
+        }
+
+        async function testJevRouter() {
+            const out = document.getElementById('jev-test-output');
+            if (out) {
+                out.classList.remove('hidden');
+                out.innerText = "⏳ Testing System 1 decision router (`Choice`, `Noul`, `Score`)...";
+            }
+            try {
+                const res = await fetch('/api/jev/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: "Which audio interface in my inventory is best for recording electric guitar?" })
+                });
+                const data = await res.json();
+                if (out) {
+                    out.innerText = `⚡ Engine used: ${data.decision.engine} | Mode: ${data.decision.mode} | Category: ${data.decision.category} | Strict Owned Noul: ${data.decision.strict_owned_only}`;
+                }
+                await loadJevSettings();
+            } catch (e) {
+                if (out) out.innerText = "❌ Error testing router: " + e;
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('gaskb_theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -1850,6 +1967,7 @@
             initI18n();
             fetchStats();
             loadSettingsSummary();
+            loadJevSettings();
         });
     </script>
 

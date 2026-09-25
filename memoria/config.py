@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 
 # Versioning (Semantic Versioning - Dual UI / API)
-APP_VERSION = "1.4.0"
-UI_VERSION = "1.4.0"
-API_VERSION = "1.4.0"
+APP_VERSION = "1.5.0"
+UI_VERSION = "1.5.0"
+API_VERSION = "1.5.0"
 
 # Default Language & Instance White-Labeling (Issues #13 & #16)
 DEFAULT_LANG = os.getenv("MEMORIA_DEFAULT_LANG", "en").lower()
@@ -18,6 +18,13 @@ DESIGN_SYSTEM_URL = os.getenv("MEMORIA_DESIGN_SYSTEM_URL", "")
 # Embedding Backend Configuration (Issue #14: 'auto', 'api', 'fastembed', 'native')
 EMBEDDING_BACKEND = os.getenv("MEMORIA_EMBEDDING_BACKEND", "auto").lower()
 EMBEDDING_MODEL = os.getenv("MEMORIA_EMBEDDING_MODEL", "")
+
+# Optional System 1 Fast Decision Engine (Issue #18: TypeSafe Jev / OpenRouter)
+JEV_ENABLED = os.getenv("MEMORIA_JEV_ENABLED", "false").lower() in ("true", "1", "yes")
+JEV_MODEL = os.getenv("MEMORIA_JEV_MODEL", "typesafe/jev-1.13")
+JEV_BASE_URL = os.getenv("MEMORIA_JEV_BASE_URL", "https://openrouter.ai/api/v1")
+JEV_API_KEY = os.getenv("MEMORIA_JEV_API_KEY", "")
+JEV_GATEKEEPER_THRESHOLD = float(os.getenv("MEMORIA_JEV_THRESHOLD", "0.55"))
 
 DEFAULT_DATA_DIR = Path(os.getenv("MEMORIA_DATA_DIR", Path.home() / ".memoria"))
 DEFAULT_DB_PATH = Path(os.getenv("MEMORIA_DB_PATH", DEFAULT_DATA_DIR / "vault.db"))

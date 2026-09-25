@@ -223,6 +223,39 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         planner.searcher._cached_count = 0
         return res
 
+    @app.get("/api/jev/status")
+    async def get_jev_status():
+        return planner.jev.get_status()
+
+    @app.post("/api/jev/config")
+    async def update_jev_config(payload: Dict[str, Any]):
+        enabled = bool(payload.get("enabled", False))
+        model = payload.get("model")
+        base_url = payload.get("base_url")
+        api_key = payload.get("api_key")
+        threshold = payload.get("threshold")
+        return planner.jev.save_config(
+            enabled=enabled,
+            model=model,
+            base_url=base_url,
+            api_key=api_key,
+            threshold=threshold,
+        )
+
+    @app.post("/api/jev/test")
+    async def test_jev_decision(payload: Optional[Dict[str, str]] = None):
+        sample_query = (payload or {}).get(
+            "query",
+            "Which audio interface in my inventory is best for recording electric guitar?",
+        )
+        decision = await asyncio.to_thread(planner.jev.route_query_decision, sample_query)
+        return {
+            "status": "ok",
+            "sample_query": sample_query,
+            "decision": decision,
+            "jev_status": planner.jev.get_status(),
+        }
+
     @app.get("/api/stats")
     async def get_stats():
         s = db.get_stats()
@@ -230,6 +263,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         s["ui_version"] = UI_VERSION
         s["api_version"] = API_VERSION
         s["embedding_engine"] = planner.searcher.embedder.get_status()
+        s["jev_system_one"] = planner.jev.get_status()
         return s
 
     @app.post("/api/query")

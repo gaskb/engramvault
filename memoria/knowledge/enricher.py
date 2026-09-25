@@ -8,6 +8,7 @@ from memoria.db.engine import Database
 from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.knowledge.extractor import KnowledgeExtractor, guess_category
 from memoria.llm.client import LLMClient
+from memoria.llm.jev import JevSystemOneEngine
 
 logger = logging.getLogger("memoria.enricher")
 
@@ -15,7 +16,8 @@ logger = logging.getLogger("memoria.enricher")
 class KnowledgeEnricher:
     """
     Batch processor to systematically extract and structure knowledge (entities, facts,
-    claims, decisions, timeline) across conversations using external/local LLM or heuristic rules.
+    claims, decisions, timeline) across conversations using external/local LLM or heuristic rules,
+    with optional Jev System 1 Gatekeeper pre-filtering.
     """
 
     def __init__(
@@ -23,11 +25,13 @@ class KnowledgeEnricher:
         db: Database,
         llm: Optional[LLMClient] = None,
         delay_between_calls: float = 0.1,
+        jev: Optional[JevSystemOneEngine] = None,
     ):
         self.db = db
         self._custom_llm = llm
         self.delay_between_calls = delay_between_calls
         self.extractor = KnowledgeExtractor(db)
+        self.jev = jev or JevSystemOneEngine(db=db)
         self.is_running = False
         self._thread: Optional[threading.Thread] = None
 
@@ -38,6 +42,7 @@ class KnowledgeEnricher:
             "processed": 0,
             "new_facts": 0,
             "new_decisions": 0,
+            "jev_filtered": 0,
             "current_conversation": "",
             "extractor_model": m_name,
             "error": None,
@@ -51,7 +56,9 @@ class KnowledgeEnricher:
         return SettingsManager(self.db).get_llm_client()
 
     def get_status(self) -> Dict[str, Any]:
-        return dict(self.status)
+        st = dict(self.status)
+        st["jev_gatekeeper"] = self.jev.get_status()
+        return st
 
     def extract_with_llm(self, conv_record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Invokes configured LLM with prompt for structured entity/fact/claim/decision extraction."""
@@ -66,6 +73,13 @@ class KnowledgeEnricher:
             text = (m.get("content") or "").strip()
             lines.append(f"{role}: {text}")
         dialogue_text = "\n\n".join(lines)[:6000]
+
+        # Optional System 1 Jev Gatekeeper pre-filter before calling expensive System 2 LLM
+        if self.jev.get_config().get("enabled"):
+            gate = self.jev.evaluate_enrichment_gate(f"TITLE: {conv_record.get('title', '')}\n{dialogue_text[:2500]}")
+            if not gate.get("should_enrich", True):
+                self.status["jev_filtered"] = self.status.get("jev_filtered", 0) + 1
+                return {"entities": [], "facts": [], "claims": [], "decisions": [], "jev_filtered": True}
 
         system_prompt = (
             "Sei un estrattore di conoscenza per la memoria personale di uno sviluppatore e appassionato tech.\n"
