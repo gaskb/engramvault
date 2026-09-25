@@ -18,7 +18,7 @@ def test_index_page(test_client):
     assert "Memoria AI" in response.text
     assert "site-header-centered" in response.text
     assert "tabs tabs-centered" in response.text
-    assert "Notion" in response.text
+    assert "/mcp" in response.text
     assert "gaskb_style" in response.text
 
 

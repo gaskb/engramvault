@@ -77,44 +77,34 @@ class LLMClient:
         query: str,
         facts: List[Dict[str, Any]],
         chunks: List[Dict[str, Any]],
+        lang: str = "en",
     ) -> Optional[str]:
         """
         Synthesizes an answer using the configured AI provider given retrieved facts and chunks.
         """
-        system_prompt = (
-            "Sei l'assistente personale intelligente di 'Memoria AI'.\n"
-            "Il tuo compito è rispondere in modo pratico, diretto ed estremamente utile alla domanda dell'utente.\n"
-            "Incrocia i dati personali dell'utente (oggetti che possiede nel suo inventario FACT, decisioni passate) "
-            "con i frammenti delle sue conversazioni precedenti (CLAIM / discussioni) e le tue competenze tecniche.\n\n"
-            "Linee guida di risposta:\n"
-            "1. Rispondi subito alla domanda con una raccomandazione chiara, concreta e personalizzata su misura per ciò che possiede.\n"
-            "   Fornisci un elenco strutturato e ragionato, ad esempio:\n"
-            "   'Tra le opzioni che possiedi nel tuo inventario, le scelte migliori per [scopo] sono:\n"
-            "   1) [Modello/Elemento] - Ideale se cerchi [caratteristica/risultato]...\n"
-            "   2) [Modello/Elemento] - Consigliato se vuoi un risultato più [caratteristica]...\n"
-            "   3) [Modello/Elemento] - Consigliato solo se...'\n"
-            "2. Se l'utente chiede cosa scegliere tra ciò che ha, considera SOLO gli elementi confermati nel suo inventario (FACT), "
-            "menzionando eventuali altri solo come confronto o nota a margine.\n"
-            "3. Motiva ogni scelta con dettagli tecnici specifici e collega i consigli alle discussioni passate citando le fonti se rilevanti.\n"
-            "4. Cita le fonti delle conversazioni passate riutilizzando i link markdown [Titolo Conversazione](#conv-ID) presenti negli estratti.\n"
-            "5. Mantieni uno stile diretto, da esperto di settore, senza preamboli burocratici."
+        from memoria.i18n import get_prompt
+
+        system_prompt = get_prompt("synthesis_system", lang) or (
+            "You are the intelligent personal assistant of 'Memoria AI'.\n"
+            "Cross-reference the user's verified inventory (FACT) and decisions with past conversation excerpts (CLAIM).\n"
+            "Always cite conversation sources using markdown links [Title](#conv-ID) and reply in the language of the user's question."
         )
 
         facts_text = "\n".join([
-            f"- [{f.get('statement_type', 'FACT')}] {f.get('subject')} -> {f.get('predicate')}: {f.get('object')} (Fonte: [{f.get('conversation_title', 'Inventario')}](#conv-{f.get('source_conversation_id', '')}))"
+            f"- [{f.get('statement_type', 'FACT')}] {f.get('subject')} -> {f.get('predicate')}: {f.get('object')} (Source: [{f.get('conversation_title', 'Inventory')}](#conv-{f.get('source_conversation_id', '')}))"
             for f in facts
-        ]) if facts else "Nessun fatto specifico trovato."
+        ]) if facts else "No specific verified facts found."
 
         chunks_text = "\n\n".join([
-            f"--- FONTE: [{c.get('conv_title', 'Conversazione')}](#conv-{c.get('conversation_id', '')}) | {c.get('provider')} ({c.get('created_at', '')[:10]}) ---\n{c.get('chunk_text', '')}"
+            f"--- SOURCE: [{c.get('conv_title', 'Conversation')}](#conv-{c.get('conversation_id', '')}) | {c.get('provider')} ({c.get('created_at', '')[:10]}) ---\n{c.get('chunk_text', '')}"
             for c in chunks
-        ]) if chunks else "Nessun frammento rilevante trovato."
+        ]) if chunks else "No relevant excerpts found."
 
         user_content = (
-            f"DOMANDA DELL'UTENTE:\n{query}\n\n"
-            f"FATTI ACCERTATI NELL'INVENTARIO/MEMORIA DELL'UTENTE:\n{facts_text}\n\n"
-            f"ESTRATTI PERTINENTI DALLE CONVERSAZIONI PASSATE:\n{chunks_text}\n\n"
-            "Fornisci una sintesi accurata, motivata e con citazioni."
+            f"USER QUESTION:\n{query}\n\n"
+            f"VERIFIED USER INVENTORY & FACTS:\n{facts_text}\n\n"
+            f"RELEVANT EXCERPTS FROM PAST CONVERSATIONS:\n{chunks_text}\n\n"
+            "Provide an accurate, well-reasoned synthesis with clickable citations."
         )
 
         messages = [

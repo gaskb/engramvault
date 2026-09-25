@@ -2,9 +2,22 @@ import os
 from pathlib import Path
 
 # Versioning (Semantic Versioning - Dual UI / API)
-APP_VERSION = "1.3.1"
-UI_VERSION = "1.3.1"
-API_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
+UI_VERSION = "1.4.0"
+API_VERSION = "1.4.0"
+
+# Default Language & Instance White-Labeling (Issues #13 & #16)
+DEFAULT_LANG = os.getenv("MEMORIA_DEFAULT_LANG", "en").lower()
+INSTANCE_NAME = os.getenv("MEMORIA_INSTANCE_NAME", "Local Node")
+DOCS_URL = os.getenv("MEMORIA_DOCS_URL", "")
+DOCS_LABEL = os.getenv("MEMORIA_DOCS_LABEL", "Documentation")
+REPO_URL = os.getenv("MEMORIA_REPO_URL", "https://github.com/gaskb/memoria-ai")
+REPO_LABEL = os.getenv("MEMORIA_REPO_LABEL", "Repository")
+DESIGN_SYSTEM_URL = os.getenv("MEMORIA_DESIGN_SYSTEM_URL", "")
+
+# Embedding Backend Configuration (Issue #14: 'auto', 'api', 'fastembed', 'native')
+EMBEDDING_BACKEND = os.getenv("MEMORIA_EMBEDDING_BACKEND", "auto").lower()
+EMBEDDING_MODEL = os.getenv("MEMORIA_EMBEDDING_MODEL", "")
 
 DEFAULT_DATA_DIR = Path(os.getenv("MEMORIA_DATA_DIR", Path.home() / ".memoria"))
 DEFAULT_DB_PATH = Path(os.getenv("MEMORIA_DB_PATH", DEFAULT_DATA_DIR / "vault.db"))
@@ -24,7 +37,6 @@ RRF_K = int(os.getenv("MEMORIA_RRF_K", "60"))
 BM25_WEIGHT = float(os.getenv("MEMORIA_BM25_WEIGHT", "1.0"))
 VEC_WEIGHT = float(os.getenv("MEMORIA_VEC_WEIGHT", "1.0"))
 
-
 # Watcher & Incoming settings
 DEFAULT_INCOMING_DIR = Path(os.getenv("MEMORIA_INCOMING_DIR", DEFAULT_DATA_DIR / "incoming"))
 WATCH_INTERVAL = int(os.getenv("MEMORIA_WATCH_INTERVAL", "5"))
@@ -39,4 +51,3 @@ def ensure_data_dir() -> Path:
 def ensure_incoming_dir() -> Path:
     DEFAULT_INCOMING_DIR.mkdir(parents=True, exist_ok=True)
     return DEFAULT_INCOMING_DIR
-

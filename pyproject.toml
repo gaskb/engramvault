@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "memoria-ai-anti"
-version = "1.3.1"
+version = "1.4.0"
 description = "Personal AI Conversation Vault, Hybrid Search & Knowledge Layer for Homelab"
 readme = "README.md"
 requires-python = ">=3.10"

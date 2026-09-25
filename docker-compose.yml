@@ -10,6 +10,14 @@ services:
     environment:
       - MEMORIA_DB_PATH=/app/data/vault.db
       - MEMORIA_DATA_DIR=/app/data
+      - MEMORIA_DEFAULT_LANG=en
+      - MEMORIA_EMBEDDING_BACKEND=auto
+      - MEMORIA_INSTANCE_NAME=.220
+      - MEMORIA_DOCS_URL=https://app.notion.com/p/AI-Things-00000000000000000000000000000000
+      - MEMORIA_DOCS_LABEL=Notion
+      - MEMORIA_REPO_URL=http://github.com/root/memoria_ai_anti
+      - MEMORIA_REPO_LABEL=GitLab
+      - MEMORIA_DESIGN_SYSTEM_URL=https://app.notion.com/p/UI-Design-System-gaskb-style-11111111111111111111111111111111
       # Per abilitare LLM esterni (es. Google Gemini o OpenAI):
       # - MEMORIA_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
       # - MEMORIA_LLM_API_KEY=your_key_here

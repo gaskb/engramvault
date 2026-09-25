@@ -20,12 +20,20 @@ from memoria.config import (
     APP_VERSION,
     DEFAULT_DB_PATH,
     DEFAULT_INCOMING_DIR,
+    DEFAULT_LANG,
+    DESIGN_SYSTEM_URL,
+    DOCS_LABEL,
+    DOCS_URL,
+    INSTANCE_NAME,
+    REPO_LABEL,
+    REPO_URL,
     UI_VERSION,
     WATCH_ENABLED,
     WATCH_INTERVAL,
 )
 from memoria.db.engine import Database
 from memoria.db.models import DecisionRecord, StatementRecord
+from memoria.i18n import get_available_locales, get_locale_bundle, load_all_locales
 from memoria.knowledge.enricher import KnowledgeEnricher
 from memoria.knowledge.extractor import guess_category
 from memoria.knowledge.query_planner import QueryPlanner
@@ -38,6 +46,7 @@ from memoria.mcp_server import (
     build_agent_search_response,
     handle_mcp_jsonrpc,
 )
+from memoria.search.embeddings import reindex_database_embeddings
 from memoria.seed.seed_data import seed_database
 from memoria.settings.manager import SettingsManager
 
@@ -50,6 +59,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 class QueryRequest(BaseModel):
     query: str
     mode: str = "auto"
+    lang: str = DEFAULT_LANG
 
 
 class UpdateSettingsRequest(BaseModel):
@@ -162,8 +172,10 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request):
+    async def index(request: Request, lang: Optional[str] = None):
         stats = db.get_stats()
+        active_lang = (lang or db.get_setting("ui_language") or DEFAULT_LANG or "en").lower()[:2]
+        bundle = get_locale_bundle(active_lang)
         return templates.TemplateResponse(
             request=request,
             name="index.html",
@@ -173,8 +185,43 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
                 "app_version": APP_VERSION,
                 "ui_version": UI_VERSION,
                 "api_version": API_VERSION,
+                "default_lang": active_lang,
+                "available_locales": get_available_locales(),
+                "i18n": bundle.get("ui", {}),
+                "instance_name": INSTANCE_NAME,
+                "docs_url": DOCS_URL,
+                "docs_label": DOCS_LABEL,
+                "repo_url": REPO_URL,
+                "repo_label": REPO_LABEL,
+                "design_system_url": DESIGN_SYSTEM_URL,
             },
         )
+
+    @app.get("/api/i18n")
+    async def get_i18n_data(lang: Optional[str] = None):
+        active_lang = (lang or db.get_setting("ui_language") or DEFAULT_LANG or "en").lower()[:2]
+        return {
+            "default_lang": active_lang,
+            "available": get_available_locales(),
+            "locales": load_all_locales(),
+        }
+
+    @app.post("/api/i18n/lang")
+    async def set_default_language(payload: Dict[str, str]):
+        new_lang = (payload.get("lang") or "en").lower()[:2]
+        db.set_setting("ui_language", new_lang)
+        return {"status": "success", "lang": new_lang, "bundle": get_locale_bundle(new_lang)}
+
+    @app.get("/api/embeddings/status")
+    async def get_embeddings_status():
+        return planner.searcher.embedder.get_status()
+
+    @app.post("/api/embeddings/reindex")
+    async def reindex_embeddings():
+        res = await asyncio.to_thread(reindex_database_embeddings, db, planner.searcher.embedder)
+        planner.searcher._cached_matrix = None
+        planner.searcher._cached_count = 0
+        return res
 
     @app.get("/api/stats")
     async def get_stats():
@@ -182,11 +229,12 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         s["app_version"] = APP_VERSION
         s["ui_version"] = UI_VERSION
         s["api_version"] = API_VERSION
+        s["embedding_engine"] = planner.searcher.embedder.get_status()
         return s
 
     @app.post("/api/query")
     async def run_query(payload: QueryRequest):
-        return planner.route_query(payload.query, mode=payload.mode)
+        return planner.route_query(payload.query, mode=payload.mode, lang=payload.lang)
 
     @app.get("/api/conversations")
     async def list_conversations(provider: Optional[str] = None, limit: int = 50, offset: int = 0):
