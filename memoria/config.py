@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 # Versioning (Release Version + API Contract Version + MCP Protocol Version)
-APP_VERSION = "2.1.0"
-UI_VERSION = "2.1.0"
+APP_VERSION = "2.2.0"
+UI_VERSION = "2.2.0"
 API_VERSION = "v1"
 MCP_PROTOCOL_VERSION = "2.0"
 APP_TITLE = os.getenv("MEMORIA_APP_TITLE", "Engram AI")

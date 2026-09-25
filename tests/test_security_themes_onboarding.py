@@ -44,8 +44,15 @@ def test_security_bearer_token_and_web_password(tmp_path: Path):
     )
     assert mcp_ok.status_code == 200
 
-    # 6. Enable Web UI password protection
-    client.post("/api/security/config", json={"web_password": "secret-homelab-pw"})
+    # 6. Enable Web UI password protection (now requires Bearer token since api_token_required=True)
+    unauth_cfg = client.post("/api/security/config", json={"web_password": "secret-homelab-pw"})
+    assert unauth_cfg.status_code == 401
+    pw_cfg = client.post(
+        "/api/security/config",
+        json={"web_password": "secret-homelab-pw"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert pw_cfg.status_code == 200
     home_locked = client.get("/")
     assert "Unlock Vault" in home_locked.text
 

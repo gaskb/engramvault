@@ -153,5 +153,45 @@ def test_multipart_ingest_and_concurrent_sqlite_wal(tmp_path: Path):
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         ids = list(ex.map(worker, range(25)))
     assert len(ids) == 25
-    assert parse_llm_json("```json\n{\"ok\": true}\n```") == {"ok": True}
+    assert parse_llm_json('```json\n{"ok": true}\n```') == {"ok": True}
     assert utc_now_iso().endswith("Z")
+
+
+def test_query_router_and_api_token_mutation_auth(tmp_path: Path):
+    from memoria.knowledge.query_router import QueryRouter
+
+    db_file = tmp_path / "router_auth.db"
+    app = create_app(db_file)
+    client = TestClient(app)
+
+    # 1. Verify QueryRouter standalone routing and language detection (A-01)
+    router = QueryRouter(Database(db_file))
+    assert router.detect_query_lang("Che scheda audio possiedo?") == "it"
+    assert router.detect_query_lang("What audio interface do I own?") == "en"
+    decision = router.select_route("Quali decisioni abbiamo preso?", mode="auto")
+    assert decision["mode"] in ("structured", "synthetic")
+    assert decision["is_decision_lookup"] >= 0.5
+
+    # 2. Verify S-04 + S-05 when ONLY api_token_required=True (without web_password)
+    tok_res = client.post("/api/security/token/generate")
+    token = tok_res.json()["api_token"]
+    client.post("/api/security/config", json={"api_token_required": True})
+
+    # Unauthenticated mutation must return 401 even when web_password is NOT set
+    assert (
+        client.post(
+            "/api/statements",
+            json={"subject": "Synth", "predicate": "owned_by_user", "object": "true"},
+        ).status_code
+        == 401
+    )
+    assert client.get("/api/security/status").status_code == 401
+
+    # With Bearer token, mutation succeeds
+    ok_stmt = client.post(
+        "/api/statements",
+        json={"subject": "Synth Prophet-6", "predicate": "owned_by_user", "object": "true"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert ok_stmt.status_code == 200
+

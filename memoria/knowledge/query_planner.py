@@ -3,20 +3,10 @@ from typing import Any, Dict, List, Optional
 
 from memoria.config import DEFAULT_LANG
 from memoria.db.engine import Database
+from memoria.knowledge.query_router import QueryRouter, detect_query_lang as _detect_query_lang
 from memoria.llm.client import LLMClient
 from memoria.llm.jev import JevSystemOneEngine
 from memoria.search.hybrid import HybridSearcher
-
-
-def _detect_query_lang(query: str, fallback: str = DEFAULT_LANG) -> str:
-    q = (query or "").lower()
-    it_markers = ("quali ", "quale ", "cosa ", "come ", "dove ", "quando ", "possiedo", "abbiamo", "nelle ", "delle ", "che ho", "deciso")
-    en_markers = ("which ", "what ", "how ", "where ", "when ", "do i own", "have i ", "between ", "my inventory", "decisions")
-    if any(m in q for m in it_markers):
-        return "it"
-    if any(m in q for m in en_markers):
-        return "en"
-    return fallback or "en"
 
 
 class QueryPlanner:
@@ -26,11 +16,13 @@ class QueryPlanner:
         searcher: Optional[HybridSearcher] = None,
         llm: Optional[LLMClient] = None,
         jev: Optional[JevSystemOneEngine] = None,
+        router: Optional[QueryRouter] = None,
     ):
         self.db = db
         self.searcher = searcher or HybridSearcher(db)
         self._llm = llm
         self.jev = jev or JevSystemOneEngine(db=db)
+        self.router = router or QueryRouter(jev=self.jev)
 
     @property
     def llm(self) -> LLMClient:
@@ -41,16 +33,15 @@ class QueryPlanner:
         return SettingsManager(self.db).get_llm_client()
 
     def route_query(self, query: str, mode: str = "auto", lang: str = DEFAULT_LANG) -> Dict[str, Any]:
-        """Routes user query into Extractive, Structured, or Synthetic execution (via System 1 Jev or local heuristics)."""
-        eff_lang = _detect_query_lang(query, fallback=lang)
-        route_decision = self.jev.route_query_decision(query)
+        """Routes user query via QueryRouter and executes Extractive, Structured, or Synthetic synthesis."""
+        routing = self.router.classify(query, requested_mode=mode, fallback_lang=lang)
+        eff_mode = routing["effective_mode"]
+        eff_lang = routing["effective_lang"]
+        route_decision = routing["route_decision"]
 
-        if mode == "auto":
-            mode = route_decision.get("mode", "synthetic")
-
-        if mode == "structured":
+        if eff_mode == "structured":
             res = self.execute_structured(query, lang=eff_lang)
-        elif mode == "synthetic":
+        elif eff_mode == "synthetic":
             res = self.execute_synthetic(query, lang=eff_lang, route_decision=route_decision)
         else:
             res = self.execute_extractive(query, lang=eff_lang)

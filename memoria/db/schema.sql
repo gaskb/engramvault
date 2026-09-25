@@ -97,6 +97,33 @@ CREATE INDEX IF NOT EXISTS idx_stmt_entity ON statements(entity_id);
 CREATE INDEX IF NOT EXISTS idx_stmt_current ON statements(is_current);
 CREATE INDEX IF NOT EXISTS idx_stmt_pred_obj ON statements(predicate, object);
 CREATE INDEX IF NOT EXISTS idx_stmt_subject ON statements(subject);
+CREATE INDEX IF NOT EXISTS idx_stmt_subject_lower ON statements(LOWER(subject));
+CREATE INDEX IF NOT EXISTS idx_stmt_object_lower ON statements(LOWER(object));
+
+-- FTS5 Index for Knowledge Layer Statements (Issue #26 / R-04)
+CREATE VIRTUAL TABLE IF NOT EXISTS statements_fts USING fts5(
+    id UNINDEXED,
+    subject,
+    predicate,
+    object,
+    notes,
+    tokenize = 'unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER IF NOT EXISTS statements_ai AFTER INSERT ON statements BEGIN
+    INSERT INTO statements_fts(id, subject, predicate, object, notes)
+    VALUES (new.id, new.subject, new.predicate, new.object, COALESCE(new.notes, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS statements_au AFTER UPDATE ON statements BEGIN
+    DELETE FROM statements_fts WHERE id = old.id;
+    INSERT INTO statements_fts(id, subject, predicate, object, notes)
+    VALUES (new.id, new.subject, new.predicate, new.object, COALESCE(new.notes, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS statements_ad AFTER DELETE ON statements BEGIN
+    DELETE FROM statements_fts WHERE id = old.id;
+END;
 
 CREATE TABLE IF NOT EXISTS decisions (
     id TEXT PRIMARY KEY,
@@ -109,7 +136,31 @@ CREATE TABLE IF NOT EXISTS decisions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_decision_topic ON decisions(topic);
+CREATE INDEX IF NOT EXISTS idx_decision_topic_lower ON decisions(LOWER(topic));
 CREATE INDEX IF NOT EXISTS idx_decision_date ON decisions(decided_at);
+
+-- FTS5 Index for Knowledge Layer Decisions (Issue #26 / R-04)
+CREATE VIRTUAL TABLE IF NOT EXISTS decisions_fts USING fts5(
+    id UNINDEXED,
+    topic,
+    decision_text,
+    tokenize = 'unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER IF NOT EXISTS decisions_ai AFTER INSERT ON decisions BEGIN
+    INSERT INTO decisions_fts(id, topic, decision_text)
+    VALUES (new.id, new.topic, new.decision_text);
+END;
+
+CREATE TRIGGER IF NOT EXISTS decisions_au AFTER UPDATE ON decisions BEGIN
+    DELETE FROM decisions_fts WHERE id = old.id;
+    INSERT INTO decisions_fts(id, topic, decision_text)
+    VALUES (new.id, new.topic, new.decision_text);
+END;
+
+CREATE TRIGGER IF NOT EXISTS decisions_ad AFTER DELETE ON decisions BEGIN
+    DELETE FROM decisions_fts WHERE id = old.id;
+END;
 
 CREATE TABLE IF NOT EXISTS relations (
     id TEXT PRIMARY KEY,

@@ -1,11 +1,14 @@
 from datetime import datetime, timezone
 import json
+import logging
 import sqlite3
 import threading
 import time
 import uuid
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
+
+logger = logging.getLogger("memoria.db")
 from memoria.adapters.base import NormalizedConversation
 from memoria.db.models import (
     ConversationRecord,
@@ -61,6 +64,25 @@ class Database:
             schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
             conn.executescript(schema_sql)
             conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)")
+            # Backfill FTS5 tables if upgrading from pre-v2.2.0 database
+            try:
+                s_cnt = conn.execute("SELECT COUNT(*) FROM statements").fetchone()[0]
+                sf_cnt = conn.execute("SELECT COUNT(*) FROM statements_fts").fetchone()[0]
+                if s_cnt > 0 and sf_cnt == 0:
+                    conn.execute(
+                        "INSERT INTO statements_fts(id, subject, predicate, object, notes) "
+                        "SELECT id, subject, predicate, object, COALESCE(notes, '') FROM statements"
+                    )
+                d_cnt = conn.execute("SELECT COUNT(*) FROM decisions").fetchone()[0]
+                df_cnt = conn.execute("SELECT COUNT(*) FROM decisions_fts").fetchone()[0]
+                if d_cnt > 0 and df_cnt == 0:
+                    conn.execute(
+                        "INSERT INTO decisions_fts(id, topic, decision_text) "
+                        "SELECT id, topic, decision_text FROM decisions"
+                    )
+                conn.commit()
+            except Exception as exc:
+                logger.debug("FTS5 backfill skipped: %s", exc)
 
     def conversation_exists_by_hash(self, content_hash: str) -> bool:
         with self.get_connection() as conn:
@@ -440,8 +462,8 @@ class Database:
             if row and row["metadata_json"]:
                 try:
                     meta = json.loads(row["metadata_json"])
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Invalid metadata_json for conversation %s: %s", conv_id, exc)
 
             meta["enriched"] = True
             meta["enriched_at"] = utc_now_iso()
@@ -499,7 +521,7 @@ class Database:
         category: Optional[str] = None,
         provider: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Searches structured knowledge (statements, decisions, conversation titles) matching query tokens."""
+        """Searches structured knowledge using FTS5 (`statements_fts` & `decisions_fts` — R-04) with LIKE fallback."""
         import re
 
         stopwords = {
@@ -515,64 +537,110 @@ class Database:
         if not tokens and raw_tokens:
             tokens = raw_tokens
 
+        safe_fts_terms = [re.sub(r'[^a-zA-Z0-9_]', '', t) for t in tokens[:8]]
+        safe_fts_terms = [t for t in safe_fts_terms if len(t) >= 2]
+        fts_expr = " OR ".join(f'"{t}"*' for t in safe_fts_terms)
+
         with self.get_connection() as conn:
-            # 1. Statements (FACT & CLAIM)
-            s_sql = """
-                SELECT s.*, e.name AS entity_name, e.category AS entity_category,
-                       c.title AS conversation_title, c.provider AS conversation_provider
-                FROM statements s
-                LEFT JOIN entities e ON s.entity_id = e.id
-                LEFT JOIN conversations c ON s.source_conversation_id = c.id
-                WHERE s.is_current = 1
-            """
-            s_params: List[Any] = []
-            if category:
-                s_sql += " AND LOWER(e.category) = LOWER(?)"
-                s_params.append(category)
-            if provider:
-                s_sql += " AND LOWER(c.provider) = LOWER(?)"
-                s_params.append(provider)
+            statements: List[Dict[str, Any]] = []
+            decisions: List[Dict[str, Any]] = []
 
-            if tokens:
-                token_clauses = []
-                for t in tokens[:8]:
-                    like_val = f"%{t}%"
-                    token_clauses.append(
-                        "(LOWER(s.subject) LIKE ? OR LOWER(s.predicate) LIKE ? OR LOWER(s.object) LIKE ? "
-                        "OR LOWER(COALESCE(s.notes, '')) LIKE ? OR LOWER(COALESCE(e.category, '')) LIKE ?)"
-                    )
-                    s_params.extend([like_val, like_val, like_val, like_val, like_val])
-                s_sql += " AND (" + " OR ".join(token_clauses) + ")"
+            if fts_expr:
+                try:
+                    fts_s_sql = """
+                        SELECT s.*, e.name AS entity_name, e.category AS entity_category,
+                               c.title AS conversation_title, c.provider AS conversation_provider
+                        FROM statements_fts f
+                        JOIN statements s ON s.id = f.id
+                        LEFT JOIN entities e ON s.entity_id = e.id
+                        LEFT JOIN conversations c ON s.source_conversation_id = c.id
+                        WHERE statements_fts MATCH ? AND s.is_current = 1
+                    """
+                    fts_s_params: List[Any] = [fts_expr]
+                    if category:
+                        fts_s_sql += " AND LOWER(e.category) = LOWER(?)"
+                        fts_s_params.append(category)
+                    if provider:
+                        fts_s_sql += " AND LOWER(c.provider) = LOWER(?)"
+                        fts_s_params.append(provider)
+                    fts_s_sql += " ORDER BY CASE WHEN s.statement_type = 'FACT' THEN 0 ELSE 1 END, bm25(statements_fts) ASC LIMIT ?"
+                    fts_s_params.append(limit)
+                    statements = [dict(r) for r in conn.execute(fts_s_sql, fts_s_params).fetchall()]
+                except Exception as exc:
+                    logger.debug("statements_fts query fallback: %s", exc)
 
-            s_sql += " ORDER BY CASE WHEN s.statement_type = 'FACT' THEN 0 ELSE 1 END, s.confidence DESC, s.valid_from DESC LIMIT ?"
-            s_params.append(limit)
-            statements = [dict(r) for r in conn.execute(s_sql, s_params).fetchall()]
+                try:
+                    fts_d_sql = """
+                        SELECT d.*, c.title AS conversation_title, c.provider AS conversation_provider
+                        FROM decisions_fts f
+                        JOIN decisions d ON d.id = f.id
+                        LEFT JOIN conversations c ON d.source_conversation_id = c.id
+                        WHERE decisions_fts MATCH ?
+                    """
+                    fts_d_params: List[Any] = [fts_expr]
+                    if provider:
+                        fts_d_sql += " AND LOWER(c.provider) = LOWER(?)"
+                        fts_d_params.append(provider)
+                    fts_d_sql += " ORDER BY bm25(decisions_fts) ASC, d.decided_at DESC LIMIT ?"
+                    fts_d_params.append(limit)
+                    decisions = [dict(r) for r in conn.execute(fts_d_sql, fts_d_params).fetchall()]
+                except Exception as exc:
+                    logger.debug("decisions_fts query fallback: %s", exc)
 
-            # 2. Decisions
-            d_sql = """
-                SELECT d.*, c.title AS conversation_title, c.provider AS conversation_provider
-                FROM decisions d
-                LEFT JOIN conversations c ON d.source_conversation_id = c.id
-                WHERE 1=1
-            """
-            d_params: List[Any] = []
-            if provider:
-                d_sql += " AND LOWER(c.provider) = LOWER(?)"
-                d_params.append(provider)
-            if tokens:
-                d_clauses = []
-                for t in tokens[:8]:
-                    like_val = f"%{t}%"
-                    d_clauses.append(
-                        "(LOWER(d.topic) LIKE ? OR LOWER(d.decision_text) LIKE ? OR LOWER(COALESCE(c.title, '')) LIKE ?)"
-                    )
-                    d_params.extend([like_val, like_val, like_val])
-                d_sql += " AND (" + " OR ".join(d_clauses) + ")"
-            d_sql += " ORDER BY d.decided_at DESC LIMIT ?"
-            d_params.append(limit)
-            decisions = [dict(r) for r in conn.execute(d_sql, d_params).fetchall()]
+            if not statements:
+                s_sql = """
+                    SELECT s.*, e.name AS entity_name, e.category AS entity_category,
+                           c.title AS conversation_title, c.provider AS conversation_provider
+                    FROM statements s
+                    LEFT JOIN entities e ON s.entity_id = e.id
+                    LEFT JOIN conversations c ON s.source_conversation_id = c.id
+                    WHERE s.is_current = 1
+                """
+                s_params: List[Any] = []
+                if category:
+                    s_sql += " AND LOWER(e.category) = LOWER(?)"
+                    s_params.append(category)
+                if provider:
+                    s_sql += " AND LOWER(c.provider) = LOWER(?)"
+                    s_params.append(provider)
+                if tokens:
+                    token_clauses = []
+                    for t in tokens[:8]:
+                        like_val = f"%{t}%"
+                        token_clauses.append(
+                            "(LOWER(s.subject) LIKE ? OR LOWER(s.predicate) LIKE ? OR LOWER(s.object) LIKE ? "
+                            "OR LOWER(COALESCE(s.notes, '')) LIKE ? OR LOWER(COALESCE(e.category, '')) LIKE ?)"
+                        )
+                        s_params.extend([like_val, like_val, like_val, like_val, like_val])
+                    s_sql += " AND (" + " OR ".join(token_clauses) + ")"
+                s_sql += " ORDER BY CASE WHEN s.statement_type = 'FACT' THEN 0 ELSE 1 END, s.confidence DESC, s.valid_from DESC LIMIT ?"
+                s_params.append(limit)
+                statements = [dict(r) for r in conn.execute(s_sql, s_params).fetchall()]
 
-            # 3. Matching conversation titles
+            if not decisions:
+                d_sql = """
+                    SELECT d.*, c.title AS conversation_title, c.provider AS conversation_provider
+                    FROM decisions d
+                    LEFT JOIN conversations c ON d.source_conversation_id = c.id
+                    WHERE 1=1
+                """
+                d_params: List[Any] = []
+                if provider:
+                    d_sql += " AND LOWER(c.provider) = LOWER(?)"
+                    d_params.append(provider)
+                if tokens:
+                    d_clauses = []
+                    for t in tokens[:8]:
+                        like_val = f"%{t}%"
+                        d_clauses.append(
+                            "(LOWER(d.topic) LIKE ? OR LOWER(d.decision_text) LIKE ? OR LOWER(COALESCE(c.title, '')) LIKE ?)"
+                        )
+                        d_params.extend([like_val, like_val, like_val])
+                    d_sql += " AND (" + " OR ".join(d_clauses) + ")"
+                d_sql += " ORDER BY d.decided_at DESC LIMIT ?"
+                d_params.append(limit)
+                decisions = [dict(r) for r in conn.execute(d_sql, d_params).fetchall()]
+
             c_sql = "SELECT id, provider, external_ref, title, created_at FROM conversations WHERE 1=1"
             c_params: List[Any] = []
             if provider:

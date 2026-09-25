@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "memoria-ai-anti"
-version = "2.1.0"
+version = "2.2.0"
 description = "Engram AI — AI Memory Vault: Self-hosted AI Conversation Vault, Hybrid Search & Epistemic Knowledge Graph"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,3 +22,24 @@ memoria = "memoria.cli.main:main"
 
 [tool.setuptools.packages.find]
 include = ["memoria*"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["memoria", "tests"]
+
+[tool.ruff]
+line-length = 105
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+

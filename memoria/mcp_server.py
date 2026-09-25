@@ -21,7 +21,11 @@ from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.knowledge.extractor import guess_category
 from memoria.knowledge.query_planner import QueryPlanner
 
-DEFAULT_REMOTE_URL = os.environ.get("MEMORIA_API_URL", "http://localhost:5006").rstrip("/")
+DEFAULT_REMOTE_URL = (
+    os.environ.get("MEMORIA_API_URL")
+    or os.environ.get("MEMORIA_PUBLIC_URL")
+    or "http://localhost:8080"
+).rstrip("/")
 
 MCP_SERVER_INFO = {
     "name": "memoria-ai-mcp",
