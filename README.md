@@ -1,155 +1,94 @@
-# Memoria AI Anti (memoria_ai_anti)
+# Memoria AI (`memoria_ai_anti`) — v1.5.0
 
-> **Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da centinaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Gemini, Markdown).**
+> **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
+>
+> *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-Progettato specificamente per girare su un **homelab senza GPU** (basso consumo di risorse, zero demoni pesanti), ma con la possibilità di connettersi ad **AI esterne (o locali)** per compiti di sintesi e distillazione avanzata.
-
----
-
-## 💡 Il Problema e la Filosofia
-
-Usando molteplici assistenti AI per scopi diversi (programmazione, hobby, musica, cucina), si finisce per disperdere la propria conoscenza in diversi "silos":
-1. **Problema di Retrieval:** Non ci si ricorda dove si è avuta una certa conversazione e si perde tempo a cercarla.
-2. **Problema di Conoscenza / Memoria:** Una domanda complessa (es. *"Quali sono le migliori audiocassette per registrare un brano rock tra le audiocassette che ho?"*) non si trova in una singola chat. L'inventario delle cassette potrebbe essere in una chat con ChatGPT, il confronto tecnico tra nastri Type I e Type II in una con Claude, e la calibrazione del registratore in una sessione con Gemini.
-
-`memoria_ai_anti` organizza il sistema su tre livelli:
-1. **Conversation Vault:** Archivio normalizzato, immutabile e verificabile di tutte le conversazioni originali.
-2. **Search Layer (Ibrido):** Combinazione di ricerca lessicale per parole esatte (**FTS5 / BM25**) e semantica (**Vettori L2 normalizzati**) fuse con **RRF (Reciprocal Rank Fusion)**. Trova sia i modelli esatti (es. *TDK SA-X*, *Audient iD22*) sia i concetti generici.
-3. **Knowledge Layer (Fatti vs Claim & Timeline):**
-   - **`FACT`:** Fatti dichiarati o verificati dall'utente (es. *"Possiedo una TDK SA-X"*, *"Ho venduto l'Audient iD22"*).
-   - **`CLAIM`:** Informazioni e consigli tecnici dati dalle AI (es. *"I nastri Type II offrono maggiore saturazione per il rock"*).
-   - **`DECISION`:** Decisioni esplicite dell'utente (es. *"Ho scelto la Zen Go come scheda audio principale"*).
-   - **`TIMELINE`:** Tracciamento della validità temporale (`valid_from`, `valid_until`, `is_current`, `supersedes`).
+[![Version](https://img.shields.io/badge/version-1.5.0-emerald.svg)](#)
+[![MCP Ready](https://img.shields.io/badge/MCP-JSON--RPC%202.0-indigo.svg)](#agent-api--mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
 
 ---
 
-## 🚀 Caratteristiche Principali
+## 💡 Philosophy & Architecture
 
-* **Database unico SQLite (`vault.db`):** Niente database vettoriali complessi o servizi esterni. Un solo file ACID. Backup istantaneo con `cp vault.db backup.db`.
-* **Zero requisiti GPU:** Calcolo degli embeddings e della ricerca ibrida su CPU in pochi millisecondi.
-* **Supporto AI Esterne e Locali:** Disaccoppiato dal modello di generazione. Puoi interrogare il sistema senza LLM (estrazione pura e veloce), con **Ollama** locale (`qwen2.5:3b`, `llama3.2:3b`) o con **API cloud** (Google Gemini Flash, Anthropic Claude, OpenAI, Groq) inviando all'esterno solo i pochi estratti rilevanti.
-* **Adapter multi-provider inclusi:**
-  * **ChatGPT:** parsing completo dell'albero di nodi (`mapping`) e dell'export ZIP/JSON.
-  * **Claude Web:** parsing degli export ufficiali JSON.
-  * **Claude Code (CLI):** ingest automatico delle sessioni in `~/.claude/projects/` (evitando la cancellazione automatica a 30 giorni).
-  * **Gemini:** supporto ad archivi Takeout e JSON.
-  * **Markdown:** parsing di appunti e chat con frontmatter YAML.
-* **Deduplicazione basata su Hash:** Ingestione idempotente con hash SHA-256 dei contenuti.
-* **Dashboard Web & CLI:** Interfaccia web scattante in dark mode e tool da terminale completo.
+When working across multiple AI assistants and coding agents (**ChatGPT**, **Claude**, **Claude Code**, **Google Antigravity**, **Gemini**, **Ollama**), personal context and technical decisions get fragmented into isolated silos.
 
----
+`Memoria AI` unifies your entire AI history into a single **SQLite (`vault.db`)** instance organized in 4 layers:
 
-## 🛠️ Installazione Rapida
-
-### 1. Requisiti
-* Python 3.10+
-* Nessuna scheda video richiesta
-
-### 2. Setup Locale
-```bash
-git clone ssh://git@github.com/root/memoria_ai_anti.git
-cd memoria_ai_anti
-
-# Crea virtualenv ed installa
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
-```
+1. **Conversation Vault**: Normalized, immutable, SHA-256 deduplicated archive of all raw dialogues and agent transcripts.
+2. **Multi-Backend Hybrid Search (`FTS5 BM25` + `384-dim Semantic Vectors` + `RRF`)**:
+   - Supports **External Embedding APIs** (Google Gemini `text-embedding-004`, Ollama `nomic-embed-text`, OpenAI `/v1/embeddings`), **FastEmbed ONNX**, and a zero-latency **Multilingual Concept-Cluster Vectorizer (IT/EN)** (`multilingual-concept-hash-384`), plus one-click global Vault Re-Indexing (`POST /api/embeddings/reindex`).
+3. **Epistemic Knowledge Layer (`FACT` vs `CLAIM` vs `DECISION` + `TIMELINE`)**:
+   - **`FACT`**: Verified user inventory, owned hardware/software, and permanent configurations (`owned_by_user`, `specs`, `configured_with`).
+   - **`CLAIM`**: Technical statements and advice extracted from AI responses.
+   - **`DECISION`**: Explicit architectural, technical, or purchasing choices (`ADOPTED`, `EVALUATING`, `SUPERSEDED`).
+   - **`TIMELINE`**: Temporal state tracking (`valid_from`, `valid_until`, `is_current`).
+4. **System 1 (Optional Jev) + System 2 (LLM) Synthesis**:
+   - **System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter `typesafe/jev-1.13`)**: Evaluates `Choice`, `Noul`, and `Score` primitives in ~100ms for query routing, category filtering, batch enrichment noise gatekeeping, and chunk reranking—with automatic zero-latency local fallback when disabled or offline.
+   - **System 2 Synthesis**: Synthesizes multi-hop answers using your configured LLM provider (Gemini, Anthropic, OpenAI, OpenRouter, Groq, or local Ollama).
 
 ---
 
-## 📖 Utilizzo della CLI
+## 🤖 Agent API & Native MCP Server
 
-### 1. Inizializzazione e Dati Demo
-```bash
-# Inizializza il vault
-memoria init
+Memoria AI exposes both a **Model Context Protocol (MCP JSON-RPC 2.0)** endpoint (`POST /mcp`) and a **REST Agent API** (`/api/v1/agent/*`) so autonomous agents (Antigravity, Claude Code, Cursor, OpenWebUI) can query your historical memory and record new facts/decisions in real time:
 
-# Popola con il dataset di esempio (incluso lo scenario audiocassette e audio gear)
-memoria seed
-
-# Visualizza statistiche del database
-memoria stats
-```
-
-### 2. Importazione delle tue conversazioni
-```bash
-# Import automatico (rileva il formato)
-memoria ingest /percorso/a/conversations.json
-
-# Importa le sessioni di Claude Code
-memoria ingest ~/.claude/projects --provider claude_code
-
-# Importa uno ZIP di ChatGPT
-memoria ingest export_chatgpt.zip --provider chatgpt
-```
-
-### 3. Interrogare la memoria
-```bash
-# Domanda complessa in modalità automatica o sintetica
-memoria ask "quali sono le migliori audiocassette per registrare un brano rock tra le audiocassette che ho ?"
-
-# Query strutturata sull'inventario
-memoria ask "Quali cassette possiedo?" --mode structured
-
-# Query sulle decisioni prese
-memoria ask "Che cosa ho deciso riguardo all'interfaccia audio?" --mode structured
-
-# Ricerca estrattiva pura (trova le citazioni nelle chat)
-memoria search "TDK SA-X"
-```
-
-### 4. Esplorazione Conoscenza e Timeline
-```bash
-# Elenco entità e relativi FACT / CLAIM
-memoria entities
-
-# Solo per una categoria (es. audiocassette o audio_interface)
-memoria entities --category audiocassette
-
-# Registro delle decisioni
-memoria decisions
-
-# Cronologia e cambiamenti di stato di un oggetto
-memoria timeline "Audient iD22"
-```
-
-### 5. Avviare la Dashboard Web
-```bash
-memoria serve --host 0.0.0.0 --port 8080
-```
-Apri il browser su `http://localhost:8080` per esplorare la tua memoria, cercare tra le chat, consultare i grafi di entità e importare file via drag-and-drop.
+| MCP Tool / REST Endpoint | Description |
+|---|---|
+| `memoria_search` (`GET /api/v1/agent/search?q=...`) | Hybrid search across `FACT`, `CLAIM`, `DECISION`, and 80,000+ conversation chunks in `< 30ms`. |
+| `memoria_get_conversation` (`GET /api/v1/agent/conversation/{id}`) | Retrieves the full chronological transcript of any conversation by `conversation_id`. |
+| `memoria_ask` (`POST /api/query`) | Executes multi-hop synthesis across verified inventory (`FACT`) and past discussions. |
+| `memoria_remember_fact` (`POST /api/knowledge/statement`) | Persists a verified `FACT` or `CLAIM` directly into the Knowledge Layer. |
+| `memoria_remember_decision` (`POST /api/knowledge/decision`) | Records a technical or architectural `DECISION` in the permanent registry. |
 
 ---
 
-## 🐳 Docker & Homelab Deploy
+## 🌐 Internationalization (`i18n`) & White-Labeling
 
-### Con Docker Compose:
+- **Modular `i18n` (`memoria/i18n/locales/*.json`)**: Ships with **English (`en`)** as default and full **Italian (`it`)** support, switchable live in the UI header. Adding a new language requires only dropping a `<lang>.json` file in `memoria/i18n/locales/` (auto-discovered with automatic fallback to `en.json`).
+- **White-Label Environment Variables**:
+  ```env
+  MEMORIA_DEFAULT_LANG=en
+  MEMORIA_EMBEDDING_BACKEND=auto          # auto | api | gemini | ollama | fastembed | native
+  MEMORIA_JEV_ENABLED=false               # Optional System 1 Jev engine (true | false)
+  MEMORIA_JEV_MODEL=typesafe/jev-1.13
+  MEMORIA_INSTANCE_NAME=Local Node
+  MEMORIA_DOCS_URL=
+  MEMORIA_REPO_URL=https://github.com/gaskb/memoria-ai
+  ```
+
+---
+
+## 🔄 Automatic Sync Daemons (Claude Code & Google Antigravity)
+
+Includes incremental sync scripts and macOS LaunchAgents (`deploy/launchd/`) to automatically ship new local sessions to your Memoria AI server:
+- `memoria sync-antigravity --brain-dir ~/.gemini/antigravity/brain --remote-url http://<host>:5006`
+- `memoria sync-claude --claude-dir ~/.claude/projects --remote-url http://<host>:5006`
+
+---
+
+## 🐳 Quick Start (Docker Compose)
+
 ```bash
 docker compose up -d
 ```
-Il database verrà salvato nella cartella locale `./data/vault.db`.
-
-### Con Systemd (Servizio e Sync Notturno):
-Nella cartella `deploy/systemd/` trovi i file di configurazione pronti:
-* `memoria-ai.service`: avvia il server Web come servizio di sistema.
-* `memoria-ai-sync.service` & `memoria-ai-sync.timer`: esegue ogni notte alle 03:30 l'ingest automatico dei nuovi log di Claude Code e genera un backup compresso di SQLite.
+Open `http://localhost:5006` (or `http://localhost:8080` locally via `memoria serve`).
 
 ---
 
-## 🧪 Esecuzione dei Test
+## 🧪 Running Tests
 
-Per eseguire l'intera suite di test:
 ```bash
-python3 run_tests.py
-```
-Oppure con `pytest`:
-```bash
-pytest tests/
+./venv/bin/pytest
 ```
 
 ---
 
-## 📄 Licenza
-MIT License - Realizzato per la gestione della conoscenza personale.
+## 📄 License & Support
+
+Released under the **MIT License**.
+
+*Memoria AI creates a private, self-hosted memory for your AI workflow and is distributed for free. If you find it useful, feel free to [buy me a coffee on Ko-fi ☕](https://ko-fi.com/gaskb).*
+
+*Memoria AI è gratuito. Se ti torna utile, sentiti libero di [offrirmi un caffè su Ko-fi ☕](https://ko-fi.com/gaskb).*
