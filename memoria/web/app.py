@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from memoria.config import (
     API_VERSION,
+    APP_TITLE,
     APP_VERSION,
     DEFAULT_DB_PATH,
     DEFAULT_INCOMING_DIR,
@@ -299,6 +300,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
             context={
                 "stats": stats,
                 "db_name": db.db_path.name,
+                "app_title": APP_TITLE,
                 "app_version": APP_VERSION,
                 "ui_version": UI_VERSION,
                 "api_version": API_VERSION,

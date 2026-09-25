@@ -207,210 +207,258 @@
         .markdown-content pre { background-color: var(--memoria-inner-bg); border: 1px solid var(--memoria-card-border); padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.75rem 0; }
         .markdown-content a { color: var(--theme-primary); text-decoration: underline; text-underline-offset: 2px; }
         .markdown-content .citation-link { color: var(--theme-primary); background: rgba(var(--theme-primary-rgb), 0.12); border: 1px solid rgba(var(--theme-primary-rgb), 0.35); padding: 0.15rem 0.45rem; border-radius: 0.375rem; font-size: 0.82em; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.15s; vertical-align: baseline; margin: 0 0.15rem; }
+        /* Collapsible Left Sidebar Styles (Issue #21 - Mockup 2) */
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--memoria-text-muted);
+            border: 1px solid transparent;
+            transition: all 0.16s ease;
+            text-align: left;
+            cursor: pointer;
+        }
+        .sidebar-item:hover {
+            color: var(--memoria-text-primary);
+            background: rgba(var(--theme-primary-rgb), 0.08);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(90deg, rgba(var(--theme-primary-rgb), 0.24) 0%, rgba(var(--theme-primary-rgb), 0.08) 100%);
+            color: var(--theme-primary);
+            border-color: rgba(var(--theme-primary-rgb), 0.42);
+            font-weight: 600;
+            box-shadow: 0 4px 15px -3px rgba(var(--theme-primary-rgb), 0.18);
+        }
+        #app-sidebar.collapsed {
+            width: 4.5rem !important;
+        }
+        #app-sidebar.collapsed .sidebar-label {
+            display: none !important;
+        }
+        #app-sidebar.collapsed .sidebar-item {
+            justify-content: center;
+            padding: 0.65rem 0.5rem;
+        }
     </style>
 </head>
-<body class="bg-darkbg text-slate-200 min-h-screen flex flex-col">
+<body class="bg-darkbg text-slate-200 min-h-screen flex flex-col md:flex-row">
 
-    <!-- Top Navigation Header with Centered Layout (gaskb_style standard) -->
-    <header class="border-b border-cardborder bg-[#10141d]/95 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
-            <div class="site-header-centered">
-                <!-- Leading Brand Mark -->
-                <div class="header-leading">
-                    <a href="/" class="brand flex items-center gap-2.5" title="Memoria AI Home">
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xl shadow-sm hover:scale-105 transition">
-                            🧠
-                        </div>
-                        <div class="hidden md:flex flex-col text-left">
-                            <span class="font-brand font-bold text-white text-base leading-tight">Memoria AI</span>
-                            <span class="text-[11px] text-slate-400 font-mono" data-i18n="app_subtitle">{{ i18n.get('app_subtitle', 'Vault & Knowledge') }}</span>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Center: Centered Title -->
-                <div class="header-center">
-                    <h1 class="app-title flex items-center justify-center gap-2">
-                        <span class="text-white">Memoria AI</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">Vault</span>
-                    </h1>
-                </div>
-
-                <!-- Actions: Quickstart Wizard, Language Switcher, Multi-Theme Picker & Settings -->
-                <div class="header-actions relative">
-                    <button type="button" onclick="toggleOnboardingBanner(true)" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-semibold transition" title="60-Second Quickstart & MCP Setup">
-                        <span data-i18n="quickstart_btn">{{ i18n.get('quickstart_btn', '🚀 Quickstart & MCP') }}</span>
-                    </button>
-
-                    <select id="lang-selector" onchange="changeLanguage(this.value)" title="Interface & Prompt Language"
-                            class="bg-[#10141d] border border-cardborder rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-                        {% for loc in available_locales %}
-                        <option value="{{ loc.code }}" {% if loc.code == default_lang %}selected{% endif %}>{{ loc.flag }} {{ loc.code.upper() }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <!-- Multi-Theme Popover Trigger (Issue #20) -->
-                    <div class="relative">
-                        <button type="button" onclick="toggleThemeMenu()" class="btn-settings text-xs px-2.5 py-1.5 flex items-center gap-1" title="Select Theme Palette & Mode">
-                            <span id="theme-toggle-icon">🌙</span>
-                            <span class="hidden lg:inline" data-i18n="theme_btn_label">{{ i18n.get('theme_btn_label', '🎨 Theme') }}</span>
-                        </button>
-                        <div id="theme-popover-menu" class="hidden absolute right-0 mt-2 w-64 rounded-2xl glass-panel shadow-2xl p-3 z-50 space-y-2.5 text-xs">
-                            <div class="flex items-center justify-between border-b border-cardborder pb-2">
-                                <span class="font-bold text-white">🎨 Theme & Mode</span>
-                                <button type="button" onclick="toggleTheme()" class="px-2 py-1 rounded-lg bg-[#10141d] border border-cardborder text-slate-300 hover:text-white text-[11px]">
-                                    ☀️/🌙 Mode
-                                </button>
-                            </div>
-                            <div id="theme-presets-list" class="grid grid-cols-1 gap-1.5">
-                                <!-- Populated dynamically by loadThemes() -->
-                            </div>
-                            <div class="pt-1.5 border-t border-cardborder flex justify-between gap-1">
-                                <button type="button" onclick="openCustomThemeModal()" class="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition" data-i18n="theme_create_btn">
-                                    {{ i18n.get('theme_create_btn', '+ Create Custom Theme') }}
-                                </button>
-                            </div>
-                        </div>
+    <!-- Left Collapsible Vertical Sidebar (Mockup 2 - Issue #21) -->
+    <aside id="app-sidebar" class="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-cardborder bg-[#10141d]/95 backdrop-blur-md md:sticky md:top-0 md:h-screen z-40 flex flex-col justify-between p-3.5 transition-all duration-200 site-header-centered">
+        <!-- Top Brand + Main 4 Daily Views -->
+        <div class="space-y-5">
+            <div class="flex items-center justify-between px-1.5 pt-1">
+                <a href="/" class="flex items-center gap-2.5 group" title="{{ app_title or 'AI Memory' }}">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-lg shadow-sm group-hover:scale-105 transition">
+                        🧠
                     </div>
-
-                    <button type="button" class="btn-settings text-base" title="Settings" aria-label="Settings" onclick="switchTab('settings')">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </button>
-                </div>
+                    <div class="sidebar-label flex flex-col">
+                        <span class="font-bold text-white text-base leading-tight">{{ app_title or 'AI Memory' }}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">Memoria AI Vault</span>
+                    </div>
+                </a>
+                <button type="button" onclick="toggleSidebarCollapse()" class="hidden md:inline-flex text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800/60 transition" title="Collapse / Expand Sidebar">
+                    <span id="sidebar-collapse-icon" class="text-xs font-mono">«</span>
+                </button>
             </div>
 
-            <!-- Centered Tab Navigation -->
-            <nav class="tabs tabs-centered mt-2.5 pt-2 border-t border-cardborder/60" aria-label="Main Sections">
-                <button type="button" onclick="switchTab('ask')" id="tab-btn-ask" class="tab-item active">
-                    <span>🔍</span> <span data-i18n="tab_ask">{{ i18n.get('tab_ask', 'Ask & Search') }}</span>
+            <!-- 4 Primary Daily Views -->
+            <nav class="tabs tabs-centered flex-col !items-stretch gap-1.5" aria-label="Main Views">
+                <button type="button" onclick="switchTab('ask')" id="tab-btn-ask" class="sidebar-item tab-item active">
+                    <span class="text-base">🔍</span>
+                    <span class="sidebar-label" data-i18n="tab_ask">{{ i18n.get('tab_ask', 'Ask & Search') }}</span>
                 </button>
-                <button type="button" onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="tab-item">
-                    <span>🧠</span> <span data-i18n="tab_knowledge">{{ i18n.get('tab_knowledge', 'Facts & Entities') }}</span>
+                <button type="button" onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="sidebar-item tab-item">
+                    <span class="text-base">🧠</span>
+                    <span class="sidebar-label" data-i18n="tab_knowledge">{{ i18n.get('tab_knowledge', 'Facts & Entities') }}</span>
                 </button>
-                <button type="button" onclick="switchTab('decisions')" id="tab-btn-decisions" class="tab-item">
-                    <span>⚖️</span> <span data-i18n="tab_decisions">{{ i18n.get('tab_decisions', 'Decisions & Timeline') }}</span>
+                <button type="button" onclick="switchTab('decisions')" id="tab-btn-decisions" class="sidebar-item tab-item">
+                    <span class="text-base">⚖️</span>
+                    <span class="sidebar-label" data-i18n="tab_decisions">{{ i18n.get('tab_decisions', 'Decisions & Timeline') }}</span>
                 </button>
-                <button type="button" onclick="switchTab('vault')" id="tab-btn-vault" class="tab-item">
-                    <span>💬</span> <span data-i18n="tab_vault">{{ i18n.get('tab_vault', 'Conversation Vault') }}</span>
-                </button>
-                <button type="button" onclick="switchTab('import')" id="tab-btn-import" class="tab-item">
-                    <span>📥</span> <span data-i18n="tab_import">{{ i18n.get('tab_import', 'Ingest & Enrich') }}</span>
-                </button>
-                <button type="button" onclick="switchTab('settings')" id="tab-btn-settings" class="tab-item">
-                    <span>⚙️</span> <span data-i18n="tab_settings">{{ i18n.get('tab_settings', 'Settings') }}</span>
+                <button type="button" onclick="switchTab('vault')" id="tab-btn-vault" class="sidebar-item tab-item">
+                    <span class="text-base">💬</span>
+                    <span class="sidebar-label" data-i18n="tab_vault">{{ i18n.get('tab_vault', 'Conversation Vault') }}</span>
                 </button>
             </nav>
         </div>
-    </header>
 
-    <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <!-- Bottom Admin, Ingest, Theme & Language Controls -->
+        <div class="pt-3 border-t border-cardborder/70 space-y-1.5">
+            <button type="button" onclick="switchTab('import')" id="tab-btn-import" class="sidebar-item tab-item">
+                <span class="text-base">📥</span>
+                <span class="sidebar-label" data-i18n="tab_import">{{ i18n.get('tab_import', 'Ingest & Enrich') }}</span>
+            </button>
+            <button type="button" onclick="switchTab('settings')" id="tab-btn-settings" class="sidebar-item tab-item">
+                <span class="text-base">⚙️</span>
+                <span class="sidebar-label" data-i18n="tab_settings">{{ i18n.get('tab_settings', 'Admin & Settings') }}</span>
+            </button>
+            <button type="button" onclick="toggleOnboardingBanner(true)" class="sidebar-item text-emerald-400 hover:text-emerald-300">
+                <span class="text-base">🚀</span>
+                <span class="sidebar-label text-xs font-semibold" data-i18n="quickstart_btn">{{ i18n.get('quickstart_btn', 'Quickstart & MCP') }}</span>
+            </button>
 
-        <!-- First-Run Onboarding & MCP Quickstart Wizard (Issue #17) -->
-        <div id="onboarding-wizard-banner" class="{% if stats.conversations > 0 %}hidden{% endif %} mb-5 glass-panel rounded-2xl p-5 border border-emerald-500/30 space-y-4">
-            <div class="flex items-start justify-between gap-3 border-b border-cardborder pb-3">
-                <div>
-                    <h2 class="text-sm font-bold text-white flex items-center gap-2" data-i18n="onboarding_title">
-                        {{ i18n.get('onboarding_title', '🚀 Welcome to Memoria AI — 60-Second Quickstart & MCP Setup') }}
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5" data-i18n="onboarding_subtitle">
-                        {{ i18n.get('onboarding_subtitle', 'Follow these 3 steps to populate your Vault and connect your AI coding agents (Antigravity, Claude Code, Claude Desktop, Cursor).') }}
-                    </p>
-                </div>
-                <button type="button" onclick="toggleOnboardingBanner(false)" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded-lg bg-[#10141d]">✕</button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <!-- Step 1 -->
-                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
-                    <div>
-                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step1_title">{{ i18n.get('onboarding_step1_title', '1. AI Provider & Embeddings') }}</div>
-                        <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step1_desc">
-                            {{ i18n.get('onboarding_step1_desc', 'Configure your preferred LLM provider (or local Ollama) in Settings. Multilingual 384-dim semantic vectors work out-of-the-box with zero config.') }}
-                        </p>
-                    </div>
-                    <button type="button" onclick="switchTab('settings')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition">
-                        ⚙️ Open AI Settings
+            <!-- Theme & Language Row -->
+            <div class="pt-2 border-t border-cardborder/50 flex items-center justify-between gap-1.5 relative">
+                <div class="relative flex-1">
+                    <button type="button" onclick="toggleThemeMenu()" class="w-full px-2.5 py-1.5 rounded-xl bg-[#0c0f17] border border-cardborder text-xs text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition" title="Theme & Mode">
+                        <span id="theme-toggle-icon">🌙</span>
+                        <span class="sidebar-label" data-i18n="theme_btn_label">{{ i18n.get('theme_btn_label', 'Theme') }}</span>
                     </button>
+                    <div id="theme-popover-menu" class="hidden absolute bottom-11 left-0 w-64 rounded-2xl glass-panel shadow-2xl p-3 z-50 space-y-2.5 text-xs">
+                        <div class="flex items-center justify-between border-b border-cardborder pb-2">
+                            <span class="font-bold text-white">🎨 Theme & Mode</span>
+                            <button type="button" onclick="toggleTheme()" class="px-2 py-1 rounded-lg bg-[#10141d] border border-cardborder text-slate-300 hover:text-white text-[11px]">
+                                ☀️/🌙 Mode
+                            </button>
+                        </div>
+                        <div id="theme-presets-list" class="grid grid-cols-1 gap-1.5"></div>
+                        <div class="pt-1.5 border-t border-cardborder">
+                            <button type="button" onclick="openCustomThemeModal()" class="w-full py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[11px] transition" data-i18n="theme_create_btn">
+                                {{ i18n.get('theme_create_btn', '+ Create Custom Theme') }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Step 2 -->
-                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                <select id="lang-selector" onchange="changeLanguage(this.value)" title="Interface & Prompt Language"
+                        class="sidebar-label bg-[#0c0f17] border border-cardborder rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer">
+                    {% for loc in available_locales %}
+                    <option value="{{ loc.code }}" {% if loc.code == default_lang %}selected{% endif %}>{{ loc.flag }} {{ loc.code.upper() }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Right Full-Height Workspace & Footer -->
+    <div class="flex-1 flex flex-col min-w-0 min-h-screen justify-between">
+        <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6">
+
+            <!-- First-Run Onboarding & MCP Quickstart Wizard (Issue #17) -->
+            <div id="onboarding-wizard-banner" class="{% if stats.conversations > 0 %}hidden{% endif %} mb-6 glass-panel rounded-2xl p-5 border border-emerald-500/30 space-y-4">
+                <div class="flex items-start justify-between gap-3 border-b border-cardborder pb-3">
                     <div>
-                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step2_title">{{ i18n.get('onboarding_step2_title', '2. Populate Vault (Import or Demo)') }}</div>
-                        <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step2_desc">
-                            {{ i18n.get('onboarding_step2_desc', 'Drop your ChatGPT/Claude/Gemini export in the Ingest tab, or load the curated Demo Dataset in 1 click to test Hybrid Search & Knowledge Curation immediately.') }}
+                        <h2 class="text-sm font-bold text-white flex items-center gap-2" data-i18n="onboarding_title">
+                            {{ i18n.get('onboarding_title', '🚀 Welcome to AI Memory — 60-Second Quickstart & MCP Setup') }}
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="onboarding_subtitle">
+                            {{ i18n.get('onboarding_subtitle', 'Follow these 3 steps to populate your Vault and connect your AI coding agents (Antigravity, Claude Code, Claude Desktop, Cursor).') }}
                         </p>
                     </div>
-                    <div class="flex flex-col gap-1.5">
+                    <button type="button" onclick="toggleOnboardingBanner(false)" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded-lg bg-[#10141d]">✕</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step1_title">{{ i18n.get('onboarding_step1_title', '1. AI Provider & Embeddings') }}</div>
+                            <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step1_desc">
+                                {{ i18n.get('onboarding_step1_desc', 'Configure your preferred LLM provider (or local Ollama) in Settings. Multilingual 384-dim semantic vectors work out-of-the-box with zero config.') }}
+                            </p>
+                        </div>
+                        <button type="button" onclick="switchTab('settings')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition">
+                            ⚙️ Open AI Settings
+                        </button>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step2_title">{{ i18n.get('onboarding_step2_title', '2. Populate Vault (Import or Demo)') }}</div>
+                            <p class="text-slate-300 leading-relaxed" data-i18n="onboarding_step2_desc">
+                                {{ i18n.get('onboarding_step2_desc', 'Drop your ChatGPT/Claude/Gemini export in the Ingest tab, or load the curated Demo Dataset in 1 click to test Hybrid Search & Knowledge Curation immediately.') }}
+                            </p>
+                        </div>
                         <button type="button" onclick="loadDemoDatasetFromWizard()" id="btn-onboarding-demo" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow" data-i18n="onboarding_load_demo_btn">
                             {{ i18n.get('onboarding_load_demo_btn', '✨ Load Demo Dataset (6 Chats + Facts/Decisions)') }}
                         </button>
                     </div>
-                </div>
 
-                <!-- Step 3 -->
-                <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
-                    <div>
-                        <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step3_title">{{ i18n.get('onboarding_step3_title', '3. Connect AI Agents via MCP') }}</div>
-                        <p class="text-slate-300 leading-relaxed mb-1.5" data-i18n="onboarding_step3_desc">
-                            {{ i18n.get('onboarding_step3_desc', 'Copy this ready-to-use mcp_config.json snippet into Google Antigravity, Claude Code, Claude Desktop, or Cursor:') }}
-                        </p>
-                        <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "memoria": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
-                    </div>
-                    <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition" data-i18n="onboarding_copy_mcp_btn">
-                        {{ i18n.get('onboarding_copy_mcp_btn', '📋 Copy MCP Config JSON') }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Clean Status & Agent API Banner -->
-        <section class="glass-panel p-3.5 mb-6 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs border border-cardborder shadow-sm">
-            <div class="flex items-center flex-wrap gap-2.5 text-slate-300">
-                <span class="flex items-center gap-1.5 text-slate-400">
-                    <span>🤖 <span data-i18n="banner_agent_api">{{ i18n.get('banner_agent_api', 'Agent API:') }}</span></span>
-                    <a href="/mcp" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 hover:text-white border border-indigo-500/30 font-mono text-[11px]" title="Model Context Protocol (MCP JSON-RPC 2.0)">/mcp</a>
-                    <a href="/docs" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 hover:text-white border border-emerald-500/30 font-mono text-[11px]" title="OpenAPI / Swagger UI">/docs</a>
-                </span>
-            </div>
-
-            <div class="flex items-center flex-wrap gap-3.5 text-slate-400 ml-auto">
-                <div class="flex items-center gap-2 font-mono text-xs">
-                    <span class="text-slate-500" data-i18n="banner_vault">{{ i18n.get('banner_vault', 'Vault:') }}</span>
-                    <span class="text-white font-bold" id="stat-convs">...</span> <span class="text-slate-500 text-[11px]" data-i18n="banner_chats">{{ i18n.get('banner_chats', 'chats') }}</span>
-                    <span class="text-slate-600">/</span>
-                    <span class="text-emerald-400 font-bold" id="stat-facts">...</span> <span class="text-slate-500 text-[11px]" data-i18n="banner_facts">{{ i18n.get('banner_facts', 'facts') }}</span>
-                    <span class="text-slate-600">/</span>
-                    <span class="text-amber-400 font-bold" id="stat-decisions">...</span> <span class="text-slate-500 text-[11px]" data-i18n="banner_decisions">{{ i18n.get('banner_decisions', 'decisions') }}</span>
-                </div>
-                <div onclick="switchTab('settings')" class="cursor-pointer flex items-center gap-1.5 bg-[#10141d] border border-cardborder px-2.5 py-1 rounded-lg hover:border-emerald-500/40 transition" title="Change Active LLM Provider/Model">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span class="text-slate-500">LLM:</span>
-                    <span id="header-active-llm" class="font-mono font-bold text-emerald-400">...</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 1: ASK & SEARCH -->
-        <section id="tab-ask" class="tab-content space-y-6">
-            <div class="glass-panel p-6 rounded-2xl shadow-xl">
-                <div class="flex flex-col gap-3">
-                    <label class="text-sm font-semibold text-slate-300" data-i18n="ask_label">{{ i18n.get('ask_label', 'Query your unified AI memory:') }}</label>
-                    <div class="flex gap-2">
-                        <input id="query-input" type="text"
-                               onkeydown="if(event.key === 'Enter') { event.preventDefault(); submitQuery(); }"
-                               data-i18n-placeholder="ask_placeholder"
-                               placeholder="{{ i18n.get('ask_placeholder', 'E.g., Which items in my inventory are best suited for recording a rock track, and why?') }}"
-                               class="flex-1 bg-[#10141d] border border-cardborder rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                        <button onclick="submitQuery()" id="btn-submit-query"
-                                class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium text-sm transition flex items-center gap-2">
-                            <span data-i18n="btn_ask">{{ i18n.get('btn_ask', 'Ask') }}</span>
+                    <div class="p-3.5 rounded-xl bg-[#10141d] border border-cardborder space-y-2 flex flex-col justify-between">
+                        <div>
+                            <div class="font-bold text-emerald-400 mb-1" data-i18n="onboarding_step3_title">{{ i18n.get('onboarding_step3_title', '3. Connect AI Agents via MCP') }}</div>
+                            <p class="text-slate-300 leading-relaxed mb-1.5" data-i18n="onboarding_step3_desc">
+                                {{ i18n.get('onboarding_step3_desc', 'Copy this ready-to-use mcp_config.json snippet into Google Antigravity, Claude Code, Claude Desktop, or Cursor:') }}
+                            </p>
+                            <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "memoria": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
+                        </div>
+                        <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition" data-i18n="onboarding_copy_mcp_btn">
+                            {{ i18n.get('onboarding_copy_mcp_btn', '📋 Copy MCP Config JSON') }}
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- TAB 1: ASK & SEARCH (with 4 KPI Stat Cards from Mockup 2) -->
+            <section id="tab-ask" class="tab-content space-y-6">
+                <!-- 4 Sleek KPI Cards (Mockup 2) -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div onclick="switchTab('vault')" class="glass-panel p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition group">
+                        <div>
+                            <div id="stat-convs" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.conversations or 0 }}</div>
+                            <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_chats">{{ i18n.get('banner_chats', 'Chats') }}</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
+                            💬
+                        </div>
+                    </div>
+
+                    <div onclick="switchTab('knowledge')" class="glass-panel p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition group">
+                        <div>
+                            <div id="stat-facts" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.facts or 0 }}</div>
+                            <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_facts">{{ i18n.get('banner_facts', 'Verified Facts') }}</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
+                            🧠
+                        </div>
+                    </div>
+
+                    <div onclick="switchTab('decisions')" class="glass-panel p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition group">
+                        <div>
+                            <div id="stat-decisions" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.decisions or 0 }}</div>
+                            <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_decisions">{{ i18n.get('banner_decisions', 'Decisions') }}</div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
+                            ⚖️
+                        </div>
+                    </div>
+
+                    <div onclick="switchTab('settings')" class="glass-panel p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition group" title="Click to configure Active LLM & Embeddings">
+                        <div>
+                            <div id="stat-chunks" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.chunks or 0 }}</div>
+                            <div class="text-[11px] text-slate-400 font-mono truncate max-w-[130px] mt-0.5">
+                                Chunks · <span id="header-active-llm" class="text-emerald-400">LLM</span>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
+                            ⚡
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Universal Ask & Search Hero Bar -->
+                <div class="glass-panel p-6 rounded-2xl shadow-xl border border-emerald-500/20">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-semibold text-slate-300" data-i18n="ask_label">{{ i18n.get('ask_label', 'Ask your memory or search facts...') }}</label>
+                            <span class="hidden sm:inline-block text-[11px] font-mono px-2 py-0.5 rounded bg-[#10141d] border border-cardborder text-slate-400">⌘K /</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <input id="query-input" type="text"
+                                   onkeydown="if(event.key === 'Enter') { event.preventDefault(); submitQuery(); }"
+                                   data-i18n-placeholder="ask_placeholder"
+                                   placeholder="{{ i18n.get('ask_placeholder', 'Ask your memory or search facts, hardware, and past decisions...') }}"
+                                   class="flex-1 bg-[#10141d] border border-cardborder rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                            <button onclick="submitQuery()" id="btn-submit-query"
+                                    class="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-lg">
+                                <span data-i18n="btn_ask">{{ i18n.get('btn_ask', 'Search') }}</span>
+                            </button>
+                        </div>
 
                     <!-- Mode Options & Quick Prompts -->
                     <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -516,15 +564,17 @@
             </div>
         </section>
 
-        <!-- TAB 4: VAULT CONVERSATIONS -->
-        <section id="tab-vault" class="tab-content hidden space-y-6">
-            <div class="flex items-center justify-between">
+        <!-- TAB 4: VAULT CONVERSATIONS (Split-View Master/Detail — Issue #21) -->
+        <section id="tab-vault" class="tab-content hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h2 class="text-lg font-bold text-white" data-i18n="vault_title">{{ i18n.get('vault_title', 'Conversation Vault (Raw Archive)') }}</h2>
-                    <p class="text-xs text-slate-400" data-i18n="vault_subtitle">{{ i18n.get('vault_subtitle', 'Normalized conversations preserved as a single source of truth.') }}</p>
+                    <h2 class="text-lg font-bold text-white" data-i18n="vault_title">{{ i18n.get('vault_title', 'Conversation Vault (Master / Detail)') }}</h2>
+                    <p class="text-xs text-slate-400" data-i18n="vault_subtitle">{{ i18n.get('vault_subtitle', 'Filter and read full conversations side-by-side without leaving the workspace.') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <select id="vault-provider-filter" onchange="loadVault()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="vault-search-input" oninput="filterVaultList()" placeholder="🔍 Filter by title or ref..."
+                           class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 w-52">
+                    <select id="vault-provider-filter" onchange="loadVault()" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="vault_all_providers">{{ i18n.get('vault_all_providers', 'All providers') }}</option>
                         <option value="antigravity">Antigravity</option>
                         <option value="chatgpt">ChatGPT</option>
@@ -536,7 +586,26 @@
                 </div>
             </div>
 
-            <div id="vault-list" class="space-y-3"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                <!-- Master Column: Conversation List -->
+                <div id="vault-list" class="lg:col-span-5 space-y-2 max-h-[73vh] overflow-y-auto pr-1"></div>
+
+                <!-- Detail Column: Full Conversation Reader -->
+                <div id="vault-detail-pane" class="lg:col-span-7 glass-panel rounded-2xl border border-cardborder flex flex-col h-[73vh]">
+                    <div class="p-4 border-b border-cardborder flex items-center justify-between gap-3">
+                        <div class="min-w-0">
+                            <h3 id="vault-detail-title" class="font-bold text-white text-sm truncate">Select a conversation from the list</h3>
+                            <p id="vault-detail-meta" class="text-[11px] text-slate-400 font-mono mt-0.5">—</p>
+                        </div>
+                        <button type="button" id="vault-expand-modal-btn" onclick="if(window.activeVaultConvId) openModal(window.activeVaultConvId)" class="px-2.5 py-1 rounded-lg bg-[#10141d] border border-cardborder text-xs text-slate-300 hover:text-white whitespace-nowrap">
+                            ⤢ Modal
+                        </button>
+                    </div>
+                    <div id="vault-detail-messages" class="p-4 overflow-y-auto space-y-3 flex-1 text-xs">
+                        <p class="text-slate-500 text-xs">Click any conversation on the left to read its full transcript here.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- TAB 5: INGEST & BATCH ENRICH -->
@@ -837,6 +906,28 @@
 
     </main>
 
+        <!-- Compact Bottom Footer Banner: Release Version + API Contract + Protocol, Design System & Ko-fi (Issues #19 & #21) -->
+        <footer class="border-t border-cardborder bg-[#10141d]/85 py-3.5 px-6 text-xs text-slate-500 mt-auto">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div class="flex items-center flex-wrap gap-2 font-mono text-[11px]">
+                    <span class="text-slate-200 font-bold">{{ app_title or 'AI Memory' }} (Memoria AI) v{{ app_version or '2.0.0' }}</span>
+                    <span>·</span>
+                    <span class="text-emerald-400">REST API {{ api_version or 'v1' }}</span>
+                    <span>·</span>
+                    <span class="text-indigo-400">MCP {{ mcp_version or '2.0' }} (<a href="/mcp" class="underline hover:text-indigo-300">/mcp</a> · <a href="/docs" class="underline hover:text-emerald-300">/docs</a>)</span>
+                    <span>·</span>
+                    <span class="text-slate-500">Design System: gaskb_style (M3)</span>
+                </div>
+                <div class="flex items-center flex-wrap gap-4 text-xs">
+                    <a href="https://ko-fi.com/gaskb" target="_blank" rel="noopener" class="text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5 font-medium">
+                        <span>☕</span>
+                        <span data-i18n="footer_kofi">Free & open project. If you find it useful, feel free to buy me a coffee on Ko-fi ☕</span>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
     <!-- Modal: Custom Theme Studio (Issue #20) -->
     <div id="custom-theme-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
@@ -990,13 +1081,37 @@
             try {
                 const res = await fetch('/api/stats');
                 const data = await res.json();
-                document.getElementById('stat-convs').innerText = data.conversations || 0;
-                document.getElementById('stat-facts').innerText = data.facts || 0;
-                document.getElementById('stat-decisions').innerText = data.decisions || 0;
+                const elConvs = document.getElementById('stat-convs');
+                const elFacts = document.getElementById('stat-facts');
+                const elDecs = document.getElementById('stat-decisions');
+                const elChunks = document.getElementById('stat-chunks');
+                if (elConvs) elConvs.innerText = data.conversations || 0;
+                if (elFacts) elFacts.innerText = data.facts || 0;
+                if (elDecs) elDecs.innerText = data.decisions || 0;
+                if (elChunks) elChunks.innerText = data.chunks || data.embeddings || 0;
             } catch (e) {
                 console.error(e);
             }
         }
+
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('app-sidebar');
+            const icon = document.getElementById('sidebar-collapse-icon');
+            if (!sidebar) return;
+            sidebar.classList.toggle('collapsed');
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            if (icon) icon.innerText = isCollapsed ? '⇥' : '⇤';
+            localStorage.setItem('gaskb_sidebar_collapsed', isCollapsed ? '1' : '0');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                switchTab('ask');
+                const q = document.getElementById('query-input');
+                if (q) q.focus();
+            }
+        });
 
         function toggleTheme() {
             const html = document.documentElement;
@@ -1458,30 +1573,93 @@
             });
         }
 
+        window.cachedVaultConversations = [];
+        window.activeVaultConvId = null;
+
         async function loadVault() {
             const prov = document.getElementById('vault-provider-filter').value;
             const url = prov ? `/api/conversations?provider=${prov}` : '/api/conversations';
             const res = await fetch(url);
             const data = await res.json();
+            window.cachedVaultConversations = data || [];
+            renderVaultMasterList(window.cachedVaultConversations);
+            if (window.cachedVaultConversations.length > 0) {
+                const targetId = window.activeVaultConvId && window.cachedVaultConversations.some(x => x.id === window.activeVaultConvId)
+                    ? window.activeVaultConvId
+                    : window.cachedVaultConversations[0].id;
+                selectVaultConversation(targetId);
+            }
+        }
 
+        function filterVaultList() {
+            const q = (document.getElementById('vault-search-input')?.value || '').toLowerCase().trim();
+            if (!q) {
+                renderVaultMasterList(window.cachedVaultConversations);
+                return;
+            }
+            const filtered = window.cachedVaultConversations.filter(cv =>
+                (cv.title || '').toLowerCase().includes(q) ||
+                (cv.provider || '').toLowerCase().includes(q) ||
+                (cv.external_ref || '').toLowerCase().includes(q)
+            );
+            renderVaultMasterList(filtered);
+        }
+
+        function renderVaultMasterList(listData) {
             const c = document.getElementById('vault-list');
+            if (!c) return;
             c.innerHTML = '';
-            data.forEach(cv => {
+            listData.forEach(cv => {
+                const isSelected = cv.id === window.activeVaultConvId;
                 const item = document.createElement('div');
-                item.className = 'glass-panel p-4 rounded-xl flex items-center justify-between hover:border-emerald-500/40 cursor-pointer transition';
-                item.onclick = () => openModal(cv.id);
+                item.id = `vault-row-${cv.id}`;
+                item.className = `glass-panel p-3.5 rounded-xl flex items-center justify-between cursor-pointer transition ${isSelected ? 'border-emerald-500 bg-emerald-500/10' : 'hover:border-emerald-500/40'}`;
+                item.onclick = () => selectVaultConversation(cv.id);
                 item.innerHTML = `
-                    <div class="space-y-1">
+                    <div class="space-y-1 min-w-0 pr-2">
                         <div class="flex items-center gap-2">
-                            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono font-bold">${cv.provider}</span>
-                            <span class="font-bold text-white text-sm">${cv.title}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono font-bold shrink-0">${cv.provider}</span>
+                            <span class="font-bold text-white text-xs truncate">${cv.title}</span>
                         </div>
-                        <p class="text-xs text-slate-500">Ref: ${cv.external_ref} • ${tr('created_on', 'Created')}: ${(cv.created_at || '').slice(0, 10)}</p>
+                        <p class="text-[11px] text-slate-500 truncate">${(cv.created_at || '').slice(0, 10)} • Ref: ${cv.external_ref}</p>
                     </div>
-                    <span class="text-slate-400 text-sm">${tr('open_chat', 'Open Chat ➔')}</span>
+                    <span class="text-emerald-400 text-xs shrink-0">➔</span>
                 `;
                 c.appendChild(item);
             });
+        }
+
+        async function selectVaultConversation(convId) {
+            window.activeVaultConvId = convId;
+            renderVaultMasterList(
+                (document.getElementById('vault-search-input')?.value || '').trim()
+                    ? window.cachedVaultConversations.filter(cv => (cv.title || '').toLowerCase().includes(document.getElementById('vault-search-input').value.toLowerCase()))
+                    : window.cachedVaultConversations
+            );
+            const res = await fetch(`/api/conversations/${convId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            const titleEl = document.getElementById('vault-detail-title');
+            const metaEl = document.getElementById('vault-detail-meta');
+            const mBox = document.getElementById('vault-detail-messages');
+            if (titleEl) titleEl.innerText = data.title || 'Conversation';
+            if (metaEl) metaEl.innerText = `${(data.provider || '').toUpperCase()} • ${data.created_at || ''} • ${(data.messages || []).length} messages`;
+            if (mBox) {
+                mBox.innerHTML = '';
+                (data.messages || []).forEach(m => {
+                    const d = document.createElement('div');
+                    const isUser = m.role === 'user';
+                    d.className = `p-3.5 rounded-xl text-xs space-y-1.5 ${isUser ? 'bg-emerald-950/30 border border-emerald-500/25 mr-6' : 'bg-[#10141d] border border-cardborder ml-6'}`;
+                    d.innerHTML = `
+                        <div class="flex justify-between font-bold ${isUser ? 'text-emerald-400' : 'text-indigo-400'}">
+                            <span>${isUser ? '👤 ' + tr('user_you', 'You') : '🤖 ' + (data.provider || '').toUpperCase()}</span>
+                            <span class="text-[10px] text-slate-500 font-normal">${(m.ts || '').slice(0, 19).replace('T', ' ')}</span>
+                        </div>
+                        <div class="text-slate-200 leading-relaxed whitespace-pre-wrap">${m.content}</div>
+                    `;
+                    mBox.appendChild(d);
+                });
+            }
         }
 
         async function openModal(convId) {
@@ -2427,6 +2605,13 @@
                 if (icon) icon.innerText = '☀️';
             }
 
+            if (localStorage.getItem('gaskb_sidebar_collapsed') === '1') {
+                const sidebar = document.getElementById('app-sidebar');
+                const icon = document.getElementById('sidebar-collapse-icon');
+                if (sidebar) sidebar.classList.add('collapsed');
+                if (icon) icon.innerText = '⇥';
+            }
+
             initI18n();
             loadThemes();
             fetchStats();
@@ -2435,27 +2620,6 @@
             loadSecuritySettings();
         });
     </script>
-
-    <!-- Footer: Release Version + API Contract + Protocol, Design System & Ko-fi (Issue #19) -->
-    <footer class="border-t border-cardborder bg-[#10141d]/80 py-5 mt-10 text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center flex-wrap gap-2 font-mono">
-                <span class="text-slate-300 font-bold">Memoria AI v{{ app_version or '1.5.1' }}</span>
-                <span>·</span>
-                <span class="text-emerald-400">REST API {{ api_version or 'v1' }}</span>
-                <span>·</span>
-                <span class="text-indigo-400">MCP {{ mcp_version or '2.0' }}</span>
-                <span>·</span>
-                <span class="text-slate-500">Design System: gaskb-style (M3)</span>
-            </div>
-            <div class="flex items-center flex-wrap gap-4 text-xs">
-                <a href="https://ko-fi.com/gaskb" target="_blank" rel="noopener" class="text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5 font-medium">
-                    <span>☕</span>
-                    <span data-i18n="footer_kofi">Free & open project. If you find it useful, feel free to buy me a coffee on Ko-fi ☕</span>
-                </a>
-            </div>
-        </div>
-    </footer>
 </body>
 
 </html>
