@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="it" class="dark" data-theme="dark">
+<html lang="{{ default_lang or 'en' }}" class="dark" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memoria AI Anti - Personal Vault & Knowledge Layer</title>
+    <title>Memoria AI — Personal Vault & Knowledge Layer</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 
     <!-- gaskb_style Design System -->
     <link rel="stylesheet" href="/static/css/gaskb.css">
@@ -221,35 +222,16 @@
                     </a>
                 </div>
 
-                <!-- Center: Centered Title + Dual Version Badges -->
+                <!-- Center: Centered Title -->
                 <div class="header-center">
                     <h1 class="app-title flex items-center justify-center gap-2">
                         <span class="text-white">Memoria AI</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">Anti</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">Vault</span>
                     </h1>
-                    <div class="version-badges" title="Active Versions: Frontend (UI) & Backend (API)">
-                        <span class="version-badge"><span class="version-badge-label">UI</span> v{{ ui_version or '1.4.0' }}</span>
-                        <span class="version-badge"><span class="version-badge-label">API</span> v{{ api_version or '1.4.0' }}</span>
-                        <span class="version-badge"><span class="version-badge-label">NODE</span> {{ instance_name or 'Local' }}</span>
-                    </div>
                 </div>
 
-                <!-- Actions: Docs, Repo, Language Switcher, Theme & Settings -->
+                <!-- Actions: Language Switcher, Theme & Settings -->
                 <div class="header-actions">
-                    {% if docs_url %}
-                    <a href="{{ docs_url }}" target="_blank" rel="noopener"
-                       class="btn btn-tonal text-xs py-1.5 px-3 hidden sm:inline-flex items-center gap-1.5 border border-cardborder rounded-xl text-slate-300 hover:text-white hover:border-emerald-500/50 transition"
-                       title="{{ docs_label }}">
-                        <span>📚</span> <span class="font-semibold">{{ docs_label }}</span>
-                    </a>
-                    {% endif %}
-                    {% if repo_url %}
-                    <a href="{{ repo_url }}" target="_blank" rel="noopener"
-                       class="btn btn-tonal text-xs py-1.5 px-3 hidden lg:inline-flex items-center gap-1.5 border border-cardborder rounded-xl text-slate-300 hover:text-white hover:border-emerald-500/50 transition"
-                       title="{{ repo_label }}">
-                        <span>🦊</span> <span class="font-semibold">{{ repo_label }}</span>
-                    </a>
-                    {% endif %}
                     <select id="lang-selector" onchange="changeLanguage(this.value)" title="Interface & Prompt Language"
                             class="bg-[#10141d] border border-cardborder rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
                         {% for loc in available_locales %}
@@ -268,7 +250,7 @@
                 </div>
             </div>
 
-            <!-- Centered Tab Navigation (gaskb_style pattern) -->
+            <!-- Centered Tab Navigation -->
             <nav class="tabs tabs-centered mt-2.5 pt-2 border-t border-cardborder/60" aria-label="Main Sections">
                 <button type="button" onclick="switchTab('ask')" id="tab-btn-ask" class="tab-item active">
                     <span>🔍</span> <span data-i18n="tab_ask">{{ i18n.get('tab_ask', 'Ask & Search') }}</span>
@@ -295,36 +277,13 @@
     <!-- Main Content Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
 
-        <!-- Project & Instance Reference Banner (White-Labeled, Issues #9 & #13) -->
+        <!-- Clean Status & Agent API Banner -->
         <section class="glass-panel p-3.5 mb-6 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs border border-cardborder shadow-sm">
             <div class="flex items-center flex-wrap gap-2.5 text-slate-300">
-                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 font-semibold border border-emerald-500/30 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>{{ instance_name or 'Local Node' }} (Online)</span>
-                </span>
-                {% if docs_url %}
-                <span class="text-slate-600 hidden sm:inline">•</span>
-                <span class="flex items-center gap-1">
-                    <span class="text-slate-400" data-i18n="banner_kb">{{ i18n.get('banner_kb', 'Knowledge Base:') }}</span>
-                    <a href="{{ docs_url }}" target="_blank" rel="noopener" class="text-emerald-400 hover:text-emerald-300 font-medium underline flex items-center gap-1">
-                        <span>{{ docs_label }}</span> ↗
-                    </a>
-                </span>
-                {% endif %}
-                {% if design_system_url %}
-                <span class="text-slate-600 hidden md:inline">•</span>
-                <span class="hidden md:flex items-center gap-1 text-slate-400">
-                    <span data-i18n="banner_design">{{ i18n.get('banner_design', 'Design System:') }}</span>
-                    <a href="{{ design_system_url }}" target="_blank" rel="noopener" class="text-slate-300 hover:text-white font-mono underline">
-                        gaskb-style (M3)
-                    </a>
-                </span>
-                {% endif %}
-                <span class="text-slate-600 hidden lg:inline">•</span>
-                <span class="hidden lg:flex items-center gap-1.5 text-slate-400">
+                <span class="flex items-center gap-1.5 text-slate-400">
                     <span>🤖 <span data-i18n="banner_agent_api">{{ i18n.get('banner_agent_api', 'Agent API:') }}</span></span>
-                    <a href="/mcp" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 hover:text-white border border-indigo-500/30 font-mono text-[11px]" title="Endpoint Model Context Protocol (MCP JSON-RPC)">/mcp</a>
-                    <a href="/docs" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 hover:text-white border border-emerald-500/30 font-mono text-[11px]" title="OpenAPI / Swagger Documentation">/docs</a>
+                    <a href="/mcp" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 hover:text-white border border-indigo-500/30 font-mono text-[11px]" title="Model Context Protocol (MCP JSON-RPC 2.0)">/mcp</a>
+                    <a href="/docs" target="_blank" rel="noopener" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 hover:text-white border border-emerald-500/30 font-mono text-[11px]" title="OpenAPI / Swagger UI">/docs</a>
                 </span>
             </div>
 
@@ -372,7 +331,7 @@
                             <button onclick="setQueryMode('extractive')" id="mode-extractive" data-i18n="mode_extractive" class="mode-btn px-2.5 py-1 rounded-md bg-[#10141d] text-slate-400 border border-cardborder hover:text-white">{{ i18n.get('mode_extractive', 'Extractive (Sources)') }}</button>
                         </div>
 
-                        <!-- Domain-Agnostic Quick Prompts (Issue #13 & #16) -->
+                        <!-- Domain-Agnostic Quick Prompts -->
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-slate-500" data-i18n="quick_try_label">{{ i18n.get('quick_try_label', 'Quick Prompts:') }}</span>
                             <button onclick="useQuickI18nPrompt('quick_inventory_query')"
@@ -394,39 +353,39 @@
             <div id="query-result-box" class="hidden glass-panel p-6 rounded-2xl space-y-4">
                 <div class="flex items-center justify-between border-b border-cardborder pb-3">
                     <h2 class="text-base font-semibold text-white flex items-center gap-2">
-                        <span>Risultato Interrogazione</span>
+                        <span data-i18n="result_title">{{ i18n.get('result_title', 'Query Result') }}</span>
                         <span id="result-mode-badge" class="text-xs px-2 py-0.5 rounded font-mono uppercase bg-slate-800 text-slate-300"></span>
                     </h2>
                 </div>
                 <div id="query-answer-content" class="markdown-content text-slate-200 text-sm leading-relaxed"></div>
                 <div id="query-sources-container" class="pt-4 border-t border-cardborder hidden">
-                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fonti e Citazioni Usate:</h3>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" data-i18n="sources_title">{{ i18n.get('sources_title', 'Sources & Citations Used:') }}</h3>
                     <div id="query-sources-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
             </div>
         </section>
 
-        <!-- TAB 2: KNOWLEDGE & ENTITIES (with Manual Curation - Issue #5) -->
+        <!-- TAB 2: KNOWLEDGE & ENTITIES -->
         <section id="tab-knowledge" class="tab-content hidden space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span>Catalogo Entità & Memoria Distillata</span>
-                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Curation Attiva</span>
+                        <span data-i18n="knowledge_title">{{ i18n.get('knowledge_title', 'Entities Catalog & Distilled Memory') }}</span>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded" data-i18n="knowledge_badge">{{ i18n.get('knowledge_badge', 'Active Curation') }}</span>
                     </h2>
-                    <p class="text-xs text-slate-400">Fai clic sui badge [FACT / CLAIM] o [ATTUALE / PASSATO] per correggere e validare la memoria.</p>
+                    <p class="text-xs text-slate-400" data-i18n="knowledge_subtitle">{{ i18n.get('knowledge_subtitle', 'Click on [FACT / CLAIM] or [CURRENT / PAST] badges to validate and curate your memory.') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="openNewStatementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                        <span>+ Nuovo Fatto</span>
+                        <span data-i18n="btn_add_fact">{{ i18n.get('btn_add_fact', '+ New Fact') }}</span>
                     </button>
                     <select id="entity-cat-filter" onchange="loadEntities()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
-                        <option value="">Tutte le categorie</option>
-                        <option value="audiocassette">Audiocassette</option>
-                        <option value="audio_interface">Interfacce Audio</option>
-                        <option value="hardware_deck">Deck / Registratori</option>
-                        <option value="software">Software & Code</option>
-                        <option value="general">Generale</option>
+                        <option value="" data-i18n="cat_all">{{ i18n.get('cat_all', 'All categories') }}</option>
+                        <option value="audiocassette" data-i18n="cat_audiocassette">{{ i18n.get('cat_audiocassette', 'Audio Cassettes') }}</option>
+                        <option value="audio_interface" data-i18n="cat_audio_interface">{{ i18n.get('cat_audio_interface', 'Audio Interfaces') }}</option>
+                        <option value="hardware_deck" data-i18n="cat_hardware_deck">{{ i18n.get('cat_hardware_deck', 'Decks & Recorders') }}</option>
+                        <option value="software" data-i18n="cat_software">{{ i18n.get('cat_software', 'Software & Code') }}</option>
+                        <option value="general" data-i18n="cat_general">{{ i18n.get('cat_general', 'General') }}</option>
                     </select>
                 </div>
             </div>
@@ -434,15 +393,15 @@
             <div id="entities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
-        <!-- TAB 3: DECISIONS & TIMELINE (with Manual Curation - Issue #5) -->
+        <!-- TAB 3: DECISIONS & TIMELINE -->
         <section id="tab-decisions" class="tab-content hidden space-y-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-bold text-white">Registro Decisioni & Timeline Evolutiva</h2>
-                    <p class="text-xs text-slate-400">Scelte tecniche, hardware e architetturali con gestione dello stato.</p>
+                    <h2 class="text-lg font-bold text-white" data-i18n="decisions_title">{{ i18n.get('decisions_title', 'Decisions Registry & Evolution Timeline') }}</h2>
+                    <p class="text-xs text-slate-400" data-i18n="decisions_subtitle">{{ i18n.get('decisions_subtitle', 'Technical, hardware, and architectural choices with lifecycle status tracking.') }}</p>
                 </div>
                 <button onclick="openNewDecisionModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                    <span>+ Nuova Decisione</span>
+                    <span data-i18n="btn_add_decision">{{ i18n.get('btn_add_decision', '+ New Decision') }}</span>
                 </button>
             </div>
 
@@ -450,7 +409,7 @@
                 <!-- Decisions Column -->
                 <div class="lg:col-span-2 glass-panel p-5 rounded-2xl space-y-4">
                     <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>⚖️ Decisioni Registrate</span>
+                        <span data-i18n="decisions_list_title">{{ i18n.get('decisions_list_title', '⚖️ Recorded Decisions') }}</span>
                         <span id="decisions-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
                     <div id="decisions-list" class="space-y-3"></div>
@@ -459,7 +418,7 @@
                 <!-- Timeline Column -->
                 <div class="glass-panel p-5 rounded-2xl space-y-4">
                     <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                        <span>⏳ Cronologia Setup</span>
+                        <span data-i18n="timeline_title">{{ i18n.get('timeline_title', '⏳ Setup & State Timeline') }}</span>
                     </h3>
                     <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20"></div>
                 </div>
@@ -470,12 +429,12 @@
         <section id="tab-vault" class="tab-content hidden space-y-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-bold text-white">Conversation Vault (Archivio Grezzo)</h2>
-                    <p class="text-xs text-slate-400">Conversazioni normalizzate conservate come unica fonte di verità.</p>
+                    <h2 class="text-lg font-bold text-white" data-i18n="vault_title">{{ i18n.get('vault_title', 'Conversation Vault (Raw Archive)') }}</h2>
+                    <p class="text-xs text-slate-400" data-i18n="vault_subtitle">{{ i18n.get('vault_subtitle', 'Normalized conversations preserved as a single source of truth.') }}</p>
                 </div>
                 <div class="flex gap-2">
                     <select id="vault-provider-filter" onchange="loadVault()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
-                        <option value="">Tutti i provider</option>
+                        <option value="" data-i18n="vault_all_providers">{{ i18n.get('vault_all_providers', 'All providers') }}</option>
                         <option value="antigravity">Antigravity</option>
                         <option value="chatgpt">ChatGPT</option>
                         <option value="claude">Claude</option>
@@ -489,28 +448,28 @@
             <div id="vault-list" class="space-y-3"></div>
         </section>
 
-        <!-- TAB 5: INGEST & BATCH ENRICH (Issue #2 & #4) -->
+        <!-- TAB 5: INGEST & BATCH ENRICH -->
         <section id="tab-import" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 <!-- Drop Folder & Upload Panel -->
                 <div class="glass-panel p-6 rounded-2xl space-y-6">
                     <div>
-                        <h2 class="text-lg font-bold text-white">Importa Conversazioni (Drop & Upload)</h2>
-                        <p class="text-xs text-slate-400">Carica manualmente archivi (.zip, .json, .jsonl, .md) oppure usa la cartella drop monitorata.</p>
+                        <h2 class="text-lg font-bold text-white" data-i18n="import_title">{{ i18n.get('import_title', 'Import Conversations (Drop & Upload)') }}</h2>
+                        <p class="text-xs text-slate-400" data-i18n="import_subtitle">{{ i18n.get('import_subtitle', 'Upload archives (.zip, .json, .jsonl, .md) manually or use the watched incoming drop folder.') }}</p>
                     </div>
 
                     <form id="upload-form" onsubmit="handleUpload(event)" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1">Provider:</label>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="import_provider_label">{{ i18n.get('import_provider_label', 'Provider:') }}</label>
                             <select name="provider" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none">
-                                <option value="auto">Rilevamento Automatico</option>
-                                <option value="antigravity">Antigravity (~/.gemini/antigravity o .jsonl/.zip)</option>
-                                <option value="chatgpt">ChatGPT (.zip o conversations.json)</option>
-                                <option value="claude">Claude Web (.zip o conversations.json)</option>
-                                <option value="claude_code">Claude Code (.jsonl o .zip)</option>
+                                <option value="auto" data-i18n="import_provider_auto">{{ i18n.get('import_provider_auto', 'Auto-Detect Format') }}</option>
+                                <option value="antigravity">Antigravity (~/.gemini/antigravity / .jsonl / .zip)</option>
+                                <option value="chatgpt">ChatGPT (.zip / conversations.json)</option>
+                                <option value="claude">Claude Web (.zip / conversations.json)</option>
+                                <option value="claude_code">Claude Code (.jsonl / .zip)</option>
                                 <option value="gemini">Gemini Takeout</option>
-                                <option value="markdown">Cartella / File Markdown (.md)</option>
+                                <option value="markdown">Markdown (.md)</option>
                             </select>
                         </div>
 
@@ -518,43 +477,43 @@
                              onclick="document.getElementById('file-upload-input').click()">
                             <input id="file-upload-input" type="file" name="file" class="hidden" onchange="fileSelected(this)">
                             <div class="text-3xl mb-1">📁</div>
-                            <p id="upload-label" class="text-sm text-slate-300 font-medium">Seleziona file o trascinalo qui</p>
-                            <p class="text-xs text-slate-500 mt-1">Supporta .zip, .json, .jsonl, .md</p>
+                            <p id="upload-label" class="text-sm text-slate-300 font-medium" data-i18n="import_drop_label">{{ i18n.get('import_drop_label', 'Select a file or drag & drop it here') }}</p>
+                            <p class="text-xs text-slate-500 mt-1" data-i18n="import_drop_hint">{{ i18n.get('import_drop_hint', 'Supports .zip, .json, .jsonl, .md') }}</p>
                         </div>
 
-                        <button type="submit" id="btn-upload" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium text-sm transition">
-                            Carica & Indicizza
+                        <button type="submit" id="btn-upload" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium text-sm transition" data-i18n="btn_upload">
+                            {{ i18n.get('btn_upload', 'Upload & Index') }}
                         </button>
                     </form>
 
                     <div class="pt-4 border-t border-cardborder flex items-center justify-between">
                         <div>
-                            <h4 class="text-xs font-semibold text-slate-300">Scansione Drop Folder Immediata</h4>
-                            <p class="text-[11px] text-slate-500">Forza scansione della cartella data/incoming/</p>
+                            <h4 class="text-xs font-semibold text-slate-300" data-i18n="drop_scan_title">{{ i18n.get('drop_scan_title', 'Immediate Drop Folder Scan') }}</h4>
+                            <p class="text-[11px] text-slate-500" data-i18n="drop_scan_subtitle">{{ i18n.get('drop_scan_subtitle', 'Force scan of the data/incoming/ directory') }}</p>
                         </div>
-                        <button onclick="triggerDropScan()" class="bg-[#10141d] hover:bg-slate-800 border border-cardborder text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition">
-                            Scansiona Ora
+                        <button onclick="triggerDropScan()" class="bg-[#10141d] hover:bg-slate-800 border border-cardborder text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition" data-i18n="btn_scan_now">
+                            {{ i18n.get('btn_scan_now', 'Scan Now') }}
                         </button>
                     </div>
                 </div>
 
-                <!-- Batch Knowledge Enrichment Panel (Issue #2) -->
+                <!-- Batch Knowledge Enrichment Panel -->
                 <div class="glass-panel p-6 rounded-2xl space-y-6 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between">
                             <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                                <span>Batch Knowledge Enrich</span>
-                                <span id="enrich-running-pill" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono uppercase">Inattivo</span>
+                                <span data-i18n="enrich_title">{{ i18n.get('enrich_title', 'Batch Knowledge Enrich') }}</span>
+                                <span id="enrich-running-pill" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono uppercase" data-i18n="enrich_status_idle">{{ i18n.get('enrich_status_idle', 'Idle') }}</span>
                             </h2>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">
-                            Elabora sistematicamente tutte le conversazioni con il modello LLM attivo per estrarre entità, fatti, claims e decisioni.
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="enrich_subtitle">
+                            {{ i18n.get('enrich_subtitle', 'Systematically analyze conversations with the active LLM to extract entities, facts, claims, and decisions.') }}
                         </p>
 
                         <!-- Live Progress Widget -->
                         <div id="enrich-widget" class="mt-4 p-4 rounded-xl bg-[#10141d] border border-cardborder space-y-3">
                             <div class="flex justify-between text-xs">
-                                <span class="text-slate-400">Stato Avanzamento:</span>
+                                <span class="text-slate-400" data-i18n="enrich_progress_label">{{ i18n.get('enrich_progress_label', 'Progress Status:') }}</span>
                                 <span id="enrich-progress-text" class="font-mono text-emerald-400 font-bold">0 / 0</span>
                             </div>
                             <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
@@ -562,16 +521,16 @@
                             </div>
                             <div class="grid grid-cols-2 gap-2 text-xs pt-1">
                                 <div class="bg-cardbg p-2 rounded border border-cardborder/50">
-                                    <span class="text-slate-500 block text-[10px]">Nuovi Fatti</span>
+                                    <span class="text-slate-500 block text-[10px]" data-i18n="enrich_new_facts">{{ i18n.get('enrich_new_facts', 'New Facts') }}</span>
                                     <span id="enrich-stat-facts" class="font-bold text-white">0</span>
                                 </div>
                                 <div class="bg-cardbg p-2 rounded border border-cardborder/50">
-                                    <span class="text-slate-500 block text-[10px]">Nuove Decisioni</span>
+                                    <span class="text-slate-500 block text-[10px]" data-i18n="enrich_new_decisions">{{ i18n.get('enrich_new_decisions', 'New Decisions') }}</span>
                                     <span id="enrich-stat-decisions" class="font-bold text-white">0</span>
                                 </div>
                             </div>
                             <div class="text-[11px] text-slate-400 truncate">
-                                Modello: <span id="enrich-model-name" class="text-indigo-300 font-mono">...</span>
+                                <span data-i18n="enrich_model_label">{{ i18n.get('enrich_model_label', 'Model:') }}</span> <span id="enrich-model-name" class="text-indigo-300 font-mono">...</span>
                             </div>
                             <div id="enrich-current-conv" class="text-[10px] text-slate-500 truncate italic"></div>
                         </div>
@@ -579,25 +538,25 @@
 
                     <div class="space-y-3 pt-4 border-t border-cardborder">
                         <div class="flex items-center justify-between text-xs bg-[#10141d] p-2.5 rounded-xl border border-cardborder">
-                            <label for="enrich-limit-input" class="text-slate-300 font-medium">Limite conversazioni:</label>
+                            <label for="enrich-limit-input" class="text-slate-300 font-medium" data-i18n="enrich_limit_label">{{ i18n.get('enrich_limit_label', 'Conversations limit:') }}</label>
                             <div class="flex items-center gap-2">
-                                <input type="number" id="enrich-limit-input" placeholder="Tutte (vuoto)" min="1" max="2000" class="w-32 bg-cardbg border border-cardborder rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                                <span class="text-[11px] text-slate-400 font-mono">(es. 5 o 10)</span>
+                                <input type="number" id="enrich-limit-input" data-i18n-placeholder="enrich_limit_placeholder" placeholder="{{ i18n.get('enrich_limit_placeholder', 'All (empty)') }}" min="1" max="2000" class="w-32 bg-cardbg border border-cardborder rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                                <span class="text-[11px] text-slate-400 font-mono" data-i18n="enrich_limit_hint">{{ i18n.get('enrich_limit_hint', '(e.g. 5 or 10)') }}</span>
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="startEnrich(false)" id="btn-start-enrich"
                                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-1.5">
-                                <span>▶ Avvia Enrich Incrementale</span>
+                                <span data-i18n="btn_start_enrich">{{ i18n.get('btn_start_enrich', '▶ Start Incremental Enrich') }}</span>
                             </button>
                             <button onclick="stopEnrich()" id="btn-stop-enrich" disabled
-                                    class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-xl font-medium text-xs transition disabled:opacity-40">
-                                Arresta
+                                    class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-xl font-medium text-xs transition disabled:opacity-40" data-i18n="btn_stop_enrich">
+                                {{ i18n.get('btn_stop_enrich', 'Stop') }}
                             </button>
                         </div>
                         <button onclick="startEnrich(true)"
-                                class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-300 border border-cardborder text-slate-400 py-2 rounded-xl text-xs transition">
-                            ⚠️ Ricostruisci Grafo da Zero (--rebuild)
+                                class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-300 border border-cardborder text-slate-400 py-2 rounded-xl text-xs transition" data-i18n="btn_rebuild_enrich">
+                            {{ i18n.get('btn_rebuild_enrich', '⚠️ Rebuild Knowledge Graph from Scratch (--rebuild)') }}
                         </button>
                         <div class="pt-3 border-t border-cardborder/60 flex items-center justify-between gap-2">
                             <div class="text-[11px] text-slate-400">
@@ -615,24 +574,24 @@
             </div>
         </section>
 
-        <!-- TAB 6: SETTINGS (Issue #7) -->
+        <!-- TAB 6: SETTINGS -->
         <section id="tab-settings" class="tab-content hidden space-y-6">
             <!-- Card 1: Active Provider & Model Selection -->
             <div class="glass-panel p-6 rounded-2xl space-y-5">
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span>🎯 Provider e Modello Attivo</span>
-                            <span id="settings-status-badge" class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Configurato</span>
+                            <span data-i18n="settings_active_title">{{ i18n.get('settings_active_title', '🎯 Active LLM Provider & Model') }}</span>
+                            <span id="settings-status-badge" class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" data-i18n="settings_configured_badge">{{ i18n.get('settings_configured_badge', 'Configured') }}</span>
                         </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Seleziona quale provider e quale modello utilizzare come predefiniti per le interrogazioni e l'arricchimento batch.</p>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="settings_active_subtitle">{{ i18n.get('settings_active_subtitle', 'Select which LLM provider and model to use as defaults for synthesis queries and batch knowledge extraction.') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models" title="Interroga le API di tutti i provider configurati per aggiornare i cataloghi modelli" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
-                            <span>🔄 Aggiorna Tutti i Provider</span>
+                        <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
+                            <span data-i18n="btn_refresh_all_models">{{ i18n.get('btn_refresh_all_models', '🔄 Refresh All Providers') }}</span>
                         </button>
                         <button onclick="saveActiveSelection()" id="btn-save-active-llm" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                            <span>💾 Salva Predefinito</span>
+                            <span data-i18n="btn_save_default_llm">{{ i18n.get('btn_save_default_llm', '💾 Save Default') }}</span>
                         </button>
                     </div>
                 </div>
@@ -640,7 +599,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <!-- Provider Select -->
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Provider LLM:</label>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5" data-i18n="settings_provider_label">{{ i18n.get('settings_provider_label', 'LLM Provider:') }}</label>
                         <select id="settings-provider-select" onchange="onProviderSelectChange()" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
                         </select>
                         <p id="provider-configured-hint" class="text-[11px] text-slate-400 mt-1"></p>
@@ -649,18 +608,18 @@
                     <!-- Model Select & Refresh / Custom Model -->
                     <div>
                         <div class="flex justify-between items-center mb-1.5">
-                            <label class="block text-xs font-semibold text-slate-300">Modello Selezionato:</label>
+                            <label class="block text-xs font-semibold text-slate-300" data-i18n="settings_model_label">{{ i18n.get('settings_model_label', 'Selected Model:') }}</label>
                             <div class="flex items-center gap-2">
-                                <button onclick="refreshModelsFromApi()" id="btn-refresh-models" title="Interroga l'API del provider selezionato per scoprire i modelli disponibili" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition">
-                                    <span>🔄 Aggiorna</span>
+                                <button onclick="refreshModelsFromApi()" id="btn-refresh-models" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition">
+                                    <span data-i18n="btn_refresh_provider">{{ i18n.get('btn_refresh_provider', '🔄 Refresh') }}</span>
                                 </button>
                                 <span class="text-slate-600">|</span>
-                                <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models-link" title="Interroga le API di tutti i provider configurati" class="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition">
-                                    <span>🌐 Aggiorna Tutti</span>
+                                <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models-link" class="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition">
+                                    <span data-i18n="btn_refresh_all_short">{{ i18n.get('btn_refresh_all_short', '🌐 Refresh All') }}</span>
                                 </button>
                                 <span class="text-slate-600">|</span>
                                 <button onclick="promptCustomModel()" class="text-xs text-emerald-400 hover:text-emerald-300 transition">
-                                    <span>+ Nuovo Modello</span>
+                                    <span data-i18n="btn_new_model">{{ i18n.get('btn_new_model', '+ Custom Model') }}</span>
                                 </button>
                             </div>
                         </div>
@@ -669,7 +628,7 @@
                         <div class="flex items-center justify-between mt-1.5">
                             <span id="model-count-hint" class="text-[11px] text-slate-500"></span>
                             <button onclick="testActiveConnection()" id="btn-test-active" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition">
-                                <span>⚡ Testa Connessione</span>
+                                <span data-i18n="btn_test_connection">{{ i18n.get('btn_test_connection', '⚡ Test Connection') }}</span>
                             </button>
                         </div>
                     </div>
@@ -684,12 +643,12 @@
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span>🔑 Gestione Credenziali e API Keys</span>
+                            <span data-i18n="settings_keys_title">{{ i18n.get('settings_keys_title', '🔑 API Keys & Credentials Management') }}</span>
                         </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Le chiavi inserite vengono salvate nel database persistente dell'Homelab e mascherate per sicurezza.</p>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="settings_keys_subtitle">{{ i18n.get('settings_keys_subtitle', 'Entered keys are stored in the persistent SQLite database and masked for security.') }}</p>
                     </div>
                     <button onclick="saveAllApiKeys()" id="btn-save-keys" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                        <span>💾 Salva Tutte le Credenziali</span>
+                        <span data-i18n="btn_save_all_keys">{{ i18n.get('btn_save_all_keys', '💾 Save All Credentials') }}</span>
                     </button>
                 </div>
 
@@ -726,16 +685,16 @@
                         </label>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">System 1 Model ID:</label>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="jev_model_label">{{ i18n.get('jev_model_label', 'System 1 Model ID:') }}</label>
                         <input type="text" id="jev-model-input" value="typesafe/jev-1.13" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Gatekeeper Noul Threshold (0..1):</label>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="jev_threshold_label">{{ i18n.get('jev_threshold_label', 'Gatekeeper Noul Threshold (0..1):') }}</label>
                         <input type="number" step="0.05" min="0.1" max="0.95" id="jev-threshold-input" value="0.55" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">Dedicated API Key (optional, defaults to OpenRouter):</label>
-                        <input type="password" id="jev-apikey-input" placeholder="Uses configured OpenRouter key if empty" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="jev_apikey_label">{{ i18n.get('jev_apikey_label', 'Dedicated API Key (optional, defaults to OpenRouter):') }}</label>
+                        <input type="password" id="jev-apikey-input" data-i18n-placeholder="jev_apikey_placeholder" placeholder="{{ i18n.get('jev_apikey_placeholder', 'Uses configured OpenRouter key if empty') }}" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-white font-mono">
                     </div>
                 </div>
 
@@ -750,7 +709,7 @@
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
             <div class="p-4 border-b border-cardborder flex items-center justify-between">
                 <div>
-                    <h3 id="modal-title" class="font-bold text-white text-base">Titolo Conversazione</h3>
+                    <h3 id="modal-title" class="font-bold text-white text-base" data-i18n="modal_conv_title">{{ i18n.get('modal_conv_title', 'Conversation Title') }}</h3>
                     <p id="modal-meta" class="text-xs text-slate-400"></p>
                 </div>
                 <button onclick="closeModal('conv-modal')" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
@@ -759,87 +718,87 @@
         </div>
     </div>
 
-    <!-- Modal: New Decision (Issue #5) -->
+    <!-- Modal: New Decision -->
     <div id="decision-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
-                <h3 class="text-base font-bold text-white">Nuova Decisione Personale</h3>
+                <h3 class="text-base font-bold text-white" data-i18n="modal_dec_title">{{ i18n.get('modal_dec_title', 'New Personal / Technical Decision') }}</h3>
                 <button onclick="closeModal('decision-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
             <form id="decision-form" onsubmit="handleCreateDecision(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Argomento / Oggetto:</label>
-                    <input type="text" id="new-dec-topic" required placeholder="Es. Interfaccia Audio, Backup Homelab"
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_dec_topic_label">{{ i18n.get('modal_dec_topic_label', 'Topic / Subject:') }}</label>
+                    <input type="text" id="new-dec-topic" required data-i18n-placeholder="modal_dec_topic_placeholder" placeholder="{{ i18n.get('modal_dec_topic_placeholder', 'E.g., Audio Interface, Homelab Backup') }}"
                            class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
                 </div>
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Testo della Decisione:</label>
-                    <textarea id="new-dec-text" required rows="3" placeholder="Es. Scelto Zen Go come interfaccia principale per stabilità driver."
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_dec_text_label">{{ i18n.get('modal_dec_text_label', 'Decision Statement:') }}</label>
+                    <textarea id="new-dec-text" required rows="3" data-i18n-placeholder="modal_dec_text_placeholder" placeholder="{{ i18n.get('modal_dec_text_placeholder', 'E.g., Selected Zen Go as primary interface for driver stability.') }}"
                               class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></textarea>
                 </div>
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Stato Iniziale:</label>
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_dec_status_label">{{ i18n.get('modal_dec_status_label', 'Initial Status:') }}</label>
                     <select id="new-dec-status" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
-                        <option value="ADOPTED">ADOPTED (Adottata)</option>
-                        <option value="EVALUATING">EVALUATING (In Valutazione)</option>
-                        <option value="ABANDONED">ABANDONED (Scartata/Abbandonata)</option>
+                        <option value="ADOPTED" data-i18n="modal_dec_status_adopted">{{ i18n.get('modal_dec_status_adopted', 'ADOPTED (Active)') }}</option>
+                        <option value="EVALUATING" data-i18n="modal_dec_status_evaluating">{{ i18n.get('modal_dec_status_evaluating', 'EVALUATING (In Progress)') }}</option>
+                        <option value="ABANDONED" data-i18n="modal_dec_status_abandoned">{{ i18n.get('modal_dec_status_abandoned', 'ABANDONED (Discarded)') }}</option>
                     </select>
                 </div>
                 <div class="pt-2 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('decision-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">Annulla</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium">Salva Decisione</button>
+                    <button type="button" onclick="closeModal('decision-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-medium" data-i18n="btn_save_decision">{{ i18n.get('btn_save_decision', 'Save Decision') }}</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal: New Statement / Fact (Issue #5) -->
+    <!-- Modal: New Statement / Fact -->
     <div id="statement-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
-                <h3 class="text-base font-bold text-white">Nuovo Fatto Manuale</h3>
+                <h3 class="text-base font-bold text-white" data-i18n="modal_stmt_title">{{ i18n.get('modal_stmt_title', 'New Manual Fact / Claim') }}</h3>
                 <button onclick="closeModal('statement-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
             <form id="statement-form" onsubmit="handleCreateStatement(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-semibold mb-1">Soggetto / Entità:</label>
-                    <input type="text" id="new-stmt-subject" required placeholder="Es. TDK SA-X, Docker, Mac Studio"
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_subject_label">{{ i18n.get('modal_stmt_subject_label', 'Subject / Entity:') }}</label>
+                    <input type="text" id="new-stmt-subject" required data-i18n-placeholder="modal_stmt_subject_placeholder" placeholder="{{ i18n.get('modal_stmt_subject_placeholder', 'E.g., TDK SA-X, Docker, Mac Studio') }}"
                            class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Proprietà / Predicato:</label>
-                        <input type="text" id="new-stmt-predicate" required value="owned_by_user" placeholder="Es. owned_by_user, uses"
+                        <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_pred_label">{{ i18n.get('modal_stmt_pred_label', 'Property / Predicate:') }}</label>
+                        <input type="text" id="new-stmt-predicate" required value="owned_by_user" data-i18n-placeholder="modal_stmt_pred_placeholder" placeholder="{{ i18n.get('modal_stmt_pred_placeholder', 'E.g., owned_by_user, uses') }}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Valore / Oggetto:</label>
-                        <input type="text" id="new-stmt-object" required value="true" placeholder="Es. true, 90 min"
+                        <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_obj_label">{{ i18n.get('modal_stmt_obj_label', 'Value / Object:') }}</label>
+                        <input type="text" id="new-stmt-object" required value="true" data-i18n-placeholder="modal_stmt_obj_placeholder" placeholder="{{ i18n.get('modal_stmt_obj_placeholder', 'E.g., true, 90 min') }}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Tipo:</label>
+                        <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_type_label">{{ i18n.get('modal_stmt_type_label', 'Type:') }}</label>
                         <select id="new-stmt-type" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
-                            <option value="FACT">FACT (Fatto confermato)</option>
-                            <option value="CLAIM">CLAIM (Ipotesi/Suggerimento)</option>
+                            <option value="FACT" data-i18n="modal_stmt_type_fact">{{ i18n.get('modal_stmt_type_fact', 'FACT (Verified Fact)') }}</option>
+                            <option value="CLAIM" data-i18n="modal_stmt_type_claim">{{ i18n.get('modal_stmt_type_claim', 'CLAIM (AI Advice / Hypothesis)') }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-300 font-semibold mb-1">Categoria:</label>
+                        <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_cat_label">{{ i18n.get('modal_stmt_cat_label', 'Category:') }}</label>
                         <select id="new-stmt-cat" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
-                            <option value="audiocassette">Audiocassetta</option>
-                            <option value="audio_interface">Interfaccia Audio</option>
-                            <option value="hardware_deck">Deck / Hardware</option>
-                            <option value="software">Software</option>
-                            <option value="general">Generale</option>
+                            <option value="audiocassette" data-i18n="cat_audiocassette">{{ i18n.get('cat_audiocassette', 'Audio Cassettes') }}</option>
+                            <option value="audio_interface" data-i18n="cat_audio_interface">{{ i18n.get('cat_audio_interface', 'Audio Interfaces') }}</option>
+                            <option value="hardware_deck" data-i18n="cat_hardware_deck">{{ i18n.get('cat_hardware_deck', 'Decks & Recorders') }}</option>
+                            <option value="software" data-i18n="cat_software">{{ i18n.get('cat_software', 'Software & Code') }}</option>
+                            <option value="general" data-i18n="cat_general">{{ i18n.get('cat_general', 'General') }}</option>
                         </select>
                     </div>
                 </div>
                 <div class="pt-2 flex justify-end gap-2">
-                    <button type="button" onclick="closeModal('statement-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white">Annulla</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium">Aggiungi Fatto</button>
+                    <button type="button" onclick="closeModal('statement-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium" data-i18n="btn_save_fact">{{ i18n.get('btn_save_fact', 'Add Fact') }}</button>
                 </div>
             </form>
         </div>
@@ -1092,7 +1051,7 @@
             const c = document.getElementById('entities-container');
             c.innerHTML = '';
             if (data.length === 0) {
-                c.innerHTML = '<p class="text-xs text-slate-500 col-span-3">Nessuna entità estratta al momento.</p>';
+                c.innerHTML = `<p class="text-xs text-slate-500 col-span-3">${tr('no_entities', 'No extracted entities yet.')}</p>`;
                 return;
             }
 
@@ -1104,21 +1063,21 @@
                 (e.statements || []).forEach(s => {
                     const badgeClass = s.statement_type === 'FACT' ? 'badge-fact hover:bg-emerald-500/30' : 'badge-claim hover:bg-indigo-500/30';
                     const currColor = s.is_current ? 'text-emerald-400' : 'text-slate-500';
-                    const currText = s.is_current ? '● ATTUALE' : '○ PASSATO';
+                    const currText = s.is_current ? `● ${tr('stmt_current', 'CURRENT')}` : `○ ${tr('stmt_past', 'PAST')}`;
                     
                     stmtsHtml += `
                     <div class="text-xs p-2.5 rounded-lg bg-[#10141d] border border-cardborder/50 group relative">
                         <div class="flex items-center justify-between mb-1.5">
-                            <button onclick="toggleStatementType('${s.id}', '${s.statement_type}')" title="Clicca per invertire FACT/CLAIM"
+                            <button onclick="toggleStatementType('${s.id}', '${s.statement_type}')" title="Click to toggle FACT/CLAIM"
                                     class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase transition cursor-pointer ${badgeClass}">
                                 ${s.statement_type} ⇄
                             </button>
                             <div class="flex items-center gap-2">
-                                <button onclick="toggleStatementStatus('${s.id}', ${s.is_current})" title="Clicca per cambiare stato attivo/passato"
+                                <button onclick="toggleStatementStatus('${s.id}', ${s.is_current})" title="Click to toggle active/past status"
                                         class="${currColor} font-mono text-[10px] hover:underline cursor-pointer">
                                     ${currText}
                                 </button>
-                                <button onclick="deleteStatement('${s.id}')" title="Elimina affermazione errata"
+                                <button onclick="deleteStatement('${s.id}')" title="Delete statement"
                                         class="text-slate-600 hover:text-rose-400 transition p-0.5 text-xs">
                                     ✕
                                 </button>
@@ -1126,7 +1085,7 @@
                         </div>
                         <div class="text-slate-200"><strong>${s.predicate}:</strong> ${s.object}</div>
                         <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
-                            <span>${s.conversation_title ? 'Fonte: ' + s.conversation_title : (s.notes || '')}</span>
+                            <span>${s.conversation_title ? tr('source_prefix', 'Source:') + ' ' + s.conversation_title : (s.notes || '')}</span>
                             <span>${(s.valid_from || '').slice(0, 10)}</span>
                         </div>
                     </div>`;
@@ -1139,10 +1098,10 @@
                         </h4>
                         <div class="flex items-center gap-1">
                             <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase font-mono">${e.category}</span>
-                            <button onclick="deleteEntity('${e.id}', '${e.name}')" title="Elimina entità" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs">✕</button>
+                            <button onclick="deleteEntity('${e.id}', '${e.name}')" title="Delete entity" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs">✕</button>
                         </div>
                     </div>
-                    <div class="space-y-2">${stmtsHtml || '<span class="text-xs text-slate-500">Nessuna affermazione registrata</span>'}</div>
+                    <div class="space-y-2">${stmtsHtml || `<span class="text-xs text-slate-500">${tr('no_statements', 'No statements recorded')}</span>`}</div>
                 `;
                 c.appendChild(card);
             });
@@ -1174,7 +1133,7 @@
         }
 
         async function deleteStatement(stmtId) {
-            if (!confirm('Eliminare questo fatto/claim?')) return;
+            if (!confirm(tr('confirm_delete_stmt', 'Delete this fact/claim?'))) return;
             const res = await fetch(`/api/statements/${stmtId}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchStats();
@@ -1183,7 +1142,7 @@
         }
 
         async function deleteEntity(entityId, name) {
-            if (!confirm(`Eliminare l'entità "${name}"?`)) return;
+            if (!confirm(`${tr('confirm_delete_entity', 'Delete entity')} "${name}"?`)) return;
             const res = await fetch(`/api/entities/${entityId}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchStats();
@@ -1223,9 +1182,9 @@
             const data = await res.json();
             const c = document.getElementById('decisions-list');
             c.innerHTML = '';
-            document.getElementById('decisions-count-badge').innerText = `${data.length} totali`;
+            document.getElementById('decisions-count-badge').innerText = `${data.length} ${tr('total_label', 'total')}`;
             if (data.length === 0) {
-                c.innerHTML = '<p class="text-xs text-slate-500">Nessuna decisione registrata.</p>';
+                c.innerHTML = `<p class="text-xs text-slate-500">${tr('no_decisions', 'No decisions recorded.')}</p>`;
                 return;
             }
 
@@ -1241,12 +1200,12 @@
                                 <option value="EVALUATING" ${d.status === 'EVALUATING' ? 'selected' : ''}>EVALUATING</option>
                                 <option value="ABANDONED" ${d.status === 'ABANDONED' ? 'selected' : ''}>ABANDONED</option>
                             </select>
-                            <button onclick="deleteDecision('${d.id}')" title="Elimina decisione" class="text-slate-600 hover:text-rose-400 text-xs">✕</button>
+                            <button onclick="deleteDecision('${d.id}')" title="Delete decision" class="text-slate-600 hover:text-rose-400 text-xs">✕</button>
                         </div>
                     </div>
                     <p class="text-slate-200 leading-relaxed">${d.decision_text}</p>
                     <div class="text-[10px] text-slate-500 flex justify-between pt-1 border-t border-cardborder/40">
-                        <span>Fonte: ${d.conversation_title ? d.conversation_provider + ' - ' + d.conversation_title : 'Manuale'}</span>
+                        <span>${tr('source_prefix', 'Source:')} ${d.conversation_title ? d.conversation_provider + ' - ' + d.conversation_title : tr('manual_source', 'Manual')}</span>
                         <span>${(d.decided_at || '').slice(0, 10)}</span>
                     </div>
                 `;
@@ -1265,7 +1224,7 @@
         }
 
         async function deleteDecision(decId) {
-            if (!confirm('Eliminare questa decisione?')) return;
+            if (!confirm(tr('confirm_delete_dec', 'Delete this decision?'))) return;
             const res = await fetch(`/api/decisions/${decId}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchStats();
@@ -1308,8 +1267,8 @@
             data.forEach(ev => {
                 const div = document.createElement('div');
                 div.className = 'text-xs space-y-0.5 relative';
-                const dt = (ev.event_date || '').slice(0, 10) || 'N/D';
-                const curr = ev.is_current ? '<span class="text-emerald-400 font-bold">● Attuale</span>' : '<span class="text-slate-500">○ Storico</span>';
+                const dt = (ev.event_date || '').slice(0, 10) || 'N/A';
+                const curr = ev.is_current ? `<span class="text-emerald-400 font-bold">● ${tr('stmt_current', 'CURRENT')}</span>` : `<span class="text-slate-500">○ ${tr('stmt_past', 'PAST')}</span>`;
                 div.innerHTML = `
                     <div class="text-[10px] font-mono text-indigo-400">${dt} — ${curr}</div>
                     <div class="font-semibold text-white">${ev.subject} <span class="text-slate-400 font-normal">(${ev.predicate})</span></div>
@@ -1337,9 +1296,9 @@
                             <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono font-bold">${cv.provider}</span>
                             <span class="font-bold text-white text-sm">${cv.title}</span>
                         </div>
-                        <p class="text-xs text-slate-500">Ref: ${cv.external_ref} • Creato il: ${(cv.created_at || '').slice(0, 10)}</p>
+                        <p class="text-xs text-slate-500">Ref: ${cv.external_ref} • ${tr('created_on', 'Created')}: ${(cv.created_at || '').slice(0, 10)}</p>
                     </div>
-                    <span class="text-slate-400 text-sm">Visualizza ➔</span>
+                    <span class="text-slate-400 text-sm">${tr('open_chat', 'Open Chat ➔')}</span>
                 `;
                 c.appendChild(item);
             });
@@ -1359,7 +1318,7 @@
                 d.className = `p-3 rounded-xl text-xs space-y-1 ${isUser ? 'bg-emerald-950/30 border border-emerald-500/20 mr-8' : 'bg-[#10141d] border border-cardborder ml-8'}`;
                 d.innerHTML = `
                     <div class="flex justify-between font-bold ${isUser ? 'text-emerald-400' : 'text-indigo-400'}">
-                        <span>${isUser ? '👤 Tu' : '🤖 ' + data.provider.toUpperCase()}</span>
+                        <span>${isUser ? '👤 ' + tr('user_you', 'You') : '🤖 ' + data.provider.toUpperCase()}</span>
                         <span class="text-[10px] text-slate-500 font-normal">${(m.ts || '').slice(0, 19).replace('T', ' ')}</span>
                     </div>
                     <div class="text-slate-200 leading-relaxed whitespace-pre-wrap">${m.content}</div>
@@ -1718,8 +1677,8 @@
                 card.className = 'glass-panel p-4 rounded-xl border border-cardborder space-y-3';
 
                 const statusBadge = p.is_configured
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">● CONFIGURATA</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-cardborder">○ MANCANTE</span>`;
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">● ${tr('key_configured', 'CONFIGURED')}</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-cardborder">○ ${tr('key_missing', 'MISSING')}</span>`;
 
                 let inputsHtml = '';
                 if (p.is_local) {
@@ -1730,7 +1689,7 @@
                                class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-[11px] text-slate-400 font-medium mb-1">API Key Cloud (Opzionale DashScope):</label>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">Cloud API Key (Optional DashScope):</label>
                         <input type="password" id="key-val-${pKey}" placeholder="${p.api_key_masked || 'sk-...'}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
                     </div>`;
@@ -1742,7 +1701,7 @@
                                class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none font-mono">
                     </div>
                     <div>
-                        <label class="block text-[11px] text-slate-400 font-medium mb-1">Base URL (Personalizzato/Proxy):</label>
+                        <label class="block text-[11px] text-slate-400 font-medium mb-1">Base URL (Custom/Proxy):</label>
                         <input type="text" id="key-url-${pKey}" value="${p.base_url || ''}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none">
                     </div>`;
@@ -1763,7 +1722,7 @@
             if (!currentSettingsData) return;
             const btn = document.getElementById('btn-save-keys');
             btn.disabled = true;
-            btn.innerHTML = '<span>Salvataggio...</span>';
+            btn.innerHTML = `<span>${tr('saving_label', 'Saving...')}</span>`;
 
             const api_keys = {};
             const base_urls = {};
@@ -1787,19 +1746,27 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert('Credenziali salvate correttamente!');
+                    alert(tr('credentials_saved', 'Credentials saved!'));
                     await loadSettings();
                 }
             } catch (e) {
-                alert('Errore salvataggio credenziali: ' + e);
+                alert('Error saving credentials: ' + e);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<span>💾 Salva Tutte le Credenziali</span>';
+                btn.innerHTML = `<span data-i18n="settings_save_keys_btn">${tr('settings_save_keys_btn', '💾 Save All Credentials')}</span>`;
             }
         }
 
         window.currentLang = '{{ default_lang or "en" }}';
         window.i18nBundles = {};
+
+        function tr(key, fallback) {
+            const bundle = (window.i18nBundles && window.i18nBundles[window.currentLang]) || (window.i18nBundles && window.i18nBundles['en']);
+            if (bundle && bundle.ui && bundle.ui[key]) {
+                return bundle.ui[key];
+            }
+            return fallback;
+        }
 
         async function initI18n() {
             try {
@@ -1834,6 +1801,20 @@
             window.currentLang = newLang;
             localStorage.setItem('memoria_lang', newLang);
             applyI18n(newLang);
+            // Re-render dynamic data views so cards/badges reflect the selected language immediately
+            if (typeof currentSettingsData !== 'undefined' && currentSettingsData) {
+                renderApiKeysCards(currentSettingsData);
+            }
+            if (!document.getElementById('panel-entities')?.classList.contains('hidden')) {
+                loadEntities();
+            }
+            if (!document.getElementById('panel-decisions')?.classList.contains('hidden')) {
+                loadDecisions();
+                loadTimeline();
+            }
+            if (!document.getElementById('panel-vault')?.classList.contains('hidden')) {
+                loadVault();
+            }
             try {
                 await fetch('/api/i18n/lang', {
                     method: 'POST',
@@ -1971,34 +1952,26 @@
         });
     </script>
 
-    <!-- White-Labeled Footer (Issues #9 & #13) -->
+    <!-- Footer: Release Version + API Contract + Protocol, Design System & Ko-fi (Issue #19) -->
     <footer class="border-t border-cardborder bg-[#10141d]/80 py-5 mt-10 text-xs text-slate-500">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-2 font-mono">
-                <span class="text-slate-400 font-bold">Memoria AI Anti</span>
-                <span>•</span>
-                <span>{{ instance_name or 'Local Node' }}</span>
-                <span>•</span>
-                <span class="text-emerald-400">UI v{{ ui_version or '1.4.0' }} / API v{{ api_version or '1.4.0' }}</span>
+            <div class="flex items-center flex-wrap gap-2 font-mono">
+                <span class="text-slate-300 font-bold">Memoria AI v{{ app_version or '1.5.1' }}</span>
+                <span>·</span>
+                <span class="text-emerald-400">REST API {{ api_version or 'v1' }}</span>
+                <span>·</span>
+                <span class="text-indigo-400">MCP {{ mcp_version or '2.0' }}</span>
+                <span>·</span>
+                <span class="text-slate-500">Design System: gaskb-style (M3)</span>
             </div>
             <div class="flex items-center flex-wrap gap-4 text-xs">
-                {% if docs_url %}
-                <a href="{{ docs_url }}" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
-                    <span>📚</span> <span>{{ docs_label }}</span>
+                <a href="https://ko-fi.com/gaskb" target="_blank" rel="noopener" class="text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5 font-medium">
+                    <span>☕</span>
+                    <span data-i18n="footer_kofi">Free & open project. If you find it useful, feel free to buy me a coffee on Ko-fi ☕</span>
                 </a>
-                {% endif %}
-                {% if repo_url %}
-                <a href="{{ repo_url }}" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
-                    <span>🦊</span> <span>{{ repo_label }}</span>
-                </a>
-                {% endif %}
-                {% if design_system_url %}
-                <a href="{{ design_system_url }}" target="_blank" rel="noopener" class="text-slate-400 hover:text-emerald-400 transition flex items-center gap-1">
-                    <span>🎨</span> <span>gaskb_style (M3)</span>
-                </a>
-                {% endif %}
             </div>
         </div>
     </footer>
 </body>
+
 </html>

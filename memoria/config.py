@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
 
-# Versioning (Semantic Versioning - Dual UI / API)
-APP_VERSION = "1.5.0"
-UI_VERSION = "1.5.0"
-API_VERSION = "1.5.0"
+# Versioning (Release Version + API Contract Version + MCP Protocol Version)
+APP_VERSION = "1.5.1"
+UI_VERSION = "1.5.1"
+API_VERSION = "v1"
+MCP_PROTOCOL_VERSION = "2.0"
 
 # Default Language & Instance White-Labeling (Issues #13 & #16)
 DEFAULT_LANG = os.getenv("MEMORIA_DEFAULT_LANG", "en").lower()
