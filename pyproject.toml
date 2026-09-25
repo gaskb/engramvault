@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "memoria-ai-anti"
-version = "2.0.0"
-description = "Personal AI Conversation Vault, Hybrid Search & Knowledge Layer for Homelab"
+version = "2.0.1"
+description = "Engram AI — AI Memory Vault: Self-hosted AI Conversation Vault, Hybrid Search & Epistemic Knowledge Graph"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
