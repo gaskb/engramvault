@@ -6,6 +6,12 @@
     <meta name="color-scheme" content="dark light">
     <title>{{ app_title or 'Engram AI' }} — {{ app_subtitle or 'AI Memory Vault' }} (Memoria AI)</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0c0f17">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EngramVault">
 
     <!-- gaskb_style Design System & Multi-Theme Engine (Issue #20) -->
     <link rel="stylesheet" href="/static/css/gaskb.css">
@@ -451,6 +457,31 @@
                         <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
                             ⚡
                         </div>
+                    </div>
+                </div>
+
+                <!-- Web Share Target Quick Action Banner (Issue #27 / v2.4.0) -->
+                <div id="share-target-banner" class="hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-[#10141d] to-indigo-500/15 border border-emerald-500/40 text-xs shadow-xl">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="space-y-1.5 flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">📲 SHARE TARGET</span>
+                                <span class="font-bold text-white text-xs">Contenuto ricevuto da condivisione mobile</span>
+                            </div>
+                            <p id="share-target-preview" class="text-slate-300 font-mono text-[11px] truncate bg-[#0c0f17] p-2 rounded-lg border border-cardborder"></p>
+                        </div>
+                        <button type="button" onclick="dismissShareBanner()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Chiudi">✕</button>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 pt-3">
+                        <button type="button" onclick="submitQuery()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow">
+                            <span>🔍</span> Cerca nel Vault
+                        </button>
+                        <button type="button" onclick="saveShareAsFact()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cardborder text-slate-200 text-xs transition flex items-center gap-1.5">
+                            <span>✨</span> Salva come Fact
+                        </button>
+                        <button type="button" onclick="saveShareAsDecision()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cardborder text-slate-200 text-xs transition flex items-center gap-1.5">
+                            <span>⚖️</span> Salva come Decision
+                        </button>
                     </div>
                 </div>
 
@@ -2639,6 +2670,81 @@
             }
         }
 
+        // --- PWA & Web Share Target Integration (Issue #27 / v2.4.0) ---
+        let pendingSharedData = null;
+
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                        .then((reg) => {
+                            console.log('[EngramVault PWA] Service Worker registered with scope:', reg.scope);
+                        })
+                        .catch((err) => {
+                            console.warn('[EngramVault PWA] Service Worker registration failed:', err);
+                        });
+                });
+            }
+        }
+
+        function checkWebShareTarget() {
+            const params = new URLSearchParams(window.location.search);
+            const isShare = params.get('share') === 'true' || params.has('text') || params.has('url') || params.has('title');
+            if (isShare) {
+                const title = (params.get('title') || '').trim();
+                const text = (params.get('text') || '').trim();
+                const url = (params.get('url') || '').trim();
+                const fullText = [title, text, url].filter(Boolean).join(' - ').trim();
+
+                if (fullText) {
+                    pendingSharedData = { title, text, url, fullText };
+                    const banner = document.getElementById('share-target-banner');
+                    const preview = document.getElementById('share-target-preview');
+                    const queryInput = document.getElementById('query-input');
+
+                    if (preview) preview.textContent = fullText;
+                    if (queryInput) queryInput.value = fullText;
+                    if (banner) banner.classList.remove('hidden');
+
+                    switchTab('ask');
+
+                    // Clean URL query parameters without reloading
+                    try {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        function dismissShareBanner() {
+            const banner = document.getElementById('share-target-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function saveShareAsFact() {
+            if (!pendingSharedData) return;
+            openNewStatementModal();
+            const subjectInput = document.getElementById('new-stmt-subject');
+            const objectInput = document.getElementById('new-stmt-object');
+            
+            if (subjectInput) subjectInput.value = pendingSharedData.title || 'Shared Mobile Note';
+            if (objectInput) objectInput.value = pendingSharedData.url || pendingSharedData.text || pendingSharedData.fullText;
+            dismissShareBanner();
+        }
+
+        function saveShareAsDecision() {
+            if (!pendingSharedData) return;
+            openNewDecisionModal();
+            const topicInput = document.getElementById('new-dec-topic');
+            const textInput = document.getElementById('new-dec-text');
+            
+            if (topicInput) topicInput.value = pendingSharedData.title || 'Mobile Decision';
+            if (textInput) textInput.value = pendingSharedData.fullText;
+            dismissShareBanner();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('gaskb_theme') || 'dark';
             document.documentElement.setAttribute('data-theme', savedTheme);
@@ -2659,6 +2765,8 @@
                 if (icon) icon.innerText = '⇥';
             }
 
+            registerServiceWorker();
+            checkWebShareTarget();
             initI18n();
             loadThemes();
             fetchStats();

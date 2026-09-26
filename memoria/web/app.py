@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -161,6 +161,24 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     )
     app.include_router(build_curation_router(db=db, enricher=enricher))
     app.include_router(build_agent_router(db=db, planner=planner))
+
+    @app.get("/manifest.json")
+    async def get_manifest():
+        manifest_file = STATIC_DIR / "manifest.json"
+        if not manifest_file.exists():
+            raise HTTPException(status_code=404, detail="Manifest not found")
+        return FileResponse(manifest_file, media_type="application/manifest+json")
+
+    @app.get("/service-worker.js")
+    async def get_service_worker():
+        sw_file = STATIC_DIR / "service-worker.js"
+        if not sw_file.exists():
+            raise HTTPException(status_code=404, detail="Service worker not found")
+        return FileResponse(
+            sw_file,
+            media_type="application/javascript",
+            headers={"Service-Worker-Allowed": "/"},
+        )
 
     @app.get("/", response_class=HTMLResponse)
     async def index(request: Request, lang: Optional[str] = None):

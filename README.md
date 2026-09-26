@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.3.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.4.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.3.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.4.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -79,6 +79,21 @@ Open **`http://localhost:5006`**:
 - **Stored XSS Defense**: All Markdown rendering and card interpolations are strictly sanitized with **DOMPurify** and HTML entity escaping.
 - **Provider API Key Privacy**: Google Gemini API keys are sent via official `x-goog-api-key` HTTP headers rather than URL query parameters to prevent exposure in proxy logs.
 - **Optional Web UI Password (`MEMORIA_WEB_PASSWORD`)**: Enable an `HttpOnly` signed session cookie and login screen (`/login`) when exposing the Web UI outside a trusted LAN.
+
+---
+
+## 📲 Progressive Web App (PWA) & Mobile Integration (v2.4.0)
+
+Engram AI / EngramVault can be installed directly onto any smartphone (Android and iOS) as a **Progressive Web App**:
+
+- **Native Standalone Experience**: Launches in full-screen standalone mode without browser navigation bars, featuring custom high-resolution icons (192x192, 512x512, maskable, and 180x180 Apple Touch Icon).
+- **Web Share Target (Android)**: Integrates directly with the native OS share sheet. Share any text, article link, YouTube video, or note from Chrome, WhatsApp, or other apps directly to EngramVault to trigger instant hybrid search or save as a verified `FACT` or `DECISION`.
+- **Service Worker & Offline Shell**: Static application assets (CSS design system, themes, icons, core shell) are cached locally via `service-worker.js` with a stale-while-revalidate strategy for instant load times and offline shell resilience.
+- **Mobile App Backlog Roadmap**: Tracks future native/hybrid extensions (Issue #27) including Android home screen widgets, Whisper-powered quick audio memos, and local read-only SQLite replicas.
+
+### How to Install on Mobile:
+- **Android (Chrome / Brave / Edge)**: Open `https://vault.example.com` $\rightarrow$ tap the browser menu (⋮) $\rightarrow$ select **"Install app"** or **"Add to Home screen"**.
+- **iOS (Safari)**: Open `https://vault.example.com` $\rightarrow$ tap the Share button (⎋) $\rightarrow$ select **"Add to Home Screen"**.
 
 ---
 
