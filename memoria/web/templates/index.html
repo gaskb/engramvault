@@ -1171,6 +1171,8 @@
                 console.error(e);
             }
         }
+        const loadStats = fetchStats;
+        window.loadStats = fetchStats;
 
         function toggleSidebarCollapse() {
             const sidebar = document.getElementById('app-sidebar');
@@ -1823,7 +1825,7 @@
                     if (mBox) mBox.innerHTML = `<p class="text-slate-500 text-xs">${tr('vault_no_results', 'No conversation selected.')}</p>`;
                     document.getElementById('vault-delete-btn')?.classList.add('hidden');
                 }
-                loadStats();
+                await fetchStats();
             } catch (err) {
                 alert('Request failed: ' + err.message);
             }

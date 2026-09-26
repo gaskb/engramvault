@@ -188,3 +188,36 @@ def test_api_conversation_search_and_delete(test_setup):
     # Re-delete returns 404
     res_del_again = client.delete(f"/api/conversations/{c1}")
     assert res_del_again.status_code == 404
+
+
+def test_vault_web_ui_delete_and_stats_sync(test_setup):
+    db, client = test_setup
+
+    c1 = _insert_sample_conversation(db, "Chat UI Test", "chatgpt", "messaggio da verificare")
+
+    # Verify initial stats
+    res_stats_before = client.get("/api/stats")
+    assert res_stats_before.status_code == 200
+    assert res_stats_before.json()["conversations"] == 1
+
+    # Verify Web UI index page has required JS functions and aliases
+    res_page = client.get("/")
+    assert res_page.status_code == 200
+    page_text = res_page.text
+
+    assert "deleteCurrentVaultConversation" in page_text
+    assert "async function fetchStats()" in page_text
+    assert "window.loadStats = fetchStats" in page_text
+    assert "await fetchStats();" in page_text
+
+    # Verify that loadStats is NOT called as an unhandled or missing function
+    assert "loadStats();" not in page_text
+
+    # Simulate frontend deletion call
+    res_del = client.delete(f"/api/conversations/{c1}")
+    assert res_del.status_code == 200
+
+    # Simulate fetchStats() call made immediately after deletion
+    res_stats_after = client.get("/api/stats")
+    assert res_stats_after.status_code == 200
+    assert res_stats_after.json()["conversations"] == 0
