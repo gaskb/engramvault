@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.7.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.8.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.7.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.8.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -94,6 +94,20 @@ Engram AI / EngramVault can be installed directly onto any smartphone (Android a
 ### How to Install on Mobile:
 - **Android (Chrome / Brave / Edge)**: Open `https://vault.example.com` $\rightarrow$ tap the browser menu (⋮) $\rightarrow$ select **"Install app"** or **"Add to Home screen"**.
 - **iOS (Safari)**: Open `https://vault.example.com` $\rightarrow$ tap the Share button (⎋) $\rightarrow$ select **"Add to Home Screen"**.
+
+## 🏷️ Open-World Taxonomy & Dynamic Category Auto-Discovery (v2.8.0)
+
+- **Dynamic Open-World Category Auto-Discovery**: The Level 3 Epistemic Knowledge Enricher now feeds known categories dynamically into extraction prompts. When encountering entities in novel specialized domains (e.g. `ham_radio`, `homelab_infra`, `audio_pro_studio`, `hardware_pc`, `cooking`, `personal_life`), it automatically creates concise snake_case categories rather than dumping them into a generic catch-all bucket.
+- **Category Promotion & Sanitization**: `Database.upsert_entity` automatically sanitizes categories into snake_case and promotes existing entities previously marked as `general` whenever a more specific domain category is discovered.
+- **Batch Re-clustering CLI (`scripts/recluster_categories.py`)**: Migrates existing legacy entities from `general` to specific domain categories using a two-stage pipeline:
+  1. *Stage 1 (Zero-Latency Heuristics)*: Matches against domain keywords instantly (e.g. transceivers, sound cards, hypervisors, decks).
+  2. *Stage 2 (Batch LLM Index-Mapping)*: Groups entities in efficient 50-item indexed payloads for sub-second, token-conservative classification via `deepseek-chat` or local models.
+  ```bash
+  # Dry-run preview
+  python scripts/recluster_categories.py --dry-run
+  # Full live execution on vault.db
+  python scripts/recluster_categories.py --db-path vault.db --batch-size 50
+  ```
 
 ---
 

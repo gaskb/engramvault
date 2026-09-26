@@ -227,17 +227,29 @@ class Database:
 
     # --- Knowledge Layer Operations ---
 
-    def upsert_entity(self, name: str, category: str) -> str:
-        """Finds or creates an entity by normalized name."""
+    def upsert_entity(self, name: str, category: str = "general") -> str:
+        """Finds or creates an entity by normalized name.
+        Sanitizes category and promotes existing 'general' category if a specific category is provided.
+        """
+        import re
         norm_name = name.strip().lower()
+        clean_cat = re.sub(r"[^a-z0-9_]+", "_", (category or "general").strip().lower()).strip("_")
+        clean_cat = clean_cat or "general"
+
         with self.get_connection() as conn:
             cur = conn.execute(
-                "SELECT id FROM entities WHERE normalized_name = ?",
+                "SELECT id, category FROM entities WHERE normalized_name = ?",
                 (norm_name,)
             )
             row = cur.fetchone()
             if row:
-                return row["id"]
+                entity_id = row["id"]
+                current_cat = (row["category"] or "").strip().lower()
+                # If current category is generic/empty and new category is specific, promote it
+                if current_cat in ("general", "", "none") and clean_cat not in ("general", "", "none"):
+                    conn.execute("UPDATE entities SET category = ? WHERE id = ?", (clean_cat, entity_id))
+                    conn.commit()
+                return entity_id
 
             entity_id = str(uuid.uuid4())
             now_iso = utc_now_iso()
@@ -246,7 +258,7 @@ class Database:
                 INSERT INTO entities (id, name, category, normalized_name, created_at)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (entity_id, name.strip(), category.strip(), norm_name, now_iso)
+                (entity_id, name.strip(), clean_cat, norm_name, now_iso)
             )
             conn.commit()
             return entity_id

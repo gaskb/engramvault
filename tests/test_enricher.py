@@ -83,3 +83,46 @@ def test_enrich_web_api(populated_db, tmp_path):
     res_stop = client.post("/api/enrich/stop")
     assert res_stop.status_code == 200
     assert res_stop.json()["status"] == "stopped"
+
+
+def test_category_sanitization_and_promotion_and_open_world(populated_db):
+    # 1. Sanitization and promotion of general category
+    ent_id1 = populated_db.upsert_entity("Yaesu FT-891", "general")
+    entities = populated_db.get_entities()
+    target = next(e for e in entities if e["id"] == ent_id1)
+    assert target["category"] == "general"
+
+    # Promote to specific category with weird casing/characters
+    ent_id2 = populated_db.upsert_entity("Yaesu FT-891", "Ham Radio / Transceiver!")
+    assert ent_id1 == ent_id2
+    entities = populated_db.get_entities()
+    target = next(e for e in entities if e["id"] == ent_id1)
+    assert target["category"] == "ham_radio_transceiver"
+
+    # Should not downgrade back to general
+    populated_db.upsert_entity("Yaesu FT-891", "general")
+    entities = populated_db.get_entities()
+    target = next(e for e in entities if e["id"] == ent_id1)
+    assert target["category"] == "ham_radio_transceiver"
+
+    # 2. Enricher LLM propagation of dynamic categories to statements
+    mock_client = MagicMock(spec=LLMClient)
+    mock_client.is_configured.return_value = True
+    mock_client.model = "mock-dynamic-extractor"
+
+    llm_payload = {
+        "entities": [{"name": "Kenwood TS-590SG", "category": "ham_radio"}],
+        "facts": [{"subject": "Kenwood TS-590SG", "predicate": "owned_by_user", "object": "true"}],
+        "claims": [],
+        "decisions": [],
+    }
+    mock_client.chat_completion.return_value = json.dumps(llm_payload)
+
+    enricher = KnowledgeEnricher(populated_db, llm=mock_client, delay_between_calls=0)
+    summary = enricher.run_batch(limit=1, rebuild=True)
+    assert summary["processed"] == 1
+
+    stmts = populated_db.get_statements(predicate="owned_by_user")
+    kenwood_stmt = next(s for s in stmts if s["subject"] == "Kenwood TS-590SG")
+    assert kenwood_stmt["entity_category"] == "ham_radio"
+

@@ -26,14 +26,17 @@ from memoria.db.engine import Database
 
 VALID_CATEGORIES = [
     "all",
-    "audio_interface",
     "audiocassette",
-    "tape_deck",
-    "microfoni",
-    "monitor_cuffie",
-    "homelab",
+    "audio_interface",
+    "hardware_deck",
+    "audio_pro_studio",
+    "ham_radio",
+    "homelab_infra",
+    "hardware_pc",
     "software",
-    "hardware",
+    "project",
+    "cooking",
+    "personal_life",
     "general",
 ]
 

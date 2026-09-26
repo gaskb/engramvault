@@ -5,13 +5,49 @@ from memoria.adapters.base import NormalizedConversation, NormalizedMessage
 from memoria.db.models import StatementRecord, DecisionRecord, EntityRecord, RelationRecord
 from memoria.db.engine import Database
 
-# Audio gear and cassette entity keywords for categorizing
+# Audio gear, cassette, homelab, dev and personal entity keywords for categorizing
 CATEGORY_KEYWORDS = {
-    "audiocassette": ["tdk", "maxell", "sony hf", "sony ufx", "sony ux", "basf", "cassetta", "audiocassetta", "nastro", "type ii", "type i", "metal"],
-    "audio_interface": ["audient", "zen go", "focusrite", "motu", "scarlett", "rme", "interfaccia audio", "scheda audio"],
-    "hardware_deck": ["nakamichi", "walkman", "teac", "deck", "registratore"],
-    "software": ["fastapi", "sqlite", "python", "docker", "react", "vue", "gitlab"],
-    "cooking": ["ricetta", "impasto", "pizza", "lievito", "farina"]
+    "audiocassette": [
+        "tdk", "maxell", "sony hf", "sony ufx", "sony ux", "basf", "cassetta", "audiocassetta",
+        "nastro magnetico", "type ii", "type i", "type iv", "metal tape", "avilyn", "ferrocromo", "c-60", "c-90"
+    ],
+    "audio_interface": [
+        "audient", "zen go", "focusrite", "motu", "scarlett", "rme", "interfaccia audio", "scheda audio", "audio interface"
+    ],
+    "hardware_deck": [
+        "nakamichi", "walkman", "teac", "tape deck", "piastra a cassette", "registratore a cassette",
+        "capstan", "pinch roller", "cinghia", "cinghie"
+    ],
+    "audio_pro_studio": [
+        "mixer", "preamp", "preamplificatore", "shure sm7b", "shure sm58", "monitor da studio",
+        "cuffie monitor", "microfono", "compressore", "outboard", "cavo bilanciato", "xlr", "akg", "sennheiser", "beyerdynamic"
+    ],
+    "ham_radio": [
+        "yaesu", "icom", "kenwood", "radioamatore", "antenne", "balun", "dipolo", "accordatore",
+        "hf", "vhf", "uhf", "nominativo", "qrz", "cw", "ssb", "ricetrasmettitore", "baofeng", "qso", "swr"
+    ],
+    "homelab_infra": [
+        "proxmox", "docker", "reverse proxy", "nginx", "npm", "vlan", "tailscale", "zfs", "raid",
+        "dns", "pi-hole", "lxc", "router", "switch", "pve", "synology", "nas", "truenas", "opnsense", "wireguard"
+    ],
+    "hardware_pc": [
+        "cpu", "gpu", "rtx", "amd", "intel", "ram", "nvme", "ssd", "alimentatore", "motherboard",
+        "scheda madre", "vram", "pc fisso", "workstation", "thinkpad", "ryzen"
+    ],
+    "software": [
+        "fastapi", "sqlite", "python", "docker compose", "react", "vue", "gitlab", "typescript",
+        "javascript", "bash", "linux", "git", "css", "html", "pwa", "api", "rest", "sdk", "postgres", "redis"
+    ],
+    "project": [
+        "livellatore", "quattrotracce", "engramvault", "memoria", "digestly", "openstorybox",
+        "cozytabs", "eggonomics", "pingsentry", "jar", "checkdns", "hyphencheck", "trucksavekit"
+    ],
+    "cooking": [
+        "ricetta", "impasto", "pizza", "lievito", "farina", "idratazione", "maturazione", "forno"
+    ],
+    "personal_life": [
+        "viaggio", "vacanza", "salute", "casa", "auto", "spesa", "medico", "palestra"
+    ],
 }
 
 

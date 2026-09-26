@@ -92,16 +92,30 @@ class KnowledgeEnricher:
                 self.status["jev_filtered"] = self.status.get("jev_filtered", 0) + 1
                 return {"entities": [], "facts": [], "claims": [], "decisions": [], "jev_filtered": True}
 
+        known_cats = self.db.get_entity_categories()
+        fallback_cats = [
+            "audiocassette", "audio_interface", "hardware_deck", "audio_pro_studio",
+            "ham_radio", "homelab_infra", "hardware_pc", "software", "project",
+            "cooking", "personal_life", "general"
+        ]
+        merged_cats = list(dict.fromkeys(known_cats + fallback_cats))
+        cats_hint = ", ".join(merged_cats[:25])
+
         system_prompt = (
             "Sei un estrattore di conoscenza per la memoria personale di uno sviluppatore e appassionato tech.\n"
             "Analizza il dialogo ed estrai SOLO informazioni certe e concrete in JSON con questo schema:\n"
             "{\n"
-            "  \"entities\": [{\"name\": \"...\", \"category\": \"audiocassette|audio_interface|hardware_deck|software|project|general\"}],\n"
+            "  \"entities\": [{\"name\": \"...\", \"category\": \"<categoria>\"}],\n"
             "  \"facts\": [{\"subject\": \"...\", \"predicate\": \"owned_by_user|uses|preference\", \"object\": \"...\", \"notes\": \"...\"}],\n"
             "  \"claims\": [{\"subject\": \"...\", \"predicate\": \"suitable_for|hardware_quality|feature\", \"object\": \"...\"}],\n"
             "  \"decisions\": [{\"topic\": \"...\", \"decision\": \"...\", \"status\": \"ADOPTED|EVALUATING|ABANDONED\"}]\n"
             "}\n"
-            "Regole tassative:\n"
+            "Regole di categorizzazione entità (Open-World Dynamic Taxonomy):\n"
+            f"- Categorie esistenti consigliate: {cats_hint}.\n"
+            "- Se un'entità appartiene chiaramente a una di queste categorie, riusala.\n"
+            "- Se appartiene a un nuovo dominio specialistico (es. 'fotografia', 'giardinaggio', 'domotica'), crea una nuova categoria sintetica in snake_case (tutto minuscolo, senza spazi).\n"
+            "- Usa 'general' solo come ultima risorsa per concetti generici o astratti.\n"
+            "Regole tassative sui contenuti:\n"
             "1. 'facts': SOLO ciò che l'utente dichiara esplicitamente di possedere, usare o fare.\n"
             "2. 'claims': affermazioni o pareri tecnici formulati dall'AI.\n"
             "3. Rispondi ESCLUSIVAMENTE con il blocco JSON valido, senza testo introduttivo."
@@ -179,11 +193,13 @@ class KnowledgeEnricher:
                     first_msg_id = conv_record["messages"][0]["id"] if conv_record["messages"] else None
 
                     # 1. Entities
+                    extracted_entity_cats = {}
                     for ent in parsed.get("entities", []):
                         name = ent.get("name")
                         cat = ent.get("category") or guess_category(name)
                         if name:
                             self.db.upsert_entity(name, cat)
+                            extracted_entity_cats[name.strip().lower()] = cat
 
                     # 2. Facts
                     for f in parsed.get("facts", []):
@@ -191,7 +207,8 @@ class KnowledgeEnricher:
                         pred = f.get("predicate", "owned_by_user")
                         obj = f.get("object", "true")
                         if subj:
-                            cat = guess_category(subj)
+                            norm_subj = subj.strip().lower()
+                            cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
                             ent_id = self.db.upsert_entity(subj, cat)
                             stmt = StatementRecord(
                                 id=str(uuid.uuid4()),
@@ -218,7 +235,8 @@ class KnowledgeEnricher:
                         pred = c.get("predicate", "technical_claim")
                         obj = c.get("object", "")
                         if subj and obj:
-                            cat = guess_category(subj)
+                            norm_subj = subj.strip().lower()
+                            cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
                             ent_id = self.db.upsert_entity(subj, cat)
                             stmt = StatementRecord(
                                 id=str(uuid.uuid4()),
