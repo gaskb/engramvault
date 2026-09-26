@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import json
 import logging
+import re
 import sqlite3
 import threading
 import time
@@ -148,19 +149,81 @@ class Database:
         self,
         limit: int = 50,
         offset: int = 0,
-        provider: Optional[str] = None
+        provider: Optional[str] = None,
+        query: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
-            query = "SELECT id, provider, external_ref, title, created_at FROM conversations"
-            params = []
+            where_clauses = []
+            params: List[Any] = []
+
             if provider:
-                query += " WHERE provider = ?"
+                where_clauses.append("c.provider = ?")
                 params.append(provider)
-            query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
+
+            if query and query.strip():
+                clean_q = query.strip()
+                like_pattern = f"%{clean_q}%"
+                fts_terms = re.findall(r"\b[\w\-\.]{2,}\b", clean_q)
+                fts_query = " OR ".join([f'"{t.replace(chr(34), "").replace(chr(39), "")}"*' for t in fts_terms if t])
+
+                if fts_query:
+                    where_clauses.append(
+                        """(
+                            c.title LIKE ? OR c.external_ref LIKE ?
+                            OR c.id IN (
+                                SELECT k.conversation_id
+                                FROM chunks_fts f
+                                JOIN chunks k ON f.rowid = k.rowid
+                                WHERE chunks_fts MATCH ?
+                            )
+                        )"""
+                    )
+                    params.extend([like_pattern, like_pattern, fts_query])
+                else:
+                    where_clauses.append("(c.title LIKE ? OR c.external_ref LIKE ?)")
+                    params.extend([like_pattern, like_pattern])
+
+            where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+            sql = f"""
+                SELECT c.id, c.provider, c.external_ref, c.title, c.created_at
+                FROM conversations c
+                {where_sql}
+                ORDER BY c.created_at DESC
+                LIMIT ? OFFSET ?
+            """
             params.extend([limit, offset])
 
-            cur = conn.execute(query, params)
-            return [dict(r) for r in cur.fetchall()]
+            try:
+                cur = conn.execute(sql, params)
+                return [dict(r) for r in cur.fetchall()]
+            except sqlite3.OperationalError as exc:
+                logger.warning("FTS search fallback to LIKE in list_conversations: %s", exc)
+                fb_where = []
+                fb_params: List[Any] = []
+                if provider:
+                    fb_where.append("c.provider = ?")
+                    fb_params.append(provider)
+                if query and query.strip():
+                    fb_where.append("(c.title LIKE ? OR c.external_ref LIKE ?)")
+                    fb_params.extend([like_pattern, like_pattern])
+                fb_sql = f"""
+                    SELECT c.id, c.provider, c.external_ref, c.title, c.created_at
+                    FROM conversations c
+                    {("WHERE " + " AND ".join(fb_where)) if fb_where else ""}
+                    ORDER BY c.created_at DESC
+                    LIMIT ? OFFSET ?
+                """
+                fb_params.extend([limit, offset])
+                cur = conn.execute(fb_sql, fb_params)
+                return [dict(r) for r in cur.fetchall()]
+
+    def delete_conversation(self, conv_id: str) -> bool:
+        """Deletes a conversation by ID, with cascading cleanup of messages, chunks, and FTS."""
+        with self.get_connection() as conn:
+            conn.execute("PRAGMA foreign_keys = ON;")
+            cur = conn.execute("DELETE FROM conversations WHERE id = ?", (conv_id,))
+            conn.commit()
+            return cur.rowcount > 0
 
     # --- Knowledge Layer Operations ---
 

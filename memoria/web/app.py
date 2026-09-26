@@ -295,8 +295,15 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         return await asyncio.to_thread(planner.route_query, payload.query, mode=payload.mode, lang=payload.lang)
 
     @app.get("/api/conversations")
-    async def list_conversations(provider: Optional[str] = None, limit: int = 50, offset: int = 0):
-        return db.list_conversations(limit=limit, offset=offset, provider=provider)
+    async def list_conversations(
+        provider: Optional[str] = None,
+        q: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ):
+        search_q = (query or q or "").strip() or None
+        return db.list_conversations(limit=limit, offset=offset, provider=provider, query=search_q)
 
     @app.get("/api/conversations/{conv_id}")
     async def get_conversation(conv_id: str):
@@ -304,6 +311,13 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         if not c:
             raise HTTPException(status_code=404, detail="Conversazione non trovata")
         return c
+
+    @app.delete("/api/conversations/{conv_id}", dependencies=[Depends(require_mutation_auth)])
+    async def delete_conversation(conv_id: str):
+        ok = db.delete_conversation(conv_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Conversazione non trovata")
+        return {"status": "success", "deleted_id": conv_id, "stats": db.get_stats()}
 
     @app.post("/api/ingest/scan", dependencies=[Depends(require_mutation_auth)])
     async def trigger_drop_folder_scan():

@@ -616,9 +616,13 @@
                     <p class="text-xs text-slate-400" data-i18n="vault_subtitle">{{ i18n.get('vault_subtitle', 'Filter and read full conversations side-by-side without leaving the workspace.') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input type="text" id="vault-search-input" oninput="filterVaultList()" placeholder="🔍 Filter by title or ref..."
-                           class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 w-52">
-                    <select id="vault-provider-filter" onchange="loadVault()" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
+                    <div class="relative w-64 sm:w-80">
+                        <input type="text" id="vault-search-input" oninput="debounceVaultSearch()"
+                               placeholder="{{ i18n.get('vault_search_placeholder', '🔍 Search title or message content...') }}"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-xl pl-3 pr-7 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        <button type="button" id="vault-search-clear" onclick="clearVaultSearch()" class="hidden absolute right-2.5 top-1.5 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+                    </div>
+                    <select id="vault-provider-filter" onchange="loadVault(true)" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="vault_all_providers">{{ i18n.get('vault_all_providers', 'All providers') }}</option>
                         <option value="antigravity">Antigravity</option>
                         <option value="chatgpt">ChatGPT</option>
@@ -632,7 +636,14 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                 <!-- Master Column: Conversation List -->
-                <div id="vault-list" class="lg:col-span-5 space-y-2 max-h-[73vh] overflow-y-auto pr-1"></div>
+                <div class="lg:col-span-5 flex flex-col max-h-[73vh]">
+                    <div id="vault-list" class="space-y-2 overflow-y-auto pr-1 flex-1"></div>
+                    <div id="vault-load-more-container" class="pt-2 text-center hidden">
+                        <button type="button" id="vault-load-more-btn" onclick="loadMoreVault()" class="w-full py-2 rounded-xl bg-card border border-cardborder text-xs text-slate-300 hover:text-white hover:border-emerald-500/50 transition">
+                            <span data-i18n="vault_load_more">{{ i18n.get('vault_load_more', 'Load more conversations...') }}</span>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Detail Column: Full Conversation Reader -->
                 <div id="vault-detail-pane" class="lg:col-span-7 glass-panel rounded-2xl border border-cardborder flex flex-col h-[73vh]">
@@ -641,9 +652,14 @@
                             <h3 id="vault-detail-title" class="font-bold text-white text-sm truncate">Select a conversation from the list</h3>
                             <p id="vault-detail-meta" class="text-[11px] text-slate-400 font-mono mt-0.5">—</p>
                         </div>
-                        <button type="button" id="vault-expand-modal-btn" onclick="if(window.activeVaultConvId) openModal(window.activeVaultConvId)" class="px-2.5 py-1 rounded-lg bg-[#10141d] border border-cardborder text-xs text-slate-300 hover:text-white whitespace-nowrap">
-                            ⤢ Modal
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="vault-delete-btn" onclick="deleteCurrentVaultConversation()" class="hidden px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 hover:bg-rose-500/20 whitespace-nowrap transition" title="{{ i18n.get('vault_delete_conv', 'Delete conversation') }}">
+                                🗑️ <span data-i18n="vault_delete_conv">{{ i18n.get('vault_delete_conv', 'Delete conversation') }}</span>
+                            </button>
+                            <button type="button" id="vault-expand-modal-btn" onclick="if(window.activeVaultConvId) openModal(window.activeVaultConvId)" class="px-2.5 py-1 rounded-lg bg-[#10141d] border border-cardborder text-xs text-slate-300 hover:text-white whitespace-nowrap">
+                                ⤢ Modal
+                            </button>
+                        </div>
                     </div>
                     <div id="vault-detail-messages" class="p-4 overflow-y-auto space-y-3 flex-1 text-xs">
                         <p class="text-slate-500 text-xs">Click any conversation on the left to read its full transcript here.</p>
@@ -1638,34 +1654,86 @@
 
         window.cachedVaultConversations = [];
         window.activeVaultConvId = null;
+        window.currentVaultOffset = 0;
+        window.VAULT_PAGE_SIZE = 50;
+        window.vaultSearchTimer = null;
 
-        async function loadVault() {
-            const prov = document.getElementById('vault-provider-filter').value;
-            const url = prov ? `/api/conversations?provider=${prov}` : '/api/conversations';
-            const res = await fetch(url);
-            const data = await res.json();
-            window.cachedVaultConversations = data || [];
-            renderVaultMasterList(window.cachedVaultConversations);
-            if (window.cachedVaultConversations.length > 0) {
-                const targetId = window.activeVaultConvId && window.cachedVaultConversations.some(x => x.id === window.activeVaultConvId)
-                    ? window.activeVaultConvId
-                    : window.cachedVaultConversations[0].id;
-                selectVaultConversation(targetId);
+        function debounceVaultSearch() {
+            clearTimeout(window.vaultSearchTimer);
+            const q = (document.getElementById('vault-search-input')?.value || '').trim();
+            const clearBtn = document.getElementById('vault-search-clear');
+            if (clearBtn) {
+                if (q) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+            window.vaultSearchTimer = setTimeout(() => {
+                loadVault(true);
+            }, 300);
+        }
+
+        function clearVaultSearch() {
+            const input = document.getElementById('vault-search-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('vault-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            loadVault(true);
+        }
+
+        async function loadVault(reset = true) {
+            if (reset) {
+                window.currentVaultOffset = 0;
+                window.cachedVaultConversations = [];
+            }
+            const prov = document.getElementById('vault-provider-filter')?.value || '';
+            const q = (document.getElementById('vault-search-input')?.value || '').trim();
+
+            let url = `/api/conversations?limit=${window.VAULT_PAGE_SIZE}&offset=${window.currentVaultOffset}`;
+            if (prov) url += `&provider=${encodeURIComponent(prov)}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const items = Array.isArray(data) ? data : [];
+                if (reset) {
+                    window.cachedVaultConversations = items;
+                } else {
+                    window.cachedVaultConversations = window.cachedVaultConversations.concat(items);
+                }
+
+                const loadMoreContainer = document.getElementById('vault-load-more-container');
+                if (loadMoreContainer) {
+                    if (items.length === window.VAULT_PAGE_SIZE) {
+                        loadMoreContainer.classList.remove('hidden');
+                    } else {
+                        loadMoreContainer.classList.add('hidden');
+                    }
+                }
+
+                renderVaultMasterList(window.cachedVaultConversations);
+                if (window.cachedVaultConversations.length > 0) {
+                    const targetId = window.activeVaultConvId && window.cachedVaultConversations.some(x => x.id === window.activeVaultConvId)
+                        ? window.activeVaultConvId
+                        : window.cachedVaultConversations[0].id;
+                    selectVaultConversation(targetId);
+                } else {
+                    window.activeVaultConvId = null;
+                    const titleEl = document.getElementById('vault-detail-title');
+                    const metaEl = document.getElementById('vault-detail-meta');
+                    const mBox = document.getElementById('vault-detail-messages');
+                    if (titleEl) titleEl.innerText = tr('vault_no_results', 'No conversations found');
+                    if (metaEl) metaEl.innerText = '—';
+                    if (mBox) mBox.innerHTML = `<p class="text-slate-500 text-xs">${tr('vault_no_results', 'No conversations matching search criteria.')}</p>`;
+                    document.getElementById('vault-delete-btn')?.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Failed to load vault conversations:', err);
             }
         }
 
-        function filterVaultList() {
-            const q = (document.getElementById('vault-search-input')?.value || '').toLowerCase().trim();
-            if (!q) {
-                renderVaultMasterList(window.cachedVaultConversations);
-                return;
-            }
-            const filtered = window.cachedVaultConversations.filter(cv =>
-                (cv.title || '').toLowerCase().includes(q) ||
-                (cv.provider || '').toLowerCase().includes(q) ||
-                (cv.external_ref || '').toLowerCase().includes(q)
-            );
-            renderVaultMasterList(filtered);
+        async function loadMoreVault() {
+            window.currentVaultOffset += window.VAULT_PAGE_SIZE;
+            await loadVault(false);
         }
 
         function renderVaultMasterList(listData) {
@@ -1694,17 +1762,15 @@
 
         async function selectVaultConversation(convId) {
             window.activeVaultConvId = convId;
-            renderVaultMasterList(
-                (document.getElementById('vault-search-input')?.value || '').trim()
-                    ? window.cachedVaultConversations.filter(cv => (cv.title || '').toLowerCase().includes(document.getElementById('vault-search-input').value.toLowerCase()))
-                    : window.cachedVaultConversations
-            );
+            renderVaultMasterList(window.cachedVaultConversations);
             const res = await fetch(`/api/conversations/${convId}`);
             if (!res.ok) return;
             const data = await res.json();
             const titleEl = document.getElementById('vault-detail-title');
             const metaEl = document.getElementById('vault-detail-meta');
             const mBox = document.getElementById('vault-detail-messages');
+            const delBtn = document.getElementById('vault-delete-btn');
+            if (delBtn) delBtn.classList.remove('hidden');
             if (titleEl) titleEl.innerText = data.title || 'Conversation';
             if (metaEl) metaEl.innerText = `${(data.provider || '').toUpperCase()} • ${data.created_at || ''} • ${(data.messages || []).length} messages`;
             if (mBox) {
@@ -1722,6 +1788,44 @@
                     `;
                     mBox.appendChild(d);
                 });
+            }
+        }
+
+        async function deleteCurrentVaultConversation() {
+            if (!window.activeVaultConvId) return;
+            const conv = window.cachedVaultConversations.find(c => c.id === window.activeVaultConvId);
+            const title = conv?.title || window.activeVaultConvId;
+            const confirmMsg = tr('vault_confirm_delete', `Are you sure you want to permanently delete "${title}" from the Vault?\nAll messages and indexing will be removed.`);
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                const res = await fetch(`/api/conversations/${window.activeVaultConvId}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert('Error: ' + (err.detail || 'Failed to delete conversation'));
+                    return;
+                }
+                // Remove from cache
+                window.cachedVaultConversations = window.cachedVaultConversations.filter(c => c.id !== window.activeVaultConvId);
+                const nextId = window.cachedVaultConversations.length > 0 ? window.cachedVaultConversations[0].id : null;
+                window.activeVaultConvId = nextId;
+                renderVaultMasterList(window.cachedVaultConversations);
+                if (nextId) {
+                    selectVaultConversation(nextId);
+                } else {
+                    const titleEl = document.getElementById('vault-detail-title');
+                    const metaEl = document.getElementById('vault-detail-meta');
+                    const mBox = document.getElementById('vault-detail-messages');
+                    if (titleEl) titleEl.innerText = tr('vault_no_results', 'Select a conversation from the list');
+                    if (metaEl) metaEl.innerText = '—';
+                    if (mBox) mBox.innerHTML = `<p class="text-slate-500 text-xs">${tr('vault_no_results', 'No conversation selected.')}</p>`;
+                    document.getElementById('vault-delete-btn')?.classList.add('hidden');
+                }
+                loadStats();
+            } catch (err) {
+                alert('Request failed: ' + err.message);
             }
         }
 
