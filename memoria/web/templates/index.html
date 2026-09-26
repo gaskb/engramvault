@@ -577,15 +577,30 @@
         </section>
 
         <!-- TAB 3: DECISIONS & TIMELINE -->
+        <!-- TAB 3: DECISIONS & TIMELINE -->
         <section id="tab-decisions" class="tab-content hidden space-y-6">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 class="text-lg font-bold text-white" data-i18n="decisions_title">{{ i18n.get('decisions_title', 'Decisions Registry & Evolution Timeline') }}</h2>
                     <p class="text-xs text-slate-400" data-i18n="decisions_subtitle">{{ i18n.get('decisions_subtitle', 'Technical, hardware, and architectural choices with lifecycle status tracking.') }}</p>
                 </div>
-                <button onclick="openNewDecisionModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                    <span data-i18n="btn_add_decision">{{ i18n.get('btn_add_decision', '+ New Decision') }}</span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <div class="relative w-56 sm:w-72">
+                        <input type="text" id="decisions-search-input" oninput="debounceDecisionsSearch()"
+                               placeholder="{{ i18n.get('decisions_search_placeholder', '🔍 Search topic or text...') }}"
+                               class="w-full bg-[#10141d] border border-cardborder rounded-xl pl-3 pr-7 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+                        <button type="button" id="decisions-search-clear" onclick="clearDecisionsSearch()" class="hidden absolute right-2.5 top-1.5 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+                    </div>
+                    <select id="decisions-status-filter" onchange="loadDecisions(true)" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
+                        <option value="" data-i18n="status_all">{{ i18n.get('status_all', 'All statuses') }}</option>
+                        <option value="ADOPTED">ADOPTED</option>
+                        <option value="EVALUATING">EVALUATING</option>
+                        <option value="ABANDONED">ABANDONED</option>
+                    </select>
+                    <button onclick="openNewDecisionModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 shrink-0">
+                        <span data-i18n="btn_add_decision">{{ i18n.get('btn_add_decision', '+ New Decision') }}</span>
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -596,14 +611,20 @@
                         <span id="decisions-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
                     <div id="decisions-list" class="space-y-3"></div>
+                    <div id="decisions-load-more-container" class="pt-2 text-center hidden">
+                        <button type="button" id="decisions-load-more-btn" onclick="loadMoreDecisions()" class="w-full py-2 rounded-xl bg-card border border-cardborder text-xs text-slate-300 hover:text-white hover:border-amber-500/50 transition">
+                            <span data-i18n="load_more_decisions">{{ i18n.get('load_more_decisions', 'Load more decisions...') }}</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Timeline Column -->
                 <div class="glass-panel p-5 rounded-2xl space-y-4">
-                    <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center justify-between">
                         <span data-i18n="timeline_title">{{ i18n.get('timeline_title', '⏳ Setup & State Timeline') }}</span>
+                        <span id="timeline-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
-                    <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20"></div>
+                    <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20 max-h-[70vh] overflow-y-auto pr-1"></div>
                 </div>
             </div>
         </section>
@@ -1514,6 +1535,7 @@
             if (res.ok) {
                 fetchStats();
                 loadEntities();
+                loadTimeline();
             }
         }
 
@@ -1551,20 +1573,90 @@
             }
         }
 
-        // --- Curation: Decisions (Issue #5) ---
+        // --- Curation: Decisions & Timeline (Issue #29) ---
 
-        async function loadDecisions() {
-            const res = await fetch('/api/decisions');
-            const data = await res.json();
+        window.cachedDecisions = [];
+        window.currentDecisionsOffset = 0;
+        window.DECISIONS_PAGE_SIZE = 50;
+        window.decisionsSearchTimer = null;
+
+        function debounceDecisionsSearch() {
+            clearTimeout(window.decisionsSearchTimer);
+            const q = (document.getElementById('decisions-search-input')?.value || '').trim();
+            const clearBtn = document.getElementById('decisions-search-clear');
+            if (clearBtn) {
+                if (q) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+            window.decisionsSearchTimer = setTimeout(() => {
+                loadDecisions(true);
+                loadTimeline();
+            }, 300);
+        }
+
+        function clearDecisionsSearch() {
+            const input = document.getElementById('decisions-search-input');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('decisions-search-clear');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            loadDecisions(true);
+            loadTimeline();
+        }
+
+        async function loadDecisions(reset = true) {
+            if (reset) {
+                window.currentDecisionsOffset = 0;
+                window.cachedDecisions = [];
+            }
+            const status = document.getElementById('decisions-status-filter')?.value || '';
+            const q = (document.getElementById('decisions-search-input')?.value || '').trim();
+
+            let url = `/api/decisions?limit=${window.DECISIONS_PAGE_SIZE}&offset=${window.currentDecisionsOffset}`;
+            if (status) url += `&status=${encodeURIComponent(status)}`;
+            if (q) url += `&q=${encodeURIComponent(q)}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const items = Array.isArray(data) ? data : [];
+                if (reset) {
+                    window.cachedDecisions = items;
+                } else {
+                    window.cachedDecisions = window.cachedDecisions.concat(items);
+                }
+
+                const loadMoreContainer = document.getElementById('decisions-load-more-container');
+                if (loadMoreContainer) {
+                    if (items.length === window.DECISIONS_PAGE_SIZE) {
+                        loadMoreContainer.classList.remove('hidden');
+                    } else {
+                        loadMoreContainer.classList.add('hidden');
+                    }
+                }
+
+                renderDecisionsList(window.cachedDecisions);
+            } catch (err) {
+                console.error('Failed to load decisions:', err);
+            }
+        }
+
+        async function loadMoreDecisions() {
+            window.currentDecisionsOffset += window.DECISIONS_PAGE_SIZE;
+            await loadDecisions(false);
+        }
+
+        function renderDecisionsList(listData) {
             const c = document.getElementById('decisions-list');
+            if (!c) return;
             c.innerHTML = '';
-            document.getElementById('decisions-count-badge').innerText = `${data.length} ${tr('total_label', 'total')}`;
-            if (data.length === 0) {
+            const badge = document.getElementById('decisions-count-badge');
+            if (badge) badge.innerText = `${listData.length} ${tr('total_label', 'total')}`;
+            if (listData.length === 0) {
                 c.innerHTML = `<p class="text-xs text-slate-500">${tr('no_decisions', 'No decisions recorded.')}</p>`;
                 return;
             }
 
-            data.forEach(d => {
+            listData.forEach(d => {
                 const item = document.createElement('div');
                 item.className = 'p-3.5 bg-[#10141d] rounded-xl border border-cardborder text-xs space-y-2';
                 item.innerHTML = `
@@ -1595,7 +1687,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
             });
-            loadDecisions();
+            loadDecisions(true);
             loadTimeline();
         }
 
@@ -1604,7 +1696,7 @@
             const res = await fetch(`/api/decisions/${decId}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchStats();
-                loadDecisions();
+                loadDecisions(true);
                 loadTimeline();
             }
         }
@@ -1628,30 +1720,57 @@
                 closeModal('decision-modal');
                 document.getElementById('decision-form').reset();
                 fetchStats();
-                loadDecisions();
+                loadDecisions(true);
                 loadTimeline();
             }
         }
 
-        // --- Timeline & Vault ---
+        // --- Timeline ---
 
         async function loadTimeline() {
-            const res = await fetch('/api/timeline');
-            const data = await res.json();
-            const c = document.getElementById('timeline-list');
-            c.innerHTML = '';
-            data.forEach(ev => {
-                const div = document.createElement('div');
-                div.className = 'text-xs space-y-0.5 relative';
-                const dt = (ev.event_date || '').slice(0, 10) || 'N/A';
-                const curr = ev.is_current ? `<span class="text-emerald-400 font-bold">● ${tr('stmt_current', 'CURRENT')}</span>` : `<span class="text-slate-500">○ ${tr('stmt_past', 'PAST')}</span>`;
-                div.innerHTML = `
-                    <div class="text-[10px] font-mono text-indigo-400">${escapeHtml(dt)} — ${curr}</div>
-                    <div class="font-semibold text-white">${escapeHtml(ev.subject)} <span class="text-slate-400 font-normal">(${escapeHtml(ev.predicate)})</span></div>
-                    <div class="text-slate-300 italic">"${escapeHtml(ev.object)}"</div>
-                `;
-                c.appendChild(div);
-            });
+            const q = (document.getElementById('decisions-search-input')?.value || '').trim();
+            let url = '/api/timeline';
+            if (q) url += `?q=${encodeURIComponent(q)}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const c = document.getElementById('timeline-list');
+                const badge = document.getElementById('timeline-count-badge');
+                if (badge) badge.innerText = `${data.length}`;
+                if (!c) return;
+                c.innerHTML = '';
+                if (data.length === 0) {
+                    c.innerHTML = `<p class="text-xs text-slate-500">${tr('no_timeline', 'No timeline events found.')}</p>`;
+                    return;
+                }
+                data.forEach(ev => {
+                    const div = document.createElement('div');
+                    div.className = 'text-xs space-y-0.5 relative group p-1.5 rounded-lg hover:bg-card/40 transition';
+                    const dt = (ev.event_date || '').slice(0, 10) || 'N/A';
+                    const curr = ev.is_current ? `<span class="text-emerald-400 font-bold">● ${tr('stmt_current', 'CURRENT')}</span>` : `<span class="text-slate-500">○ ${tr('stmt_past', 'PAST')}</span>`;
+                    const kindBadge = ev.kind === 'decision' 
+                        ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">DECISION</span>` 
+                        : `<span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">FACT</span>`;
+                    const delAction = ev.kind === 'decision' ? `deleteDecision('${escapeHtml(ev.id)}')` : `deleteStatement('${escapeHtml(ev.id)}')`;
+
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-indigo-400">${escapeHtml(dt)}</span>
+                                ${kindBadge}
+                                ${curr}
+                            </div>
+                            <button onclick="${delAction}" title="Delete event" class="text-slate-600 hover:text-rose-400 text-xs opacity-0 group-hover:opacity-100 transition">✕</button>
+                        </div>
+                        <div class="font-semibold text-white">${escapeHtml(ev.subject)} <span class="text-slate-400 font-normal">(${escapeHtml(ev.predicate)})</span></div>
+                        <div class="text-slate-300 italic">"${escapeHtml(ev.object)}"</div>
+                    `;
+                    c.appendChild(div);
+                });
+            } catch (err) {
+                console.error('Failed to load timeline:', err);
+            }
         }
 
         window.cachedVaultConversations = [];

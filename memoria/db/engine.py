@@ -346,26 +346,46 @@ class Database:
             cur = conn.execute(query, params)
             return [dict(r) for r in cur.fetchall()]
 
-    def get_decisions(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_decisions(
+        self,
+        status: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
         with self.get_connection() as conn:
-            query = """
+            sql = """
                 SELECT d.*, c.title AS conversation_title, c.provider AS conversation_provider
                 FROM decisions d
                 LEFT JOIN conversations c ON d.source_conversation_id = c.id
                 WHERE 1=1
             """
-            params = []
+            params: List[Any] = []
             if status:
-                query += " AND d.status = ?"
-                params.append(status)
-            query += " ORDER BY d.decided_at DESC"
-            cur = conn.execute(query, params)
+                sql += " AND d.status = ?"
+                params.append(status.upper())
+            if query and query.strip():
+                clean_q = query.strip()
+                sql += " AND (d.topic LIKE ? OR d.decision_text LIKE ?)"
+                params.extend([f"%{clean_q}%", f"%{clean_q}%"])
+            sql += " ORDER BY d.decided_at DESC"
+            if limit is not None:
+                sql += " LIMIT ? OFFSET ?"
+                params.extend([int(limit), int(offset)])
+            cur = conn.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
 
-    def get_timeline(self, subject: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_timeline(
+        self,
+        subject: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: int = 0,
+    ) -> List[Dict[str, Any]]:
         """Returns chronological timeline of facts, claims, and decisions."""
         with self.get_connection() as conn:
             events = []
+            search_term = (query or subject or "").strip()
 
             # Statements
             s_query = """
@@ -374,13 +394,14 @@ class Database:
                 FROM statements s
                 LEFT JOIN conversations c ON s.source_conversation_id = c.id
             """
-            params = []
-            if subject:
-                s_query += " WHERE s.subject LIKE ?"
-                params.append(f"%{subject}%")
+            s_params: List[Any] = []
+            if search_term:
+                s_query += " WHERE (s.subject LIKE ? OR s.predicate LIKE ? OR s.object LIKE ?)"
+                pattern = f"%{search_term}%"
+                s_params.extend([pattern, pattern, pattern])
             s_query += " ORDER BY s.valid_from ASC"
 
-            for r in conn.execute(s_query, params).fetchall():
+            for r in conn.execute(s_query, s_params).fetchall():
                 events.append(dict(r))
 
             # Decisions
@@ -391,16 +412,19 @@ class Database:
                 FROM decisions d
                 LEFT JOIN conversations c ON d.source_conversation_id = c.id
             """
-            d_params = []
-            if subject:
-                d_query += " WHERE d.topic LIKE ?"
-                d_params.append(f"%{subject}%")
+            d_params: List[Any] = []
+            if search_term:
+                d_query += " WHERE (d.topic LIKE ? OR d.decision_text LIKE ?)"
+                pattern = f"%{search_term}%"
+                d_params.extend([pattern, pattern])
             d_query += " ORDER BY d.decided_at ASC"
 
             for r in conn.execute(d_query, d_params).fetchall():
                 events.append(dict(r))
 
             events.sort(key=lambda x: x.get("event_date") or "")
+            if limit is not None:
+                return events[offset : offset + int(limit)]
             return events
 
     def update_statement(

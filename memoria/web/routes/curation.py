@@ -69,12 +69,28 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
         return entities
 
     @router.get("/api/decisions")
-    async def get_decisions(status: Optional[str] = None):
-        return db.get_decisions(status=status)
+    async def get_decisions(
+        status: Optional[str] = None,
+        q: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: Optional[int] = 50,
+        offset: int = 0,
+    ):
+        search_q = (query or q or "").strip() or None
+        eff_limit = None if limit is not None and limit <= 0 else limit
+        return db.get_decisions(status=status, query=search_q, limit=eff_limit, offset=offset)
 
     @router.get("/api/timeline")
-    async def get_timeline(subject: Optional[str] = None):
-        return db.get_timeline(subject=subject)
+    async def get_timeline(
+        subject: Optional[str] = None,
+        q: Optional[str] = None,
+        query: Optional[str] = None,
+        limit: Optional[int] = 50,
+        offset: int = 0,
+    ):
+        search_q = (query or q or subject or "").strip() or None
+        eff_limit = None if limit is not None and limit <= 0 else limit
+        return db.get_timeline(subject=search_q, query=search_q, limit=eff_limit, offset=offset)
 
     @router.post("/api/seed", dependencies=[Depends(require_mutation_auth)])
     async def seed_data():
