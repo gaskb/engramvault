@@ -274,7 +274,7 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
 
     @app.post("/api/query")
     async def run_query(payload: QueryRequest):
-        return planner.route_query(payload.query, mode=payload.mode, lang=payload.lang)
+        return await asyncio.to_thread(planner.route_query, payload.query, mode=payload.mode, lang=payload.lang)
 
     @app.get("/api/conversations")
     async def list_conversations(provider: Optional[str] = None, limit: int = 50, offset: int = 0):
@@ -286,42 +286,6 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         if not c:
             raise HTTPException(status_code=404, detail="Conversazione non trovata")
         return c
-
-    @app.get("/api/entities")
-    async def get_entities(category: Optional[str] = None):
-        entities = db.get_entities(category=category)
-        for e in entities:
-            e["statements"] = db.get_statements(entity_id=e["id"])
-        return entities
-
-    @app.get("/api/decisions")
-    async def get_decisions(status: Optional[str] = None):
-        return db.get_decisions(status=status)
-
-    @app.get("/api/timeline")
-    async def get_timeline(subject: Optional[str] = None):
-        return db.get_timeline(subject=subject)
-
-    @app.post("/api/seed", dependencies=[Depends(require_mutation_auth)])
-    async def seed_data():
-        count = seed_database(db)
-        return {"status": "success", "seeded_count": count, "stats": db.get_stats()}
-
-    @app.post("/api/ingest", dependencies=[Depends(require_mutation_auth)])
-    async def upload_ingest(file: UploadFile = File(...), provider: str = Form("auto")):
-        suffix = Path(file.filename or "upload").suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = Path(tmp.name)
-
-        try:
-            summary = ingest_source(tmp_path, db, provider=provider)
-            summary["filename"] = file.filename
-            summary["stats"] = db.get_stats()
-            return summary
-        finally:
-            if tmp_path.exists():
-                tmp_path.unlink()
 
     @app.post("/api/ingest/scan", dependencies=[Depends(require_mutation_auth)])
     async def trigger_drop_folder_scan():

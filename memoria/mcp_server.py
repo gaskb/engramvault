@@ -541,15 +541,24 @@ def handle_mcp_jsonrpc(
     }
 
 
-def _forward_to_remote_mcp(payload: Dict[str, Any], remote_url: str) -> Optional[Dict[str, Any]]:
+def _forward_to_remote_mcp(
+    payload: Dict[str, Any],
+    remote_url: str,
+    api_token: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     """Forwards an MCP JSON-RPC request to the remote container (`http://localhost:5006/mcp`)."""
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    token = api_token or os.environ.get("MEMORIA_API_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     req = urllib.request.Request(
         f"{remote_url}/mcp",
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=25) as resp:

@@ -2,6 +2,7 @@
 Agent API v1 & Model Context Protocol (MCP) Server Routes (Issue #26 / Q-01, S-03).
 """
 
+import asyncio
 import json
 import uuid
 from typing import Optional
@@ -72,7 +73,8 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
     ):
         search_q = (query or q or "").strip()
         base_url = str(request.base_url).rstrip("/")
-        return build_agent_search_response(
+        return await asyncio.to_thread(
+            build_agent_search_response,
             db=db,
             planner=planner,
             query=search_q,
@@ -85,7 +87,8 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
     @router.post("/api/v1/agent/search", dependencies=[Depends(require_agent_auth)])
     async def agent_search_post(request: Request, payload: AgentSearchRequest):
         base_url = str(request.base_url).rstrip("/")
-        return build_agent_search_response(
+        return await asyncio.to_thread(
+            build_agent_search_response,
             db=db,
             planner=planner,
             query=payload.query.strip(),
@@ -98,7 +101,8 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
     @router.get("/api/v1/agent/conversation/{conv_id}", dependencies=[Depends(require_agent_auth)])
     async def agent_get_conversation(request: Request, conv_id: str, max_messages: int = 40):
         base_url = str(request.base_url).rstrip("/")
-        res = build_agent_conversation_response(
+        res = await asyncio.to_thread(
+            build_agent_conversation_response,
             db=db,
             conv_id=conv_id,
             max_messages=max_messages,
@@ -160,7 +164,7 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
 
     @router.post("/api/v1/agent/ask", dependencies=[Depends(require_agent_auth)])
     async def agent_ask(payload: AgentQueryRequest):
-        return planner.route_query(payload.query, mode=payload.mode, lang=payload.lang)
+        return await asyncio.to_thread(planner.route_query, payload.query, mode=payload.mode, lang=payload.lang)
 
     @router.get("/mcp", dependencies=[Depends(require_agent_auth)])
     async def mcp_info_or_sse(request: Request):
@@ -206,14 +210,14 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
         if isinstance(body, list):
             responses = []
             for req_item in body:
-                res = handle_mcp_jsonrpc(req_item, db=db, planner=planner, base_url=base_url)
+                res = await asyncio.to_thread(handle_mcp_jsonrpc, req_item, db=db, planner=planner, base_url=base_url)
                 if res is not None:
                     responses.append(res)
             if not responses:
                 return Response(status_code=202)
             resp_payload = responses
         else:
-            resp_payload = handle_mcp_jsonrpc(body, db=db, planner=planner, base_url=base_url)
+            resp_payload = await asyncio.to_thread(handle_mcp_jsonrpc, body, db=db, planner=planner, base_url=base_url)
             if resp_payload is None:
                 return Response(status_code=202)
 

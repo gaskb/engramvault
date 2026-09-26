@@ -454,6 +454,18 @@ class Database:
             cur = conn.execute(sql)
             return [dict(r) for r in cur.fetchall()]
 
+    def count_unenriched_conversations(self) -> int:
+        """Returns the total count of conversations that have not yet been processed by the batch enricher."""
+        sql = """
+            SELECT COUNT(*) AS cnt
+            FROM conversations
+            WHERE metadata_json IS NULL OR metadata_json NOT LIKE '%"enriched": true%'
+        """
+        with self.get_connection() as conn:
+            cur = conn.execute(sql)
+            row = cur.fetchone()
+            return int(row["cnt"] if row else 0)
+
     def mark_conversation_enriched(self, conv_id: str, model_name: str, extracted_count: int):
         with self.get_connection() as conn:
             cur = conn.execute("SELECT metadata_json FROM conversations WHERE id = ?", (conv_id,))

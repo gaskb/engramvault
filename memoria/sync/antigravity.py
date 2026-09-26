@@ -28,10 +28,12 @@ class AntigravitySyncer:
         state_file: Optional[Path | str] = None,
         remote_url: Optional[str] = None,
         db: Optional[Database] = None,
+        api_token: Optional[str] = None,
     ):
         self.antigravity_dir = Path(antigravity_dir or DEFAULT_ANTIGRAVITY_DIR)
         self.state_file = Path(state_file or DEFAULT_ANTIGRAVITY_STATE_FILE)
         self.remote_url = (remote_url or "").rstrip("/")
+        self.api_token = api_token or os.environ.get("MEMORIA_API_TOKEN")
         self.db = db
 
     def scan_changed_files(self) -> List[Path]:
@@ -138,6 +140,7 @@ class AntigravitySyncer:
                         endpoint,
                         tmp_zip_path,
                         form_fields={"provider": "antigravity"},
+                        api_token=self.api_token,
                     )
 
                     if resp.get("status") == "success":

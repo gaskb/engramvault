@@ -79,7 +79,7 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
     @router.post("/api/seed", dependencies=[Depends(require_mutation_auth)])
     async def seed_data():
         count = seed_database(db)
-        return {"status": "success", "seeded_conversations": count, "stats": db.get_stats()}
+        return {"status": "success", "seeded_count": count, "seeded_conversations": count, "stats": db.get_stats()}
 
     @router.post("/api/ingest", dependencies=[Depends(require_mutation_auth)])
     async def ingest_file(

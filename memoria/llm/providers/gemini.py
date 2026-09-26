@@ -41,8 +41,11 @@ class GeminiProvider(BaseLLMProvider):
             return None
 
         clean_model = self.model.replace("models/", "").strip()
-        url = f"{self.base_url}/v1beta/models/{clean_model}:generateContent?key={self.api_key}"
-        headers = {"Content-Type": "application/json"}
+        url = f"{self.base_url}/v1beta/models/{clean_model}:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key,
+        }
 
         # Format chat messages into Gemini contents structure
         contents: List[Dict[str, Any]] = []

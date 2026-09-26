@@ -111,10 +111,27 @@ def test_onboarding_mcp_config_generator(tmp_path: Path):
     app = create_app(db_file)
     client = TestClient(app)
 
-    # Enable token to verify header injection in MCP snippet
+    # 1. Before token is required: accessible without headers
+    res_open = client.get("/api/onboarding/mcp-config")
+    assert res_open.status_code == 200
+    cfg_open = res_open.json()["config"]
+    assert "memoria" in cfg_open["mcpServers"]
+    assert "Authorization" not in cfg_open["mcpServers"]["memoria"].get("headers", {})
+
+    # 2. Generate token and enable token enforcement
+    gen_res = client.post("/api/security/token/generate")
+    assert gen_res.status_code == 200
+    token = gen_res.json()["api_token"]
     client.post("/api/security/config", json={"api_token_required": True})
-    res = client.get("/api/onboarding/mcp-config")
+
+    # 3. Unauthenticated request is rejected with 401 (prevents leaking token)
+    res_unauth = client.get("/api/onboarding/mcp-config")
+    assert res_unauth.status_code == 401
+
+    # 4. Authenticated request succeeds and provides bearer token in config snippet
+    res = client.get("/api/onboarding/mcp-config", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     cfg = res.json()["config"]
     assert "memoria" in cfg["mcpServers"]
     assert "Authorization" in cfg["mcpServers"]["memoria"]["headers"]
+    assert token in cfg["mcpServers"]["memoria"]["headers"]["Authorization"]

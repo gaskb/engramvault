@@ -2,7 +2,7 @@ import logging
 import re
 from typing import List, Dict, Any, Optional
 from memoria.db.engine import Database
-from memoria.search.embeddings import EmbeddingEngine
+from memoria.search.embeddings import EmbeddingEngine, EMBEDDING_DIM
 from memoria.config import RRF_K, BM25_WEIGHT, VEC_WEIGHT
 
 logger = logging.getLogger("memoria.search.hybrid")
@@ -55,10 +55,28 @@ class HybridSearcher:
                 self._cached_count = 0
                 return
 
-            self._cached_chunk_ids = [r[0] for r in rows]
-            raw_blobs = b"".join(r[1] for r in rows)
-            self._cached_matrix = np.frombuffer(raw_blobs, dtype=np.float32).reshape((len(rows), -1))
-            self._cached_count = len(rows)
+            expected_blob_size = EMBEDDING_DIM * 4
+            valid_rows = []
+            for r in rows:
+                blob = r[1]
+                if blob and len(blob) == expected_blob_size:
+                    valid_rows.append(r)
+                else:
+                    logger.warning(
+                        "Skipping chunk %s with invalid embedding BLOB size %s (expected %s bytes)",
+                        r[0], len(blob) if blob else 0, expected_blob_size
+                    )
+
+            if not valid_rows:
+                self._cached_chunk_ids = []
+                self._cached_matrix = None
+                self._cached_count = total
+                return
+
+            self._cached_chunk_ids = [r[0] for r in valid_rows]
+            raw_blobs = b"".join(r[1] for r in valid_rows)
+            self._cached_matrix = np.frombuffer(raw_blobs, dtype=np.float32).reshape((len(valid_rows), EMBEDDING_DIM))
+            self._cached_count = total
 
     def search_bm25(
         self,

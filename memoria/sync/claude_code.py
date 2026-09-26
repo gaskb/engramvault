@@ -37,6 +37,7 @@ def post_multipart_file(
     file_path: Path,
     form_fields: Optional[Dict[str, str]] = None,
     timeout: int = 60,
+    api_token: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Posts a file to an HTTP endpoint using standard multipart/form-data."""
     boundary = f"----MemoriaBoundary{uuid.uuid4().hex}"
@@ -65,13 +66,18 @@ def post_multipart_file(
 
     payload = b"".join(body_parts)
 
+    headers = {
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+        "Content-Length": str(len(payload)),
+    }
+    token = api_token or os.environ.get("MEMORIA_API_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     req = urllib.request.Request(
         url,
         data=payload,
-        headers={
-            "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "Content-Length": str(len(payload)),
-        },
+        headers=headers,
         method="POST",
     )
 
@@ -92,10 +98,12 @@ class ClaudeCodeSyncer:
         state_file: Optional[Path | str] = None,
         remote_url: Optional[str] = None,
         db: Optional[Database] = None,
+        api_token: Optional[str] = None,
     ):
         self.projects_dir = Path(projects_dir or DEFAULT_CLAUDE_PROJECTS_DIR)
         self.state_file = Path(state_file or DEFAULT_STATE_FILE)
         self.remote_url = (remote_url or "").rstrip("/")
+        self.api_token = api_token or os.environ.get("MEMORIA_API_TOKEN")
         self.db = db
 
     def scan_changed_files(self) -> List[Path]:
@@ -169,6 +177,7 @@ class ClaudeCodeSyncer:
                         endpoint,
                         tmp_zip_path,
                         form_fields={"provider": "claude_code"},
+                        api_token=self.api_token,
                     )
 
                     if resp.get("status") == "success":

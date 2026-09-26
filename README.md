@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.2.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.3.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.2.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.3.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -74,8 +74,21 @@ Open **`http://localhost:5006`**:
 
 ## 🔐 Security, Bearer Token & Web UI Password
 
-- **API / MCP Bearer Token (`MEMORIA_API_TOKEN`)**: Protect `/api/v1/agent/*` and `/mcp` with `Authorization: Bearer <token>`. Generate, view, copy, or toggle enforcement live in **⚙️ Settings → Security**.
+- **API / MCP Bearer Token (`MEMORIA_API_TOKEN`)**: Protect `/api/v1/agent/*` and `/mcp` with `Authorization: Bearer <token>`. Supported transparently in `ClaudeCodeSyncer`, `AntigravitySyncer`, and stdio MCP proxy. Generate, view, copy, or toggle enforcement live in **⚙️ Settings → Security**.
+- **Onboarding Leak Protection**: `/api/onboarding/mcp-config` enforces mutation authentication when tokens are enabled to prevent exposing credentials to unauthenticated visitors.
+- **Stored XSS Defense**: All Markdown rendering and card interpolations are strictly sanitized with **DOMPurify** and HTML entity escaping.
+- **Provider API Key Privacy**: Google Gemini API keys are sent via official `x-goog-api-key` HTTP headers rather than URL query parameters to prevent exposure in proxy logs.
 - **Optional Web UI Password (`MEMORIA_WEB_PASSWORD`)**: Enable an `HttpOnly` signed session cookie and login screen (`/login`) when exposing the Web UI outside a trusted LAN.
+
+---
+
+## ⚡ Concurrency, CLI & UX Enhancements (v2.3.0)
+
+- **Non-Blocking Async Event Loop**: All synchronous SQLite, BM25, embedding matrix operations, and LLM queries are offloaded via `asyncio.to_thread` to ensure sub-millisecond API responsiveness under load.
+- **Vector BLOB Reshape Protection**: Validates 384-dimensional float buffer integrity (`1536` bytes) in `_ensure_vector_cache`, gracefully skipping malformed entries without runtime crashes.
+- **Real-Time Unenriched Conversation Tracker**: The "Ingest & Enrich" view displays real-time counters of unanalyzed conversations (`X in attesa / Y totali`), providing clear feedback on batch extraction status.
+- **Viewport Layout Optimization**: Zero-margin base styling ensures the footer is cleanly visible at the bottom of the viewport on initial load without default vertical scrollbars.
+- **CLI Robustness**: Full unit-test suite for `memoria` CLI commands (`init`, `seed`, `stats`, `search`, `ask`, `entities`, `decisions`, `timeline`) with support for global `--db` positioning.
 
 ---
 

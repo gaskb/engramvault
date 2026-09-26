@@ -154,7 +154,7 @@ def build_security_router(
     async def delete_custom_theme(theme_id: str):
         return theme_mgr.delete_custom_theme(theme_id)
 
-    @router.get("/api/onboarding/mcp-config")
+    @router.get("/api/onboarding/mcp-config", dependencies=[Depends(require_mutation_auth)])
     async def get_onboarding_mcp_config(request: Request):
         base_url = str(request.base_url).rstrip("/")
         sec = security_mgr.get_status()

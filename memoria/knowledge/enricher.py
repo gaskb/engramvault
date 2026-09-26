@@ -58,6 +58,17 @@ class KnowledgeEnricher:
     def get_status(self) -> Dict[str, Any]:
         st = dict(self.status)
         st["jev_gatekeeper"] = self.jev.get_status()
+        try:
+            total_convs = self.db.get_stats().get("conversations", 0)
+            unenriched = self.db.count_unenriched_conversations()
+            st["total_conversations"] = total_convs
+            st["unenriched_count"] = unenriched
+            st["enriched_count"] = max(0, total_convs - unenriched)
+        except Exception as exc:
+            logger.debug("Failed to calculate enrich stats: %s", exc)
+            st["total_conversations"] = 0
+            st["unenriched_count"] = 0
+            st["enriched_count"] = 0
         return st
 
     def extract_with_llm(self, conv_record: Dict[str, Any]) -> Optional[Dict[str, Any]]:

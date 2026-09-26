@@ -202,7 +202,7 @@ def cmd_serve(args, db: Database):
 
 def main():
     base_parser = argparse.ArgumentParser(add_help=False)
-    base_parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Percorso file SQLite vault.db")
+    base_parser.add_argument("--db", default=argparse.SUPPRESS, help="Percorso file SQLite vault.db")
 
     parser = argparse.ArgumentParser(
         prog="memoria",
@@ -297,7 +297,8 @@ def main():
     p_serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args()
-    db = Database(args.db)
+    db_path = getattr(args, "db", str(DEFAULT_DB_PATH))
+    db = Database(db_path)
     args.func(args, db)
 
 
