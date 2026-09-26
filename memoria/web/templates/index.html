@@ -564,10 +564,14 @@
                     </button>
                     <select id="entity-cat-filter" onchange="loadEntities()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="cat_all">{{ i18n.get('cat_all', 'All categories') }}</option>
+                        <option value="project" data-i18n="cat_project">{{ i18n.get('cat_project', 'Projects') }}</option>
                         <option value="audiocassette" data-i18n="cat_audiocassette">{{ i18n.get('cat_audiocassette', 'Audio Cassettes') }}</option>
                         <option value="audio_interface" data-i18n="cat_audio_interface">{{ i18n.get('cat_audio_interface', 'Audio Interfaces') }}</option>
                         <option value="hardware_deck" data-i18n="cat_hardware_deck">{{ i18n.get('cat_hardware_deck', 'Decks & Recorders') }}</option>
                         <option value="software" data-i18n="cat_software">{{ i18n.get('cat_software', 'Software & Code') }}</option>
+                        <option value="homelab" data-i18n="cat_homelab">{{ i18n.get('cat_homelab', 'Homelab & Infra') }}</option>
+                        <option value="cooking" data-i18n="cat_cooking">{{ i18n.get('cat_cooking', 'Cooking') }}</option>
+                        <option value="hardware" data-i18n="cat_hardware">{{ i18n.get('cat_hardware', 'Hardware') }}</option>
                         <option value="general" data-i18n="cat_general">{{ i18n.get('cat_general', 'General') }}</option>
                     </select>
                 </div>
@@ -1145,10 +1149,14 @@
                     <div>
                         <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_stmt_cat_label">{{ i18n.get('modal_stmt_cat_label', 'Category:') }}</label>
                         <select id="new-stmt-cat" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
+                            <option value="project" data-i18n="cat_project">{{ i18n.get('cat_project', 'Projects') }}</option>
                             <option value="audiocassette" data-i18n="cat_audiocassette">{{ i18n.get('cat_audiocassette', 'Audio Cassettes') }}</option>
                             <option value="audio_interface" data-i18n="cat_audio_interface">{{ i18n.get('cat_audio_interface', 'Audio Interfaces') }}</option>
                             <option value="hardware_deck" data-i18n="cat_hardware_deck">{{ i18n.get('cat_hardware_deck', 'Decks & Recorders') }}</option>
                             <option value="software" data-i18n="cat_software">{{ i18n.get('cat_software', 'Software & Code') }}</option>
+                            <option value="homelab" data-i18n="cat_homelab">{{ i18n.get('cat_homelab', 'Homelab & Infra') }}</option>
+                            <option value="cooking" data-i18n="cat_cooking">{{ i18n.get('cat_cooking', 'Cooking') }}</option>
+                            <option value="hardware" data-i18n="cat_hardware">{{ i18n.get('cat_hardware', 'Hardware') }}</option>
                             <option value="general" data-i18n="cat_general">{{ i18n.get('cat_general', 'General') }}</option>
                         </select>
                     </div>
@@ -1439,7 +1447,67 @@
 
         // --- Curation: Entities & Statements (Issue #5) ---
 
+        let loadedCategories = [];
+
+        function getCategoryDisplayName(cat) {
+            const key = `cat_${cat}`;
+            const localized = tr(key, null);
+            if (localized && localized !== key) return localized;
+            const fallbackMap = {
+                'audiocassette': 'Audio Cassettes',
+                'audio_interface': 'Audio Interfaces',
+                'hardware_deck': 'Decks & Recorders',
+                'software': 'Software & Code',
+                'project': 'Projects',
+                'homelab': 'Homelab & Infra',
+                'cooking': 'Cooking',
+                'hardware': 'Hardware',
+                'general': 'General'
+            };
+            if (fallbackMap[cat]) return fallbackMap[cat];
+            return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/categories');
+                if (!res.ok) return;
+                const cats = await res.json();
+                if (!Array.isArray(cats)) return;
+                loadedCategories = cats;
+
+                const filterSel = document.getElementById('entity-cat-filter');
+                if (filterSel) {
+                    const curVal = filterSel.value;
+                    let opts = `<option value="" data-i18n="cat_all">${tr('cat_all', 'All categories')}</option>`;
+                    cats.forEach(c => {
+                        const lbl = getCategoryDisplayName(c);
+                        const sel = c === curVal ? 'selected' : '';
+                        opts += `<option value="${escapeHtml(c)}" ${sel}>${escapeHtml(lbl)}</option>`;
+                    });
+                    filterSel.innerHTML = opts;
+                }
+
+                const modalSel = document.getElementById('new-stmt-cat');
+                if (modalSel) {
+                    const curVal = modalSel.value;
+                    let opts = '';
+                    cats.forEach(c => {
+                        const lbl = getCategoryDisplayName(c);
+                        const sel = c === curVal ? 'selected' : '';
+                        opts += `<option value="${escapeHtml(c)}" ${sel}>${escapeHtml(lbl)}</option>`;
+                    });
+                    modalSel.innerHTML = opts;
+                }
+            } catch (e) {
+                console.error('Failed to load categories:', e);
+            }
+        }
+
         async function loadEntities() {
+            if (loadedCategories.length === 0) {
+                await loadCategories();
+            }
             const cat = document.getElementById('entity-cat-filter').value;
             const url = cat ? `/api/entities?category=${cat}` : '/api/entities';
             const res = await fetch(url);
@@ -1549,6 +1617,7 @@
         }
 
         function openNewStatementModal() {
+            loadCategories();
             document.getElementById('statement-modal').classList.remove('hidden');
         }
 

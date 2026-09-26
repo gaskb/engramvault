@@ -312,6 +312,13 @@ class Database:
             cur = conn.execute(query, params)
             return [dict(r) for r in cur.fetchall()]
 
+    def get_entity_categories(self) -> List[str]:
+        with self.get_connection() as conn:
+            cur = conn.execute(
+                "SELECT DISTINCT category FROM entities WHERE category IS NOT NULL AND TRIM(category) != '' ORDER BY category ASC"
+            )
+            return [r[0] for r in cur.fetchall()]
+
     def get_statements(
         self,
         entity_id: Optional[str] = None,

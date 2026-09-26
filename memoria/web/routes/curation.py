@@ -68,6 +68,10 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
             e["statements"] = db.get_statements(entity_id=e["id"])
         return entities
 
+    @router.get("/api/categories")
+    async def get_categories():
+        return db.get_entity_categories()
+
     @router.get("/api/decisions")
     async def get_decisions(
         status: Optional[str] = None,

@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.4.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.7.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.4.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.7.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)

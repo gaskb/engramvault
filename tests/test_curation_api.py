@@ -116,3 +116,28 @@ def test_entity_curation_flow(client):
     # Delete entity
     res_del = client.delete(f"/api/entities/{ent_id}")
     assert res_del.status_code == 200
+
+
+def test_get_categories_flow(client):
+    # Insert statements with distinct categories including project and homelab
+    client.post("/api/statements", json={
+        "subject": "EngramVault",
+        "predicate": "uses",
+        "object": "true",
+        "statement_type": "FACT",
+        "entity_category": "project",
+    })
+    client.post("/api/statements", json={
+        "subject": "Proxmox",
+        "predicate": "runs_on",
+        "object": "SER3",
+        "statement_type": "FACT",
+        "entity_category": "homelab",
+    })
+
+    res = client.get("/api/categories")
+    assert res.status_code == 200
+    cats = res.json()
+    assert "project" in cats
+    assert "homelab" in cats
+
