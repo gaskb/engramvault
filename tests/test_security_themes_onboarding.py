@@ -1,7 +1,7 @@
 """Tests for Security/Bearer Auth (Issue #15), Onboarding/MCP Config (Issue #17), and Multi-Theme Engine (Issue #20)."""
 
 from pathlib import Path
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 
 from memoria.web.app import create_app
 
@@ -56,15 +56,39 @@ def test_security_bearer_token_and_web_password(tmp_path: Path):
     home_locked = client.get("/")
     assert "Unlock Vault" in home_locked.text
 
+    # 7. Regression Test (review.md / Issue #32):
+    # When Web Password is enabled, ALL /api/* read and write data endpoints must return 401 without auth!
+    unauth_client = TestClient(app)
+    for protected_path in (
+        "/api/conversations",
+        "/api/entities",
+        "/api/decisions",
+        "/api/relations",
+        "/api/stats",
+        "/api/settings",
+    ):
+        r = unauth_client.get(protected_path)
+        assert r.status_code == 401, f"{protected_path} should be 401 Unauthorized without session or token"
+
+    # Bearer token unlocks read endpoints
+    for protected_path in ("/api/conversations", "/api/entities", "/api/stats"):
+        r_auth = unauth_client.get(protected_path, headers={"Authorization": f"Bearer {token}"})
+        assert r_auth.status_code == 200, f"{protected_path} should be 200 with Bearer token"
+
     # Login with wrong password fails
     bad_login = client.post("/api/auth/login", json={"password": "wrong"})
     assert bad_login.status_code == 401
 
-    # Login with right password sets cookie and unlocks /
+    # Login with right password sets cookie and unlocks / AND /api/* data endpoints
     good_login = client.post("/api/auth/login", json={"password": "secret-homelab-pw"})
     assert good_login.status_code == 200
     home_unlocked = client.get("/")
     assert "tab-btn-ask" in home_unlocked.text
+
+    # Cookie unlocks data endpoints
+    cookie_res = client.get("/api/conversations")
+    assert cookie_res.status_code == 200
+    assert client.get("/api/stats").status_code == 200
 
 
 def test_multi_theme_engine_and_custom_theme(tmp_path: Path):

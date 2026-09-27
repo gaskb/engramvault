@@ -5,7 +5,7 @@ Agent API v1 & Model Context Protocol (MCP) Server Routes (Issue #26 / Q-01, S-0
 import asyncio
 import json
 import uuid
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
@@ -34,7 +34,7 @@ class AgentSearchRequest(BaseModel):
 
 
 class AgentRememberRequest(BaseModel):
-    record_type: str = Field(default="fact", max_length=32)  # "fact" | "decision"
+    record_type: Literal["fact", "claim", "decision"] = Field(default="fact")
     subject: Optional[str] = Field(default=None, max_length=512)
     predicate: str = Field(default="owned_by_user", max_length=256)
     object_value: Optional[str] = Field(default=None, max_length=4000)
@@ -42,7 +42,7 @@ class AgentRememberRequest(BaseModel):
     notes: Optional[str] = Field(default=None, max_length=2000)
     topic: Optional[str] = Field(default=None, max_length=512)
     decision_text: Optional[str] = Field(default=None, max_length=4000)
-    status: str = Field(default="ADOPTED", max_length=32)
+    status: Literal["ADOPTED", "EVALUATING", "SUPERSEDED", "ABANDONED"] = Field(default="ADOPTED")
 
 
 class AgentQueryRequest(BaseModel):

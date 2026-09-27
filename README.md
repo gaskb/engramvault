@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.1
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.9.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.9.1-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -72,13 +72,17 @@ Open **`http://localhost:5006`**:
 
 ---
 
-## 🔐 Security, Bearer Token & Web UI Password
+## 🔐 Security, Bearer Token, Web Lockdown & Ingest Protection (v2.9.1)
 
+- **Full Web API Lockdown (`MEMORIA_WEB_PASSWORD`)**: When web password protection is active, all `/api/*` read and write endpoints (`/api/conversations`, `/api/entities`, `/api/decisions`, `/api/relations`, `/api/stats`, `/api/settings`) strictly require an authenticated web session cookie or Bearer Token, rejecting unauthorized requests with `401 Unauthorized`.
 - **API / MCP Bearer Token (`MEMORIA_API_TOKEN`)**: Protect `/api/v1/agent/*` and `/mcp` with `Authorization: Bearer <token>`. Supported transparently in `ClaudeCodeSyncer`, `AntigravitySyncer`, and stdio MCP proxy. Generate, view, copy, or toggle enforcement live in **⚙️ Settings → Security**.
-- **Onboarding Leak Protection**: `/api/onboarding/mcp-config` enforces mutation authentication when tokens are enabled to prevent exposing credentials to unauthenticated visitors.
+- **Safe Streaming Ingest & Resource Limits (`MEMORIA_MAX_UPLOAD_MB`)**:
+  - Enforces strict extension whitelist (`.json`, `.jsonl`, `.zip`, `.md`, `.txt`), rejecting unauthorized formats with `400 Bad Request`.
+  - Streams uploads in chunks with configurable ceiling (default: `100MB`), cleanly returning `413 Payload Too Large` if breached.
+  - Offloads parsing, chunking, and embedding generation to `asyncio.to_thread` to maintain zero-latency event loop responsiveness.
+- **Strict Schema Validation (Pydantic Literals)**: Agent and curation endpoints validate status and statement types via Pydantic Literals, returning clean `422 Unprocessable Entity` responses rather than unhandled database 500 errors.
 - **Stored XSS Defense**: All Markdown rendering and card interpolations are strictly sanitized with **DOMPurify** and HTML entity escaping.
 - **Provider API Key Privacy**: Google Gemini API keys are sent via official `x-goog-api-key` HTTP headers rather than URL query parameters to prevent exposure in proxy logs.
-- **Optional Web UI Password (`MEMORIA_WEB_PASSWORD`)**: Enable an `HttpOnly` signed session cookie and login screen (`/login`) when exposing the Web UI outside a trusted LAN.
 
 ---
 

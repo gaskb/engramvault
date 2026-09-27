@@ -2,16 +2,17 @@ import os
 from pathlib import Path
 
 # Versioning (Release Version + API Contract Version + MCP Protocol Version)
-APP_VERSION = "2.9.0"
-UI_VERSION = "2.9.0"
+APP_VERSION = "2.9.1"
+UI_VERSION = "2.9.1"
 API_VERSION = "v1"
 MCP_PROTOCOL_VERSION = "2.0"
 APP_TITLE = os.getenv("MEMORIA_APP_TITLE", "Engram AI")
 APP_SUBTITLE = os.getenv("MEMORIA_APP_SUBTITLE", "AI Memory Vault")
 
-# Security & Authentication (Issue #15)
+# Security & Authentication (Issue #15 & #32)
 API_TOKEN = os.getenv("MEMORIA_API_TOKEN", "").strip()
 WEB_PASSWORD = os.getenv("MEMORIA_WEB_PASSWORD", "").strip()
+MAX_UPLOAD_MB = int(os.getenv("MEMORIA_MAX_UPLOAD_MB", "100"))
 DEFAULT_THEME_PALETTE = os.getenv("MEMORIA_DEFAULT_THEME", "emerald").lower()
 
 # Default Language & Instance White-Labeling (Issues #13 & #16)

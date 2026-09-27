@@ -1,4 +1,4 @@
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 from memoria.web.app import create_app
 
 
@@ -53,6 +53,29 @@ def test_agent_api_search_and_remember(tmp_path):
     brief2 = res2.json()["markdown_brief"]
     assert "Neumann TLM 102" in brief2
     assert "Protocollo MCP Homelab" in brief2
+
+    # 4. Strict validation: invalid status or record_type must return 422 (Issue #32)
+    invalid_status = client.post(
+        "/api/v1/agent/remember",
+        json={
+            "record_type": "decision",
+            "topic": "Test Invalid",
+            "decision_text": "Should fail validation",
+            "status": "NOT_AN_ENUM",
+        },
+    )
+    assert invalid_status.status_code == 422
+
+    invalid_record_type = client.post(
+        "/api/v1/agent/remember",
+        json={
+            "record_type": "invalid_type",
+            "subject": "Foo",
+            "predicate": "bar",
+            "object_value": "baz",
+        },
+    )
+    assert invalid_record_type.status_code == 422
 
 
 def test_mcp_jsonrpc_and_sse(tmp_path):

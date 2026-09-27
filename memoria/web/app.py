@@ -135,12 +135,23 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
     @app.middleware("http")
-    async def protect_security_and_mutations(request: Request, call_next):
+    async def protect_web_and_api_security(request: Request, call_next):
         path = request.url.path
         method = request.method.upper()
-        if path.startswith("/api/v1/agent") or path.startswith("/mcp") or path.startswith("/api/auth/"):
+        if path.startswith("/api/v1/agent") or path.startswith("/mcp"):
             return await call_next(request)
+        if path.startswith("/api/auth/"):
+            return await call_next(request)
+
         if security_mgr.is_web_password_enabled():
+            is_public_api = (path == "/api/i18n") or (path == "/api/themes" and method == "GET")
+            if path.startswith("/api/") and not is_public_api:
+                if not security_mgr.is_request_authorized(request):
+                    return JSONResponse(
+                        status_code=401,
+                        content={"detail": "Unauthorized: valid Web Session or Bearer Token required."},
+                    )
+        else:
             if path.startswith("/api/security") or (
                 path.startswith("/api/") and method in ("POST", "PUT", "PATCH", "DELETE")
             ):

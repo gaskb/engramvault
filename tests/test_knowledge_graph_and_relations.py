@@ -2,7 +2,7 @@ import json
 import uuid
 from unittest.mock import MagicMock
 import pytest
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 
 from memoria.db.engine import Database
 from memoria.db.models import RelationRecord, StatementRecord
@@ -171,3 +171,53 @@ def test_agent_api_and_mcp_graph(graph_db):
     assert "relations" in search_res
     assert len(search_res["relations"]) >= 1
     assert "Relazioni Semantiche nel Knowledge Graph" in search_res["markdown_brief"]
+
+
+def test_graph_edge_cases_and_cycles(graph_db):
+    # 1. Non-existent entity returns clean empty graph
+    empty_graph = graph_db.get_entity_graph("Totally_Non_Existent_Entity_404")
+    assert empty_graph["nodes"] == []
+    assert empty_graph["edges"] == []
+    assert empty_graph["statements"] == []
+
+    # 2. find_related_entities on empty list
+    assert graph_db.find_related_entities([]) == []
+
+    # 3. Delete non-existent relation returns False
+    assert graph_db.delete_relation("00000000-0000-0000-0000-000000000000") is False
+
+    # 4. Cyclic graph test: NodeA -> NodeB -> NodeC -> NodeA
+    na = graph_db.upsert_entity("CycleNodeA", "test")
+    nb = graph_db.upsert_entity("CycleNodeB", "test")
+    nc = graph_db.upsert_entity("CycleNodeC", "test")
+
+    graph_db.insert_relation(RelationRecord(
+        id=str(uuid.uuid4()),
+        from_entity_id=na,
+        to_entity_id=nb,
+        relation_type="links_to",
+    ))
+    graph_db.insert_relation(RelationRecord(
+        id=str(uuid.uuid4()),
+        from_entity_id=nb,
+        to_entity_id=nc,
+        relation_type="links_to",
+    ))
+    graph_db.insert_relation(RelationRecord(
+        id=str(uuid.uuid4()),
+        from_entity_id=nc,
+        to_entity_id=na,
+        relation_type="links_to",
+    ))
+
+    # Traversal starting from CycleNodeA with depth 2 and depth 3
+    cycle_graph = graph_db.get_entity_graph("CycleNodeA", depth=3)
+    node_names = [n["name"] for n in cycle_graph["nodes"]]
+    assert "CycleNodeA" in node_names
+    assert "CycleNodeB" in node_names
+    assert "CycleNodeC" in node_names
+    # Each node should be present exactly once (no duplicates due to cycle)
+    assert len(node_names) == len(set(node_names))
+    # Edges should not have duplicates
+    edge_ids = [e["id"] for e in cycle_graph["edges"]]
+    assert len(edge_ids) == len(set(edge_ids))

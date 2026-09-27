@@ -2,15 +2,17 @@
 Curation, Ingestion, Seed & Knowledge Enrichment Routes (Issue #26 / Q-01, S-05, R-05).
 """
 
+import asyncio
 import shutil
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from memoria.config import MAX_UPLOAD_MB
 from memoria.db.engine import Database, utc_now_iso
 from memoria.db.models import DecisionRecord, StatementRecord
 from memoria.ingest.pipeline import ingest_source
@@ -19,18 +21,20 @@ from memoria.knowledge.extractor import guess_category
 from memoria.seed.seed_data import seed_database
 from memoria.web.routes.security import require_mutation_auth
 
+ALLOWED_UPLOAD_EXTENSIONS = {".json", ".jsonl", ".zip", ".md", ".markdown", ".txt"}
+
 
 class CreateStatementRequest(BaseModel):
     subject: str = Field(..., min_length=1, max_length=512)
     predicate: str = Field(..., min_length=1, max_length=256)
     object: str = Field(..., min_length=1, max_length=4000)
-    statement_type: str = Field(default="FACT", max_length=32)
+    statement_type: Literal["FACT", "CLAIM", "DECISION"] = Field(default="FACT")
     notes: Optional[str] = Field(default=None, max_length=2000)
     entity_category: Optional[str] = Field(default=None, max_length=128)
 
 
 class UpdateStatementRequest(BaseModel):
-    statement_type: Optional[str] = Field(default=None, max_length=32)
+    statement_type: Optional[Literal["FACT", "CLAIM", "DECISION"]] = None
     is_current: Optional[int] = None
     notes: Optional[str] = Field(default=None, max_length=2000)
 
@@ -38,12 +42,12 @@ class UpdateStatementRequest(BaseModel):
 class CreateDecisionRequest(BaseModel):
     topic: str = Field(..., min_length=1, max_length=512)
     decision_text: str = Field(..., min_length=1, max_length=4000)
-    status: str = Field(default="ADOPTED", max_length=32)
+    status: Literal["ADOPTED", "EVALUATING", "SUPERSEDED", "ABANDONED"] = Field(default="ADOPTED")
     decided_at: Optional[str] = Field(default=None, max_length=64)
 
 
 class UpdateDecisionRequest(BaseModel):
-    status: Optional[str] = Field(default=None, max_length=32)
+    status: Optional[Literal["ADOPTED", "EVALUATING", "SUPERSEDED", "ABANDONED"]] = None
     decision_text: Optional[str] = Field(default=None, max_length=4000)
 
 
@@ -112,13 +116,41 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
         file: UploadFile = File(...),
         provider: str = Form("auto"),
     ):
-        suffix = "".join(Path(file.filename or "upload.json").suffixes) or ".json"
+        raw_filename = file.filename or "upload.json"
+        raw_suffix = Path(raw_filename).suffix.lower()
+        if raw_suffix not in ALLOWED_UPLOAD_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Formato file non supportato ('{raw_suffix}'). Formati ammessi: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}",
+            )
+
+        max_bytes = MAX_UPLOAD_MB * 1024 * 1024
+        total_bytes = 0
+        suffix = "".join(Path(raw_filename).suffixes) or ".json"
+
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
             tmp_path = Path(tmp.name)
+            try:
+                while True:
+                    chunk = await file.read(64 * 1024)
+                    if not chunk:
+                        break
+                    total_bytes += len(chunk)
+                    if total_bytes > max_bytes:
+                        raise HTTPException(
+                            status_code=413,
+                            detail=f"Dimensione file oltre il limite consentito ({MAX_UPLOAD_MB} MB).",
+                        )
+                    tmp.write(chunk)
+                tmp.flush()
+            except Exception:
+                tmp_path.unlink(missing_ok=True)
+                raise
 
         try:
-            summary = ingest_source(tmp_path, db, provider=provider)
+            summary = await asyncio.to_thread(ingest_source, tmp_path, db, provider=provider)
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail=str(ve))
         finally:
             tmp_path.unlink(missing_ok=True)
 

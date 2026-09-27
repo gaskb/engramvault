@@ -1,5 +1,6 @@
+import io
 import pytest
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 from memoria.db.engine import Database
 from memoria.web.app import create_app
 
@@ -140,4 +141,49 @@ def test_get_categories_flow(client):
     cats = res.json()
     assert "project" in cats
     assert "homelab" in cats
+
+
+def test_validation_and_upload_limits(client, monkeypatch):
+    # 1. Statement invalid statement_type returns 422
+    bad_stmt = client.post(
+        "/api/statements",
+        json={
+            "subject": "Test",
+            "predicate": "test",
+            "object": "test",
+            "statement_type": "INVALID_TYPE",
+        },
+    )
+    assert bad_stmt.status_code == 422
+
+    # 2. Decision invalid status returns 422
+    bad_dec = client.post(
+        "/api/decisions",
+        json={
+            "topic": "Test",
+            "decision_text": "Text",
+            "status": "INVALID_STATUS",
+        },
+    )
+    assert bad_dec.status_code == 422
+
+    # 3. Upload file with invalid extension returns 400
+    fake_exe = io.BytesIO(b"binary content")
+    res_bad_ext = client.post(
+        "/api/ingest",
+        files={"file": ("malware.exe", fake_exe, "application/octet-stream")},
+    )
+    assert res_bad_ext.status_code == 400
+    assert "non supportato" in res_bad_ext.json()["detail"]
+
+    # 4. Upload file exceeding MAX_UPLOAD_MB returns 413
+    import memoria.web.routes.curation as curation_mod
+    monkeypatch.setattr(curation_mod, "MAX_UPLOAD_MB", 1)  # 1 MB limit for test
+    oversized = io.BytesIO(b"A" * (1024 * 1024 + 1024))  # 1 MB + 1 KB
+    res_too_large = client.post(
+        "/api/ingest",
+        files={"file": ("big_conversations.json", oversized, "application/json")},
+    )
+    assert res_too_large.status_code == 413
+    assert "oltre il limite" in res_too_large.json()["detail"]
 

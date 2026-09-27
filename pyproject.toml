@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "memoria-ai-anti"
-version = "2.9.0"
+version = "2.9.1"
 description = "Engram AI — AI Memory Vault: Self-hosted AI Conversation Vault, Hybrid Search & Epistemic Knowledge Graph"
 readme = "README.md"
 requires-python = ">=3.10"
