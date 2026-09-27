@@ -85,11 +85,12 @@ def test_jev_web_endpoints(tmp_path):
 
     r_cfg = client.post(
         "/api/jev/config",
-        json={"enabled": True, "model": "typesafe/jev-1.13", "threshold": 0.60},
+        json={"enabled": True, "model": "typesafe/jev-1.13", "threshold": 0.60, "timeout": 4.8},
     )
     assert r_cfg.status_code == 200
     assert r_cfg.json()["enabled"] is True
     assert r_cfg.json()["threshold"] == 0.60
+    assert r_cfg.json()["timeout"] == 4.8
 
     r_test = client.post(
         "/api/jev/test",

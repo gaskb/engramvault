@@ -269,12 +269,14 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         base_url = payload.get("base_url")
         api_key = payload.get("api_key")
         threshold = payload.get("threshold")
+        timeout = payload.get("timeout")
         return planner.jev.save_config(
             enabled=enabled,
             model=model,
             base_url=base_url,
             api_key=api_key,
             threshold=threshold,
+            timeout=timeout,
         )
 
     @app.post("/api/jev/test", dependencies=[Depends(require_mutation_auth)])
