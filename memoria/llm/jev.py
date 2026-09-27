@@ -241,7 +241,8 @@ class JevSystemOneEngine:
                         "role": "system",
                         "content": (
                             "You are Jev System 1 Decision Engine. Evaluate the state against the questions. "
-                            f"Return ONLY a compact JSON object containing all question keys: {keys_str}."
+                            f"Return ONLY a JSON object with keys: {keys_str}. "
+                            "Choice values must be one of the specified options; Noul/Score values must be numbers between 0.0 and 1.0."
                         ),
                     },
                     {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
@@ -267,7 +268,7 @@ class JevSystemOneEngine:
                 content = raw.get("choices", [{}])[0].get("message", {}).get("content", "{}")
                 parsed = json.loads(content)
                 if isinstance(parsed, dict):
-                    for key in ("system_one_state", "response", "data", "result", "questions"):
+                    for key in ("system_one_state", "response", "data", "result", "questions", "compact", "decision"):
                         if key in parsed and isinstance(parsed[key], (dict, str)):
                             inner = parsed[key]
                             if isinstance(inner, str):
@@ -279,6 +280,10 @@ class JevSystemOneEngine:
                             elif isinstance(inner, dict):
                                 parsed = inner
                             break
+                    if isinstance(parsed, dict) and len(parsed) == 1:
+                        only_val = next(iter(parsed.values()))
+                        if isinstance(only_val, dict):
+                            parsed = only_val
                 elapsed = (time.perf_counter() - t0) * 1000.0
                 self.stats["calls_succeeded"] += 1
                 self.stats["last_latency_ms"] = round(elapsed, 1)
