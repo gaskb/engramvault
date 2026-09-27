@@ -140,7 +140,8 @@ def test_get_categories_flow(client):
     assert res.status_code == 200
     cats = res.json()
     assert "project" in cats
-    assert "homelab" in cats
+    assert "homelab_infra" in cats
+    assert "homelab" not in cats
 
 
 def test_validation_and_upload_limits(client, monkeypatch):

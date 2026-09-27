@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.1
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.2
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.9.1-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.9.2-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -125,7 +125,7 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
 ## 🏷️ Open-World Taxonomy & Dynamic Category Auto-Discovery (v2.8.0)
 
 - **Dynamic Open-World Category Auto-Discovery**: The Level 3 Epistemic Knowledge Enricher now feeds known categories dynamically into extraction prompts. When encountering entities in novel specialized domains (e.g. `ham_radio`, `homelab_infra`, `audio_pro_studio`, `hardware_pc`, `cooking`, `personal_life`), it automatically creates concise snake_case categories rather than dumping them into a generic catch-all bucket.
-- **Category Promotion & Sanitization**: `Database.upsert_entity` automatically sanitizes categories into snake_case and promotes existing entities previously marked as `general` whenever a more specific domain category is discovered.
+- **Category Promotion, Sanitization & Canonical Aliasing (v2.9.2)**: `Database.upsert_entity` sanitizes categories into snake_case and transparently canonicalizes fragmented variants into unified domains (e.g. `homelab`, `infrastruttura`, and `homelab & infra` $\rightarrow$ `homelab_infra`; `hardware` $\rightarrow$ `hardware_pc`; `feature` $\rightarrow$ `audio_interface`).
 - **Batch Re-clustering CLI (`scripts/recluster_categories.py`)**: Migrates existing legacy entities from `general` to specific domain categories using a two-stage pipeline:
   1. *Stage 1 (Zero-Latency Heuristics)*: Matches against domain keywords instantly (e.g. transceivers, sound cards, hypervisors, decks).
   2. *Stage 2 (Batch LLM Index-Mapping)*: Groups entities in efficient 50-item indexed payloads for sub-second, token-conservative classification via `deepseek-chat` or local models.

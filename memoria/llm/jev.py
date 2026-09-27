@@ -21,6 +21,7 @@ from memoria.config import (
     JEV_ENABLED,
     JEV_GATEKEEPER_THRESHOLD,
     JEV_MODEL,
+    JEV_TIMEOUT,
 )
 from memoria.db.engine import Database
 
@@ -41,6 +42,25 @@ VALID_CATEGORIES = [
 ]
 
 
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    """Safely converts arbitrary values (str, bool, num) to float without raising exceptions."""
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, bool):
+        return 1.0 if val else 0.0
+    val_s = str(val).strip().lower()
+    if val_s in ("true", "yes", "1"):
+        return 1.0
+    if val_s in ("false", "no", "0"):
+        return 0.0
+    try:
+        return float(val_s)
+    except (ValueError, TypeError):
+        return default
+
+
 class JevSystemOneEngine:
     """
     System 1 Decision Engine (`Choice`, `Noul`, `Score`) with circuit-breaker local fallback.
@@ -54,7 +74,7 @@ class JevSystemOneEngine:
         base_url: Optional[str] = None,
         model: Optional[str] = None,
         threshold: Optional[float] = None,
-        timeout_seconds: float = 0.75,
+        timeout_seconds: Optional[float] = None,
     ):
         self.db = db
         self._explicit_enabled = enabled
@@ -62,7 +82,7 @@ class JevSystemOneEngine:
         self._explicit_base_url = base_url
         self._explicit_model = model
         self._explicit_threshold = threshold
-        self.timeout_seconds = timeout_seconds
+        self._explicit_timeout = timeout_seconds
 
         # Runtime telemetry
         self.stats = {
@@ -103,6 +123,16 @@ class JevSystemOneEngine:
                     pass
         threshold = raw_thresh if raw_thresh is not None else JEV_GATEKEEPER_THRESHOLD
 
+        raw_to = self._explicit_timeout
+        if raw_to is None and self.db:
+            db_to = self.db.get_setting("jev_timeout")
+            if db_to:
+                try:
+                    raw_to = float(db_to)
+                except ValueError:
+                    pass
+        timeout = float(raw_to) if raw_to is not None else JEV_TIMEOUT
+
         # Resolve API key: explicit -> db jev_api_key -> db openrouter key -> env
         api_key = self._explicit_api_key or (self.db.get_setting("jev_api_key") if self.db else "") or JEV_API_KEY
         if not api_key and self.db:
@@ -125,6 +155,7 @@ class JevSystemOneEngine:
             "api_key_configured": bool(api_key and api_key != "dummy"),
             "api_key": api_key,
             "threshold": float(threshold),
+            "timeout": float(timeout),
         }
 
     def save_config(
@@ -134,6 +165,7 @@ class JevSystemOneEngine:
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
         threshold: Optional[float] = None,
+        timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Persists Jev System 1 configuration in SQLite settings."""
         if self.db:
@@ -146,6 +178,8 @@ class JevSystemOneEngine:
                 self.db.set_setting("jev_api_key", api_key.strip())
             if threshold is not None:
                 self.db.set_setting("jev_threshold", str(float(threshold)))
+            if timeout is not None:
+                self.db.set_setting("jev_timeout", str(float(timeout)))
         return self.get_status()
 
     def get_status(self) -> Dict[str, Any]:
@@ -157,6 +191,7 @@ class JevSystemOneEngine:
             "base_url": cfg["base_url"],
             "api_key_configured": cfg["api_key_configured"],
             "threshold": cfg["threshold"],
+            "timeout": cfg["timeout"],
             "stats": dict(self.stats),
         }
 
@@ -178,19 +213,19 @@ class JevSystemOneEngine:
                 endpoint = cfg["base_url"]
 
             prompt_payload = {
-                "system_one_state": state_text[:3500],
                 "questions": questions_schema,
+                "system_one_state": state_text[:3500],
             }
 
+            keys_str = ", ".join(questions_schema.keys())
             body = {
                 "model": cfg["model"],
                 "messages": [
                     {
                         "role": "system",
                         "content": (
-                            "You are Jev System 1 Decision Engine. Evaluate the provided state against the "
-                            "typed questions (Choice, Noul [0..1], Score [0..1]) and return ONLY a compact JSON object "
-                            "with the exact question keys."
+                            "You are Jev System 1 Decision Engine. Evaluate the state against the questions. "
+                            f"Return ONLY a compact JSON object containing all question keys: {keys_str}."
                         ),
                     },
                     {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
@@ -211,10 +246,23 @@ class JevSystemOneEngine:
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=self.timeout_seconds) as resp:
+            with urllib.request.urlopen(req, timeout=cfg["timeout"]) as resp:
                 raw = json.loads(resp.read().decode("utf-8"))
                 content = raw.get("choices", [{}])[0].get("message", {}).get("content", "{}")
                 parsed = json.loads(content)
+                if isinstance(parsed, dict):
+                    for key in ("system_one_state", "response", "data", "result", "questions"):
+                        if key in parsed and isinstance(parsed[key], (dict, str)):
+                            inner = parsed[key]
+                            if isinstance(inner, str):
+                                try:
+                                    import ast
+                                    parsed = ast.literal_eval(inner) if inner.startswith("{") else json.loads(inner)
+                                except Exception:
+                                    pass
+                            elif isinstance(inner, dict):
+                                parsed = inner
+                            break
                 elapsed = (time.perf_counter() - t0) * 1000.0
                 self.stats["calls_succeeded"] += 1
                 self.stats["last_latency_ms"] = round(elapsed, 1)
@@ -254,15 +302,26 @@ class JevSystemOneEngine:
         }
 
         remote = self._call_jev_primitives(query, schema)
-        if remote and remote.get("mode") in ("extractive", "structured", "synthetic"):
-            cat = remote.get("category", "all")
+        if remote and any(k in remote for k in ("mode", "category", "strict_owned_only", "is_decision_lookup")):
+            mode = remote.get("mode")
+            if mode not in ("extractive", "structured", "synthetic"):
+                mode = "synthetic"
+            cat = str(remote.get("category", "all")).lower().strip()
+            cat_map = {
+                "audio": "audio_interface",
+                "hardware": "hardware_pc",
+                "homelab": "homelab_infra",
+                "infra": "homelab_infra",
+                "cassette": "audiocassette",
+            }
+            cat = cat_map.get(cat, cat)
             if cat not in VALID_CATEGORIES:
                 cat = "all"
             return {
-                "mode": remote["mode"],
+                "mode": mode,
                 "category": cat,
-                "strict_owned_only": float(remote.get("strict_owned_only", 0.5)),
-                "is_decision_lookup": float(remote.get("is_decision_lookup", 0.2)),
+                "strict_owned_only": _safe_float(remote.get("strict_owned_only"), 0.5),
+                "is_decision_lookup": _safe_float(remote.get("is_decision_lookup"), 0.2),
                 "engine": "jev_system_1",
             }
 
@@ -348,9 +407,9 @@ class JevSystemOneEngine:
 
         remote = self._call_jev_primitives(conversation_snippet, schema)
         if remote and ("has_permanent_fact" in remote or "has_architectural_decision" in remote):
-            p_fact = float(remote.get("has_permanent_fact", 0.0))
-            p_dec = float(remote.get("has_architectural_decision", 0.0))
-            m_score = float(remote.get("memory_score", max(p_fact, p_dec)))
+            p_fact = _safe_float(remote.get("has_permanent_fact"), 0.0)
+            p_dec = _safe_float(remote.get("has_architectural_decision"), 0.0)
+            m_score = _safe_float(remote.get("memory_score"), max(p_fact, p_dec))
             combined = max(p_fact, p_dec, m_score)
             should_enrich = combined >= threshold
             if should_enrich:
@@ -427,10 +486,7 @@ class JevSystemOneEngine:
         for idx, h in enumerate(candidates):
             key = f"chunk_{idx}"
             jev_val = remote.get(key)
-            try:
-                bonus = float(jev_val) if isinstance(jev_val, (int, float)) else 0.5
-            except Exception:
-                bonus = 0.5
+            bonus = _safe_float(jev_val, 0.5)
             h_copy = dict(h)
             base_score = float(h_copy.get("rrf_score", h_copy.get("score", 0.5)))
             h_copy["jev_score"] = round(bonus, 3)

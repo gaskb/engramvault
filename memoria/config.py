@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 # Versioning (Release Version + API Contract Version + MCP Protocol Version)
-APP_VERSION = "2.9.1"
-UI_VERSION = "2.9.1"
+APP_VERSION = "2.9.2"
+UI_VERSION = "2.9.2"
 API_VERSION = "v1"
 MCP_PROTOCOL_VERSION = "2.0"
 APP_TITLE = os.getenv("MEMORIA_APP_TITLE", "Engram AI")
@@ -34,6 +34,7 @@ JEV_MODEL = os.getenv("MEMORIA_JEV_MODEL", "typesafe/jev-1.13")
 JEV_BASE_URL = os.getenv("MEMORIA_JEV_BASE_URL", "https://openrouter.ai/api/v1")
 JEV_API_KEY = os.getenv("MEMORIA_JEV_API_KEY", "")
 JEV_GATEKEEPER_THRESHOLD = float(os.getenv("MEMORIA_JEV_THRESHOLD", "0.55"))
+JEV_TIMEOUT = float(os.getenv("MEMORIA_JEV_TIMEOUT", "5.0"))
 
 DEFAULT_DATA_DIR = Path(os.getenv("MEMORIA_DATA_DIR", Path.home() / ".memoria"))
 DEFAULT_DB_PATH = Path(os.getenv("MEMORIA_DB_PATH", DEFAULT_DATA_DIR / "vault.db"))

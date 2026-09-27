@@ -236,6 +236,18 @@ class Database:
         clean_cat = re.sub(r"[^a-z0-9_]+", "_", (category or "general").strip().lower()).strip("_")
         clean_cat = clean_cat or "general"
 
+        # Canonical category normalization (unifies synonyms and legacy misclassifications)
+        canonical_map = {
+            "infrastruttura": "homelab_infra",
+            "homelab": "homelab_infra",
+            "homelab_infra": "homelab_infra",
+            "homelab_and_infra": "homelab_infra",
+            "hardware": "hardware_pc",
+            "hardware_pc": "hardware_pc",
+            "feature": "audio_interface",
+        }
+        clean_cat = canonical_map.get(clean_cat, clean_cat)
+
         with self.get_connection() as conn:
             cur = conn.execute(
                 "SELECT id, category FROM entities WHERE normalized_name = ?",
