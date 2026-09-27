@@ -194,6 +194,17 @@ class QueryPlanner:
                 else "- No specific items registered in the verified inventory."
             )
 
+        # Collect graph relations for matched entities
+        target_entity_ids = [item.get("entity_id") for item in target_owned if item.get("entity_id")]
+        relations = self.db.find_related_entities(target_entity_ids, limit=8) if target_entity_ids else []
+        if relations:
+            sec_rel = "Relazioni Semantiche & Connessioni (`GRAPH`):" if is_it else "Knowledge Graph Connections (`GRAPH`):"
+            lines.append(f"\n#### {sec_rel}")
+            for r in relations:
+                lines.append(
+                    f"- **{r['from_name']}** (`{r['from_category']}`) $\\rightarrow$ `{r['relation_type']}`: **{r['to_name']}** (`{r['to_category']}`)"
+                )
+
         sec2 = (
             "2. Dati tecnici e confronti estratti dalle discussioni (`CLAIM`):"
             if is_it

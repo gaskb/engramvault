@@ -557,10 +557,21 @@
                         <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded" data-i18n="knowledge_badge">{{ i18n.get('knowledge_badge', 'Active Curation') }}</span>
                     </h2>
                     <p class="text-xs text-slate-400" data-i18n="knowledge_subtitle">{{ i18n.get('knowledge_subtitle', 'Click on [FACT / CLAIM] or [CURRENT / PAST] badges to validate and curate your memory.') }}</p>
+                    <div class="flex items-center gap-1.5 mt-2">
+                        <button id="btn-view-entities" onclick="switchKnowledgeView('entities')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition">
+                            📦 <span data-i18n="tab_entities_sub">{{ i18n.get('tab_entities_sub', 'Entities & Facts') }}</span>
+                        </button>
+                        <button id="btn-view-relations" onclick="switchKnowledgeView('relations')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-transparent hover:text-white transition">
+                            🕸️ <span data-i18n="tab_relations_sub">{{ i18n.get('tab_relations_sub', 'Knowledge Graph Relations') }}</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="openNewStatementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                    <button id="btn-add-fact" onclick="openNewStatementModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
                         <span data-i18n="btn_add_fact">{{ i18n.get('btn_add_fact', '+ New Fact') }}</span>
+                    </button>
+                    <button id="btn-add-relation" onclick="openNewRelationModal()" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                        <span data-i18n="btn_add_relation">{{ i18n.get('btn_add_relation', '+ New Relation') }}</span>
                     </button>
                     <select id="entity-cat-filter" onchange="loadEntities()" class="bg-[#10141d] border border-cardborder rounded-lg px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="cat_all">{{ i18n.get('cat_all', 'All categories') }}</option>
@@ -578,6 +589,7 @@
             </div>
 
             <div id="entities-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="relations-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
         <!-- TAB 3: DECISIONS & TIMELINE -->
@@ -772,7 +784,7 @@
                                 <span>In attesa: <strong id="enrich-stat-unenriched" class="text-amber-400">0</strong> / <span id="enrich-stat-total">0</span></span>
                                 <span>Già arricchite: <strong id="enrich-stat-enriched" class="text-emerald-400">0</strong></span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                            <div class="grid grid-cols-3 gap-2 text-xs pt-1">
                                 <div class="bg-cardbg p-2 rounded border border-cardborder/50">
                                     <span class="text-slate-500 block text-[10px]" data-i18n="enrich_new_facts">{{ i18n.get('enrich_new_facts', 'New Facts') }}</span>
                                     <span id="enrich-stat-facts" class="font-bold text-white">0</span>
@@ -780,6 +792,10 @@
                                 <div class="bg-cardbg p-2 rounded border border-cardborder/50">
                                     <span class="text-slate-500 block text-[10px]" data-i18n="enrich_new_decisions">{{ i18n.get('enrich_new_decisions', 'New Decisions') }}</span>
                                     <span id="enrich-stat-decisions" class="font-bold text-white">0</span>
+                                </div>
+                                <div class="bg-cardbg p-2 rounded border border-cardborder/50">
+                                    <span class="text-slate-500 block text-[10px]" data-i18n="enrich_new_relations">{{ i18n.get('enrich_new_relations', 'New Relations') }}</span>
+                                    <span id="enrich-stat-relations" class="font-bold text-white">0</span>
                                 </div>
                             </div>
                             <div class="text-[11px] text-slate-400 truncate">
@@ -1164,6 +1180,50 @@
                 <div class="pt-2 flex justify-end gap-2">
                     <button type="button" onclick="closeModal('statement-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium" data-i18n="btn_save_fact">{{ i18n.get('btn_save_fact', 'Add Fact') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: New Knowledge Graph Relation -->
+    <div id="relation-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-cardborder pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>🕸️</span>
+                    <span data-i18n="modal_rel_title">{{ i18n.get('modal_rel_title', 'New Knowledge Graph Relation') }}</span>
+                </h3>
+                <button onclick="closeModal('relation-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form id="relation-form" onsubmit="handleCreateRelation(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_rel_from_label">{{ i18n.get('modal_rel_from_label', 'Source Entity (From):') }}</label>
+                    <input type="text" id="new-rel-from" required placeholder="E.g., Yaesu FT-891, EngramVault"
+                           class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_rel_type_label">{{ i18n.get('modal_rel_type_label', 'Relation Type:') }}</label>
+                    <select id="new-rel-type" class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white">
+                        <option value="connected_to">connected_to (Collegato a)</option>
+                        <option value="runs_on">runs_on (Gira su)</option>
+                        <option value="depends_on">depends_on (Dipende da)</option>
+                        <option value="part_of">part_of (Parte di)</option>
+                        <option value="compatible_with">compatible_with (Compatibile con)</option>
+                        <option value="subproject_of">subproject_of (Sotto-progetto di)</option>
+                        <option value="uses">uses (Utilizza)</option>
+                        <option value="created_by">created_by (Creato da)</option>
+                        <option value="configured_with">configured_with (Configurato con)</option>
+                        <option value="installed_on">installed_on (Installato su)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1" data-i18n="modal_rel_to_label">{{ i18n.get('modal_rel_to_label', 'Target Entity (To):') }}</label>
+                    <input type="text" id="new-rel-to" required placeholder="E.g., Antenna Dipolo, Docker"
+                           class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('relation-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium" data-i18n="btn_save_relation">{{ i18n.get('btn_save_relation', 'Save Relation') }}</button>
                 </div>
             </form>
         </div>
@@ -1639,6 +1699,115 @@
                 document.getElementById('statement-form').reset();
                 fetchStats();
                 loadEntities();
+            }
+        }
+
+        let currentKnowledgeView = 'entities';
+
+        function switchKnowledgeView(view) {
+            currentKnowledgeView = view;
+            const btnEntities = document.getElementById('btn-view-entities');
+            const btnRelations = document.getElementById('btn-view-relations');
+            const entContainer = document.getElementById('entities-container');
+            const relContainer = document.getElementById('relations-container');
+            const btnAddFact = document.getElementById('btn-add-fact');
+            const btnAddRel = document.getElementById('btn-add-relation');
+            const catFilter = document.getElementById('entity-cat-filter');
+
+            if (view === 'relations') {
+                if (btnEntities) btnEntities.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-transparent hover:text-white transition';
+                if (btnRelations) btnRelations.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 transition';
+                if (entContainer) entContainer.classList.add('hidden');
+                if (relContainer) relContainer.classList.remove('hidden');
+                if (btnAddFact) btnAddFact.classList.add('hidden');
+                if (btnAddRel) btnAddRel.classList.remove('hidden');
+                if (catFilter) catFilter.classList.add('hidden');
+                loadRelations();
+            } else {
+                if (btnEntities) btnEntities.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition';
+                if (btnRelations) btnRelations.className = 'px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-transparent hover:text-white transition';
+                if (entContainer) entContainer.classList.remove('hidden');
+                if (relContainer) relContainer.classList.add('hidden');
+                if (btnAddFact) btnAddFact.classList.remove('hidden');
+                if (btnAddRel) btnAddRel.classList.add('hidden');
+                if (catFilter) catFilter.classList.remove('hidden');
+                loadEntities();
+            }
+        }
+
+        async function loadRelations() {
+            const res = await fetch('/api/relations?limit=150');
+            const data = await res.json();
+            const c = document.getElementById('relations-container');
+            if (!c) return;
+            c.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                c.innerHTML = `<div class="col-span-3 text-center py-10 text-xs text-slate-500">
+                    🕸️ Nessuna relazione semantica ancora estratta.<br>
+                    Usa il pulsante <strong>"+ Nuova Relazione"</strong> o avvia l'arricchimento batch per popolare il grafo.
+                </div>`;
+                return;
+            }
+
+            data.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3.5 rounded-xl border border-cardborder space-y-2 relative group hover:border-indigo-500/40 transition';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">
+                            ${escapeHtml(r.relation_type)}
+                        </span>
+                        <button onclick="deleteRelation('${escapeHtml(r.id)}')" title="Elimina relazione" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs transition">✕</button>
+                    </div>
+                    <div class="flex items-center justify-between text-xs py-1">
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-100">${escapeHtml(r.from_name)}</div>
+                            <span class="text-[9px] text-slate-500 font-mono">${escapeHtml(r.from_category)}</span>
+                        </div>
+                        <div class="px-2 text-indigo-400 text-sm">➔</div>
+                        <div class="flex-1 text-right">
+                            <div class="font-bold text-slate-100">${escapeHtml(r.to_name)}</div>
+                            <span class="text-[9px] text-slate-500 font-mono">${escapeHtml(r.to_category)}</span>
+                        </div>
+                    </div>
+                `;
+                c.appendChild(card);
+            });
+        }
+
+        function openNewRelationModal() {
+            document.getElementById('relation-modal').classList.remove('hidden');
+        }
+
+        async function handleCreateRelation(e) {
+            e.preventDefault();
+            const from_entity = document.getElementById('new-rel-from').value.trim();
+            const relation_type = document.getElementById('new-rel-type').value.trim();
+            const to_entity = document.getElementById('new-rel-to').value.trim();
+
+            const res = await fetch('/api/relations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from_entity, relation_type, to_entity })
+            });
+            if (res.ok) {
+                closeModal('relation-modal');
+                document.getElementById('relation-form').reset();
+                fetchStats();
+                loadRelations();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Errore durante la creazione della relazione');
+            }
+        }
+
+        async function deleteRelation(relId) {
+            if (!confirm('Eliminare questa relazione dal Knowledge Graph?')) return;
+            const res = await fetch(`/api/relations/${relId}`, { method: 'DELETE' });
+            if (res.ok) {
+                fetchStats();
+                loadRelations();
             }
         }
 
@@ -2123,6 +2292,8 @@
                 document.getElementById('enrich-progress-bar').style.width = `${pct}%`;
                 document.getElementById('enrich-stat-facts').innerText = s.new_facts;
                 document.getElementById('enrich-stat-decisions').innerText = s.new_decisions;
+                const relEl = document.getElementById('enrich-stat-relations');
+                if (relEl) relEl.innerText = s.new_relations || 0;
                 document.getElementById('enrich-model-name').innerText = s.extractor_model || 'heuristics';
                 document.getElementById('enrich-current-conv').innerText = s.current_conversation ? `Attuale: "${s.current_conversation}"` : '';
 

@@ -42,6 +42,7 @@ class KnowledgeEnricher:
             "processed": 0,
             "new_facts": 0,
             "new_decisions": 0,
+            "new_relations": 0,
             "jev_filtered": 0,
             "current_conversation": "",
             "extractor_model": m_name,
@@ -108,7 +109,8 @@ class KnowledgeEnricher:
             "  \"entities\": [{\"name\": \"...\", \"category\": \"<categoria>\"}],\n"
             "  \"facts\": [{\"subject\": \"...\", \"predicate\": \"owned_by_user|uses|preference\", \"object\": \"...\", \"notes\": \"...\"}],\n"
             "  \"claims\": [{\"subject\": \"...\", \"predicate\": \"suitable_for|hardware_quality|feature\", \"object\": \"...\"}],\n"
-            "  \"decisions\": [{\"topic\": \"...\", \"decision\": \"...\", \"status\": \"ADOPTED|EVALUATING|ABANDONED\"}]\n"
+            "  \"decisions\": [{\"topic\": \"...\", \"decision\": \"...\", \"status\": \"ADOPTED|EVALUATING|ABANDONED\"}],\n"
+            "  \"relations\": [{\"from_entity\": \"...\", \"relation\": \"connected_to|runs_on|part_of|depends_on|compatible_with|subproject_of|uses|created_by\", \"to_entity\": \"...\"}]\n"
             "}\n"
             "Regole di categorizzazione entità (Open-World Dynamic Taxonomy):\n"
             f"- Categorie esistenti consigliate: {cats_hint}.\n"
@@ -118,7 +120,8 @@ class KnowledgeEnricher:
             "Regole tassative sui contenuti:\n"
             "1. 'facts': SOLO ciò che l'utente dichiara esplicitamente di possedere, usare o fare.\n"
             "2. 'claims': affermazioni o pareri tecnici formulati dall'AI.\n"
-            "3. Rispondi ESCLUSIVAMENTE con il blocco JSON valido, senza testo introduttivo."
+            "3. 'relations': SOLO relazioni logiche o fisiche dirette tra due entità concrete (es. apparato -> antenna, app -> container/db).\n"
+            "4. Rispondi ESCLUSIVAMENTE con il blocco JSON valido, senza testo introduttivo."
         )
 
         user_content = f"TITOLO: {conv_record.get('title', '')}\nDATA: {conv_record.get('created_at', '')[:10]}\n\nDIALOGO:\n{dialogue_text}"
@@ -159,6 +162,7 @@ class KnowledgeEnricher:
             "processed": 0,
             "new_facts": 0,
             "new_decisions": 0,
+            "new_relations": 0,
             "current_conversation": "",
             "extractor_model": model_name,
             "error": None,
@@ -275,6 +279,28 @@ class KnowledgeEnricher:
                             )
                             self.db.insert_decision(dec)
                             self.status["new_decisions"] += 1
+                            extracted_count += 1
+
+                    # 5. Relations
+                    for r in parsed.get("relations", []):
+                        f_ent = (r.get("from_entity") or "").strip()
+                        t_ent = (r.get("to_entity") or "").strip()
+                        rel_type = (r.get("relation") or r.get("relation_type") or "relates_to").strip()
+                        if f_ent and t_ent and f_ent.lower() != t_ent.lower():
+                            f_cat = extracted_entity_cats.get(f_ent.lower()) or guess_category(f_ent)
+                            t_cat = extracted_entity_cats.get(t_ent.lower()) or guess_category(t_ent)
+                            f_id = self.db.upsert_entity(f_ent, f_cat)
+                            t_id = self.db.upsert_entity(t_ent, t_cat)
+                            from memoria.db.models import RelationRecord
+                            rel_rec = RelationRecord(
+                                id=str(uuid.uuid4()),
+                                from_entity_id=f_id,
+                                to_entity_id=t_id,
+                                relation_type=rel_type,
+                                source_message_id=first_msg_id,
+                            )
+                            self.db.insert_relation(rel_rec)
+                            self.status["new_relations"] = self.status.get("new_relations", 0) + 1
                             extracted_count += 1
                 else:
                     # Fallback to deterministic heuristic extractor

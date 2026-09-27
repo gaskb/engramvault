@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.8.0
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.8.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.9.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -95,6 +95,29 @@ Engram AI / EngramVault can be installed directly onto any smartphone (Android a
 - **Android (Chrome / Brave / Edge)**: Open `https://vault.example.com` $\rightarrow$ tap the browser menu (⋮) $\rightarrow$ select **"Install app"** or **"Add to Home screen"**.
 - **iOS (Safari)**: Open `https://vault.example.com` $\rightarrow$ tap the Share button (⎋) $\rightarrow$ select **"Add to Home Screen"**.
 
+## 🕸️ Knowledge Graph & Multi-Hop Reasoning (v2.9.0)
+
+Engram AI models interconnected homelab topology, software stacks, hardware setups, and project dependencies using an epistemic **Knowledge Graph**:
+
+- **Typed Directed Edges**: First-class relations linking entities with semantic predicates:
+  - `connected_to` (e.g. `Focusrite Scarlett 2i2` $\rightarrow$ `MacBook Pro M1`)
+  - `runs_on` / `installed_on` (e.g. `EngramVault` $\rightarrow$ `Docker Server 10.0.0.5`)
+  - `depends_on` / `uses` (e.g. `Home Assistant` $\rightarrow$ `Zigbee2MQTT`)
+  - `part_of` / `subproject_of` (e.g. `Agent Curation UI` $\rightarrow$ `Engram AI`)
+  - `compatible_with`, `created_by`, `configured_with`.
+- **Multi-Hop Traversal (BFS)**:
+  - 1-hop and 2-hop graph expansion integrated natively into the DB engine (`Database.get_entity_graph`).
+  - Automatically queries outward connections during agent search (`memoria_search`) and synthesizes relational context in `memoria_ask` / `planner.execute_synthetic`.
+- **Interactive Web UI Relation Explorer**:
+  - Live filterable grid of entity relationships directly within the **Entities & Facts** tab.
+  - Interactive creation modal (`+ Add Relation`) and instant deletion/curation tools.
+  - Live relationship counter (`enrich-stat-relations`) in the Ingest & Enrich dashboard.
+- **Automated Two-Stage Relation Extraction CLI (`scripts/extract_relations.py`)**:
+  - *Stage 1*: Zero-latency heuristic mining from existing statement predicates (`installed_on`, `runs_on`, `connected_to`, `part_of`, `depends_on`).
+  - *Stage 2*: Token-conservative batch LLM extraction across historical conversations.
+
+---
+
 ## 🏷️ Open-World Taxonomy & Dynamic Category Auto-Discovery (v2.8.0)
 
 - **Dynamic Open-World Category Auto-Discovery**: The Level 3 Epistemic Knowledge Enricher now feeds known categories dynamically into extraction prompts. When encountering entities in novel specialized domains (e.g. `ham_radio`, `homelab_infra`, `audio_pro_studio`, `hardware_pc`, `cooking`, `personal_life`), it automatically creates concise snake_case categories rather than dumping them into a generic catch-all bucket.
@@ -125,11 +148,13 @@ Engram AI / EngramVault can be installed directly onto any smartphone (Android a
 
 | MCP Tool / REST Endpoint | Description |
 |---|---|
-| `memoria_search` (`GET /api/v1/agent/search?q=...`) | Hybrid search across `FACT`, `CLAIM`, `DECISION`, and 80,000+ conversation chunks in `< 30ms`. |
+| `memoria_search` (`GET /api/v1/agent/search?q=...`) | Hybrid search across `FACT`, `CLAIM`, `DECISION`, Knowledge Graph relations, and 80,000+ conversation chunks in `< 30ms`. |
 | `memoria_get_conversation` (`GET /api/v1/agent/conversation/{id}`) | Retrieves the full chronological transcript of any conversation by `conversation_id`. |
-| `memoria_ask` (`POST /api/v1/agent/ask`) | Executes multi-hop synthesis across verified inventory (`FACT`) and past discussions. |
+| `memoria_get_entity_graph` (`GET /api/v1/agent/graph/{entity}`) | Traverses outgoing & incoming Knowledge Graph connections (1-hop / 2-hop) for any entity. |
+| `memoria_ask` (`POST /api/v1/agent/ask`) | Executes multi-hop synthesis across verified inventory (`FACT`), graph topology, and past discussions. |
 | `memoria_remember_fact` (`POST /api/v1/agent/remember`) | Persists a verified `FACT` or `CLAIM` directly into the Knowledge Layer. |
 | `memoria_remember_decision` (`POST /api/v1/agent/remember`) | Records a technical or architectural `DECISION` in the permanent registry. |
+| `memoria_remember_relation` (`POST /api/v1/agent/relation`) | Connects two entities with a typed directed edge (`from_entity`, `relation_type`, `to_entity`). |
 
 ---
 

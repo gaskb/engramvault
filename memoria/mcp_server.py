@@ -176,6 +176,54 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
             "required": ["topic", "decision_text"],
         },
     },
+    {
+        "name": "memoria_get_entity_graph",
+        "description": (
+            "Esplora il grafo di conoscenza (Knowledge Graph) intorno a un'entità fino a una profondità indicata (1 o 2 salti), "
+            "restituendo le relazioni semantiche/fisiche connesse (es. 'connected_to', 'runs_on', 'part_of', 'depends_on', 'uses'), "
+            "i nodi adiacenti e i fatti/claim associati a ciascun nodo."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entity": {
+                    "type": "string",
+                    "description": "Nome dell'entità o UUID da esplorare nel grafo (es. 'Yaesu FT-891', 'EngramVault', 'Docker', 'Proxmox').",
+                },
+                "depth": {
+                    "type": "integer",
+                    "description": "Profondità di attraversamento del grafo (default: 1, max: 2).",
+                    "default": 1,
+                },
+            },
+            "required": ["entity"],
+        },
+    },
+    {
+        "name": "memoria_remember_relation",
+        "description": (
+            "Collega semanticamente due entità nel Knowledge Graph creando una relazione diretta "
+            "(es. 'Yaesu FT-891' connected_to 'Antenna Dipolo', 'EngramVault' runs_on 'Docker')."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "from_entity": {
+                    "type": "string",
+                    "description": "Nome dell'entità sorgente.",
+                },
+                "relation_type": {
+                    "type": "string",
+                    "description": "Tipo di relazione (es. 'connected_to', 'runs_on', 'depends_on', 'part_of', 'compatible_with', 'subproject_of', 'uses', 'created_by').",
+                },
+                "to_entity": {
+                    "type": "string",
+                    "description": "Nome dell'entità destinazione.",
+                },
+            },
+            "required": ["from_entity", "relation_type", "to_entity"],
+        },
+    },
 ]
 
 
@@ -202,6 +250,20 @@ def build_agent_search_response(
     decisions = k_res["decisions"]
     conversations = k_res["conversations"]
 
+    # Knowledge Graph related entities
+    entity_ids = list({s["entity_id"] for s in statements if s.get("entity_id")})
+    with db.get_connection() as conn:
+        q_clean = query.strip()
+        matching_entities = conn.execute(
+            "SELECT id FROM entities WHERE name LIKE ? OR ? LIKE '%' || normalized_name || '%' LIMIT 5",
+            (f"%{q_clean}%", q_clean.lower())
+        ).fetchall()
+        for me in matching_entities:
+            if me["id"] not in entity_ids:
+                entity_ids.append(me["id"])
+
+    relations = db.find_related_entities(entity_ids, limit=12) if entity_ids else []
+
     # Build Markdown Brief for Agents
     md_lines = [f"## 🧠 Memoria AI — Risultati per: `{query}`\n"]
 
@@ -222,6 +284,17 @@ def build_agent_search_response(
                 f"- **[{st_type}] {subj}** (`{cat}`) $\\rightarrow$ `{pred}`: **{obj}** "
                 f"— *Fonte: {src_prov} in \"{src_title}\" ({dt}){conv_ref}*"
             )
+        md_lines.append("")
+
+    if relations:
+        md_lines.append(f"### 2. Relazioni Semantiche nel Knowledge Graph ({len(relations)})")
+        for r in relations:
+            fn = r.get("from_name", "")
+            fc = r.get("from_category", "")
+            rtype = r.get("relation_type", "")
+            tn = r.get("to_name", "")
+            tc = r.get("to_category", "")
+            md_lines.append(f"- **{fn}** (`{fc}`) $\\xrightarrow{{\\text{{{rtype}}}}}$ **{tn}** (`{tc}`)")
         md_lines.append("")
 
     if decisions:
@@ -272,11 +345,13 @@ def build_agent_search_response(
         "elapsed_ms": elapsed_ms,
         "counts": {
             "statements": len(statements),
+            "relations": len(relations),
             "decisions": len(decisions),
             "matching_conversations": len(conversations),
             "message_chunks": len(chunks),
         },
         "statements": statements,
+        "relations": relations,
         "decisions": decisions,
         "matching_conversations": conversations,
         "message_chunks": chunks,
@@ -456,6 +531,78 @@ def handle_mcp_tool_call(
                     {
                         "type": "text",
                         "text": f"✅ Decisione registrata in Memoria AI (`id`: `{dec_id}`): **[{status}] {topic}** — {decision_text}",
+                    }
+                ],
+            }
+
+        elif name == "memoria_get_entity_graph":
+            entity = str(arguments.get("entity", "")).strip()
+            depth = int(arguments.get("depth", 1))
+            graph_data = db.get_entity_graph(entity, depth=depth)
+            root = graph_data.get("root")
+            if not root:
+                return {
+                    "isError": True,
+                    "content": [{"type": "text", "text": f"Entità `{entity}` non trovata nel Knowledge Graph."}],
+                }
+
+            md_lines = [
+                f"## 🕸️ Knowledge Graph: `{root['name']}` (`{root.get('category', 'general')}`)",
+                f"- **Profondità esplorata**: {graph_data['depth']} salto/i",
+                f"- **Nodi connessi**: {len(graph_data['nodes'])}",
+                f"- **Archi/Relazioni**: {len(graph_data['edges'])}",
+                "",
+                "### Relazioni Semantiche & Connessioni:",
+            ]
+            if graph_data["edges"]:
+                for e in graph_data["edges"]:
+                    md_lines.append(
+                        f"- **{e['from_name']}** (`{e['from_category']}`) $\\xrightarrow{{\\text{{{e['relation_type']}}}}}$ **{e['to_name']}** (`{e['to_category']}`)"
+                    )
+            else:
+                md_lines.append("- _Nessuna relazione esplicita registrata per questa entità._")
+            md_lines.append("")
+
+            if graph_data["statements"]:
+                md_lines.append(f"### Fatti & Claims sui nodi del grafo ({len(graph_data['statements'])}):")
+                for s in graph_data["statements"][:15]:
+                    md_lines.append(f"- **[{s['statement_type']}] {s['subject']}** $\\rightarrow$ `{s['predicate']}`: **{s['object']}**")
+                md_lines.append("")
+
+            return {
+                "content": [{"type": "text", "text": "\n".join(md_lines)}],
+                "structuredContent": graph_data,
+            }
+
+        elif name == "memoria_remember_relation":
+            from_ent = str(arguments.get("from_entity", "")).strip()
+            to_ent = str(arguments.get("to_entity", "")).strip()
+            rel_type = str(arguments.get("relation_type", "relates_to")).strip()
+
+            if not from_ent or not to_ent:
+                return {
+                    "isError": True,
+                    "content": [{"type": "text", "text": "from_entity e to_entity sono obbligatori."}],
+                }
+
+            from memoria.db.models import RelationRecord
+
+            f_cat = guess_category(from_ent)
+            t_cat = guess_category(to_ent)
+            f_id = db.upsert_entity(from_ent, f_cat)
+            t_id = db.upsert_entity(to_ent, t_cat)
+            rel_rec = RelationRecord(
+                id=str(uuid.uuid4()),
+                from_entity_id=f_id,
+                to_entity_id=t_id,
+                relation_type=rel_type,
+            )
+            rel_id = db.insert_relation(rel_rec)
+            return {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f"✅ Relazione registrata in Memoria AI (`id`: `{rel_id}`): **{from_ent}** (`{f_cat}`) $\\xrightarrow{{\\text{{{rel_type}}}}}$ **{to_ent}** (`{t_cat}`)",
                     }
                 ],
             }

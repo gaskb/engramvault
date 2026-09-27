@@ -51,6 +51,12 @@ class AgentQueryRequest(BaseModel):
     lang: str = Field(default=DEFAULT_LANG, max_length=8)
 
 
+class AgentRelationRequest(BaseModel):
+    from_entity: str = Field(..., max_length=512)
+    relation_type: str = Field(default="relates_to", max_length=128)
+    to_entity: str = Field(..., max_length=512)
+
+
 def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
     router = APIRouter()
 
@@ -165,6 +171,39 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
     @router.post("/api/v1/agent/ask", dependencies=[Depends(require_agent_auth)])
     async def agent_ask(payload: AgentQueryRequest):
         return await asyncio.to_thread(planner.route_query, payload.query, mode=payload.mode, lang=payload.lang)
+
+    @router.get("/api/v1/agent/graph/{entity}", dependencies=[Depends(require_agent_auth)])
+    async def agent_get_graph(entity: str, depth: int = 1):
+        res = await asyncio.to_thread(db.get_entity_graph, entity, depth=depth)
+        if not res.get("root"):
+            raise HTTPException(status_code=404, detail=f"Entità '{entity}' non trovata nel Knowledge Graph.")
+        return res
+
+    @router.post("/api/v1/agent/relation", dependencies=[Depends(require_agent_auth)])
+    async def agent_create_relation(payload: AgentRelationRequest):
+        from_ent = payload.from_entity.strip()
+        to_ent = payload.to_entity.strip()
+        if not from_ent or not to_ent or from_ent.lower() == to_ent.lower():
+            raise HTTPException(status_code=400, detail="from_entity e to_entity devono essere entità distinte e non vuote")
+        f_cat = guess_category(from_ent)
+        t_cat = guess_category(to_ent)
+        f_id = db.upsert_entity(from_ent, f_cat)
+        t_id = db.upsert_entity(to_ent, t_cat)
+        from memoria.db.models import RelationRecord
+        rel_rec = RelationRecord(
+            id=str(uuid.uuid4()),
+            from_entity_id=f_id,
+            to_entity_id=t_id,
+            relation_type=payload.relation_type.strip(),
+        )
+        rel_id = db.insert_relation(rel_rec)
+        return {
+            "status": "success",
+            "id": rel_id,
+            "from_entity": from_ent,
+            "relation_type": payload.relation_type,
+            "to_entity": to_ent,
+        }
 
     @router.get("/mcp", dependencies=[Depends(require_agent_auth)])
     async def mcp_info_or_sse(request: Request):

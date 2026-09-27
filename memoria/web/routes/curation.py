@@ -52,6 +52,12 @@ class UpdateEntityRequest(BaseModel):
     category: Optional[str] = Field(default=None, max_length=128)
 
 
+class CreateRelationRequest(BaseModel):
+    from_entity: str = Field(..., min_length=1, max_length=512)
+    to_entity: str = Field(..., min_length=1, max_length=512)
+    relation_type: str = Field(default="relates_to", max_length=128)
+
+
 class EnrichStartRequest(BaseModel):
     limit: Optional[int] = None
     rebuild: bool = False
@@ -214,6 +220,45 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
         if not ok:
             raise HTTPException(status_code=404, detail="Entità non trovata")
         return {"status": "success", "deleted_id": entity_id, "stats": db.get_stats()}
+
+    # --- Knowledge Graph Relations Endpoints (Issue #30) ---
+
+    @router.get("/api/relations")
+    async def list_relations(
+        entity_id: Optional[str] = None,
+        relation_type: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ):
+        return db.get_relations(entity_id=entity_id, relation_type=relation_type, limit=limit, offset=offset)
+
+    @router.post("/api/relations", dependencies=[Depends(require_mutation_auth)])
+    async def create_relation(payload: CreateRelationRequest):
+        from_ent = payload.from_entity.strip()
+        to_ent = payload.to_entity.strip()
+        if not from_ent or not to_ent or from_ent.lower() == to_ent.lower():
+            raise HTTPException(status_code=400, detail="from_entity e to_entity devono essere diverse e non vuote")
+        f_cat = guess_category(from_ent)
+        t_cat = guess_category(to_ent)
+        f_id = db.upsert_entity(from_ent, f_cat)
+        t_id = db.upsert_entity(to_ent, t_cat)
+        from memoria.db.models import RelationRecord
+
+        rel_rec = RelationRecord(
+            id=str(uuid.uuid4()),
+            from_entity_id=f_id,
+            to_entity_id=t_id,
+            relation_type=payload.relation_type.strip(),
+        )
+        rel_id = db.insert_relation(rel_rec)
+        return {"status": "success", "relation_id": rel_id}
+
+    @router.delete("/api/relations/{rel_id}", dependencies=[Depends(require_mutation_auth)])
+    async def delete_relation(rel_id: str):
+        ok = db.delete_relation(rel_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Relazione non trovata")
+        return {"status": "success", "deleted_id": rel_id, "stats": db.get_stats()}
 
     # --- Batch Enrichment API Endpoints (Issue #7) ---
 
