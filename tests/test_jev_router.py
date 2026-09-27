@@ -97,3 +97,67 @@ def test_jev_web_endpoints(tmp_path):
     )
     assert r_test.status_code == 200
     assert r_test.json()["decision"]["mode"] == "structured"
+
+
+def test_jev_safe_float_and_resilient_parsing(tmp_path, monkeypatch):
+    """Test _safe_float handles edge cases (booleans, strings, none, invalid) and category normalization."""
+    from memoria.llm.jev import _safe_float
+
+    assert _safe_float(None, 0.5) == 0.5
+    assert _safe_float(True) == 1.0
+    assert _safe_float(False) == 0.0
+    assert _safe_float("true") == 1.0
+    assert _safe_float("false") == 0.0
+    assert _safe_float("yes") == 1.0
+    assert _safe_float("no") == 0.0
+    assert _safe_float("0.85") == 0.85
+    assert _safe_float("invalid_str", 0.3) == 0.3
+    assert _safe_float({"nested": "dict"}, 0.2) == 0.2
+
+    # Test route_query_decision with string booleans and category synonyms
+    db = Database(tmp_path / "test_jev_resilience.db")
+    jev = JevSystemOneEngine(db=db, enabled=True, api_key="sk-test")
+
+    monkeypatch.setattr(
+        jev,
+        "_call_jev_primitives",
+        lambda state, schema: {
+            "mode": "extractive",
+            "category": "audio",  # synonym for audio_interface
+            "strict_owned_only": "true",
+            "is_decision_lookup": "0.0",
+        },
+    )
+    res = jev.route_query_decision("test audio query")
+    assert res["engine"] == "jev_system_1"
+    assert res["category"] == "audio_interface"
+    assert res["strict_owned_only"] == 1.0
+    assert res["is_decision_lookup"] == 0.0
+
+
+def test_jev_timeout_and_error_handling(tmp_path, monkeypatch):
+    """Test Jev timeout configuration, database persistence, and graceful fallback on timeout."""
+    db = Database(tmp_path / "test_jev_timeout.db")
+    jev = JevSystemOneEngine(db=db, enabled=True, api_key="sk-test", timeout_seconds=1.5)
+
+    cfg = jev.get_config()
+    assert cfg["timeout"] == 1.5
+
+    # Persist custom timeout in DB
+    jev.save_config(enabled=True, timeout=4.2)
+    cfg2 = jev.get_config()
+    assert cfg2["timeout"] == 4.2
+
+    # Simulate timeout exception in _call_jev_primitives
+    def mock_urlopen_timeout(*args, **kwargs):
+        import socket
+        raise socket.timeout("Connection timed out")
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", mock_urlopen_timeout)
+
+    decision = jev.route_query_decision("What did I decide for proxmox?")
+    assert decision["engine"] == "local_heuristic"
+    assert jev.stats["local_fallbacks"] == 1
+    assert "timed out" in jev.stats["last_error"]
+

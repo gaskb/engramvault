@@ -167,19 +167,35 @@ class JevSystemOneEngine:
         threshold: Optional[float] = None,
         timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """Persists Jev System 1 configuration in SQLite settings."""
+        self._explicit_enabled = enabled
         if self.db:
             self.db.set_setting("jev_enabled", "true" if enabled else "false")
             if model is not None:
                 self.db.set_setting("jev_model", model.strip())
+                self._explicit_model = model.strip()
             if base_url is not None:
                 self.db.set_setting("jev_base_url", base_url.strip())
+                self._explicit_base_url = base_url.strip()
             if api_key is not None and api_key.strip() and not api_key.startswith("***"):
                 self.db.set_setting("jev_api_key", api_key.strip())
+                self._explicit_api_key = api_key.strip()
             if threshold is not None:
                 self.db.set_setting("jev_threshold", str(float(threshold)))
+                self._explicit_threshold = float(threshold)
             if timeout is not None:
                 self.db.set_setting("jev_timeout", str(float(timeout)))
+                self._explicit_timeout = float(timeout)
+        else:
+            if model is not None:
+                self._explicit_model = model.strip()
+            if base_url is not None:
+                self._explicit_base_url = base_url.strip()
+            if api_key is not None:
+                self._explicit_api_key = api_key.strip()
+            if threshold is not None:
+                self._explicit_threshold = float(threshold)
+            if timeout is not None:
+                self._explicit_timeout = float(timeout)
         return self.get_status()
 
     def get_status(self) -> Dict[str, Any]:

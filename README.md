@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.2
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.3
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.9.2-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.9.3-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -46,7 +46,7 @@ flowchart LR
    - **`DECISION`**: Explicit architectural, technical, or purchasing choices (`ADOPTED`, `EVALUATING`, `ABANDONED`).
    - **`TIMELINE`**: Temporal state tracking (`valid_from`, `valid_until`, `is_current`).
 4. **System 1 (Optional Jev) + System 2 (LLM) Synthesis**:
-   - **System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter `typesafe/jev-1.13`)**: Evaluates `Choice`, `Noul`, and `Score` primitives in ~100ms for query routing, category filtering, batch enrichment noise gatekeeping, and chunk reranking—with automatic zero-latency local fallback when disabled or offline.
+   - **System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter `typesafe/jev-1.13` or Local `jev-system1-local` on CPU)**: Evaluates `Choice`, `Noul`, and `Score` primitives in ~100ms (cloud) or ~1.5s (local CPU via quantized Qwen 2.5 1.5B on `llama.cpp:server`) for query routing, category filtering, batch enrichment noise gatekeeping, and chunk reranking—with automatic zero-latency local heuristic fallback when disabled or offline.
    - **System 2 Synthesis**: Synthesizes multi-hop answers using your configured LLM provider (Gemini, Anthropic, OpenAI, OpenRouter, Groq, or local Ollama).
 
 ---
@@ -173,7 +173,9 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
   MEMORIA_WEB_PASSWORD=                   # Optional password for Web UI login screen
   MEMORIA_EMBEDDING_BACKEND=auto          # auto | api | gemini | ollama | fastembed | native
   MEMORIA_JEV_ENABLED=false               # Optional System 1 Jev engine (true | false)
-  MEMORIA_JEV_MODEL=typesafe/jev-1.13
+  MEMORIA_JEV_MODEL=typesafe/jev-1.13     # typesafe/jev-1.13 or local qwen2.5-1.5b
+  MEMORIA_JEV_BASE_URL=https://openrouter.ai/api/v1 # or http://jev_system1_1_5b:8080/v1
+  MEMORIA_JEV_TIMEOUT=5.0                 # Timeout in seconds before falling back to local heuristic
   ```
 
 ---
