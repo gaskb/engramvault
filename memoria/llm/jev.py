@@ -247,7 +247,7 @@ class JevSystemOneEngine:
                     {"role": "user", "content": json.dumps(prompt_payload, ensure_ascii=False)},
                 ],
                 "temperature": 0.0,
-                "max_tokens": 180,
+                "max_tokens": 90,
                 "response_format": {"type": "json_object"},
             }
 
@@ -300,20 +300,18 @@ class JevSystemOneEngine:
             "mode": {
                 "type": "Choice",
                 "options": ["extractive", "structured", "synthetic"],
-                "instructions": "extractive=locate exact chat quotes; structured=list inventory/decisions; synthetic=recommend or compare across inventory and knowledge.",
             },
             "category": {
                 "type": "Choice",
                 "options": VALID_CATEGORIES,
-                "instructions": "Target domain category if the query focuses on a specific domain, otherwise 'all'.",
             },
             "strict_owned_only": {
                 "type": "Noul",
-                "question": "Is the user asking specifically about equipment/software they personally own in their inventory?",
+                "question": "Owned personal inventory items only? 0.0 to 1.0",
             },
             "is_decision_lookup": {
                 "type": "Noul",
-                "question": "Is the user asking about past architectural, hardware, or technical decisions?",
+                "question": "Past technical decisions? 0.0 to 1.0",
             },
         }
 
