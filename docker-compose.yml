@@ -1,6 +1,6 @@
 services:
   memoria:
-    image: gaskb/memoria-ai-anti:latest
+    image: gaskb/engramvault:latest
     container_name: memoria_ai_anti
     restart: unless-stopped
     ports:

@@ -54,7 +54,7 @@ flowchart LR
 ## 🚀 60-Second Quickstart & First-Run Onboarding Wizard
 
 ```bash
-docker run -d --name memoria-ai -p 5006:8080 -v memoria_data:/app/data gaskb/memoria-ai-anti:latest
+docker run -d --name memoria-ai -p 5006:8080 -v memoria_data:/app/data gaskb/engramvault:latest
 ```
 
 Open **`http://localhost:5006`**:
