@@ -1,10 +1,10 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.9.3
+# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.10.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.9.3-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/Engram_AI-v2.10.0-emerald.svg)](https://engramvault.dev)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
@@ -177,6 +177,13 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
   MEMORIA_JEV_BASE_URL=https://openrouter.ai/api/v1 # or http://jev_system1_1_5b:8080/v1
   MEMORIA_JEV_TIMEOUT=5.0                 # Timeout in seconds before falling back to local heuristic
   ```
+
+---
+
+## 🎨 UI & Design System (`gaskb_style`)
+
+- **Pure Vector SVG Iconography**: Zero emoji di sistema nei menu, card e azioni; set completo di icone vettoriali SVG scalabili ad alta definizione con ereditarietà di colore `currentColor` per una visualizzazione nitida su qualsiasi densità di pixel.
+- **Multi-Theme Engine (M3 Dark & Light)**: 5 palette integrate (`emerald`, `amber`, `indigo`, `ruby`, `slate`) con Custom Theme Studio per creare, esportare e importare temi personalizzati.
 
 ---
 

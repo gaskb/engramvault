@@ -266,6 +266,194 @@
     </style>
 </head>
 <body class="bg-darkbg text-slate-200 min-h-screen flex flex-col md:flex-row">
+    <!-- SVG Sprite Icons System (gaskb_style, clean vector iconography) -->
+    <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </symbol>
+            <symbol id="icon-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path>
+            </symbol>
+            <symbol id="icon-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+                <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path>
+                <path d="M7 21h10"></path>
+                <path d="M12 3v18"></path>
+                <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path>
+            </symbol>
+            <symbol id="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </symbol>
+            <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </symbol>
+            <symbol id="icon-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+            </symbol>
+            <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </symbol>
+            <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path>
+                <path d="M12 20v2"></path>
+                <path d="m4.93 4.93 1.41 1.41"></path>
+                <path d="m17.66 17.66 1.41 1.41"></path>
+                <path d="M2 12h2"></path>
+                <path d="M20 12h2"></path>
+                <path d="m6.34 17.66-1.41 1.41"></path>
+                <path d="m19.07 4.93-1.41 1.41"></path>
+            </symbol>
+            <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+            </symbol>
+            <symbol id="icon-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                <path d="M5 3v4"></path>
+                <path d="M19 17v4"></path>
+                <path d="M3 5h4"></path>
+                <path d="M17 19h4"></path>
+            </symbol>
+            <symbol id="icon-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            </symbol>
+            <symbol id="icon-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </symbol>
+            <symbol id="icon-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </symbol>
+            <symbol id="icon-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m7.5 4.27 9 5.15"></path>
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                <path d="m3.3 7 8.7 5 8.7-5"></path>
+                <path d="M12 22V12"></path>
+            </symbol>
+            <symbol id="icon-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="16" y="16" width="6" height="6" rx="1"></rect>
+                <rect x="2" y="16" width="6" height="6" rx="1"></rect>
+                <rect x="9" y="2" width="6" height="6" rx="1"></rect>
+                <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path>
+                <path d="M12 12V8"></path>
+            </symbol>
+            <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </symbol>
+            <symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+            </symbol>
+            <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M8 16H3v5"></path>
+            </symbol>
+            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </symbol>
+            <symbol id="icon-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                <path d="m21 2-9.6 9.6"></path>
+                <path d="m15.5 7.5 3 3L22 7l-3-3"></path>
+            </symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </symbol>
+            <symbol id="icon-coffee" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                <line x1="6" y1="1" x2="6" y2="4"></line>
+                <line x1="10" y1="1" x2="10" y2="4"></line>
+                <line x1="14" y1="1" x2="14" y2="4"></line>
+            </symbol>
+            <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </symbol>
+            <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </symbol>
+            <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </symbol>
+            <symbol id="icon-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </symbol>
+            <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+            </symbol>
+            <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </symbol>
+            <symbol id="icon-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+                <circle cx="12" cy="5" r="2"></circle>
+                <path d="M12 7v4"></path>
+                <line x1="8" y1="16" x2="8" y2="16"></line>
+                <line x1="16" y1="16" x2="16" y2="16"></line>
+            </symbol>
+            <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <line x1="10" y1="9" x2="8" y2="9"></line>
+            </symbol>
+            <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+            </symbol>
+            <symbol id="icon-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </symbol>
+            <symbol id="icon-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </symbol>
+            <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </symbol>
+            <symbol id="icon-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+            </symbol>
+        </defs>
+    </svg>
+
 
     <!-- Left Collapsible Vertical Sidebar (Mockup 2 - Issue #21) -->
     <aside id="app-sidebar" class="w-full md:w-64 shrink-0 border-b md:border-b-0 md:border-r border-cardborder bg-[#10141d]/95 backdrop-blur-md md:sticky md:top-0 md:h-screen z-40 flex flex-col justify-between p-3.5 transition-all duration-200 site-header-centered">
@@ -273,8 +461,8 @@
         <div class="space-y-5">
             <div class="flex items-center justify-between px-1.5 pt-1">
                 <a href="/" class="flex items-center gap-2.5 group" title="{{ app_title or 'Engram AI' }} — {{ app_subtitle or 'AI Memory Vault' }}">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-lg shadow-sm group-hover:scale-105 transition">
-                        🧠
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold shadow-sm group-hover:scale-105 transition">
+                        <svg class="w-5 h-5"><use href="#icon-brain"></use></svg>
                     </div>
                     <div class="sidebar-label flex flex-col">
                         <span class="font-bold text-white text-base leading-tight">{{ app_title or 'Engram AI' }}</span>
@@ -289,19 +477,19 @@
             <!-- 4 Primary Daily Views -->
             <nav class="tabs tabs-centered flex-col !items-stretch gap-1.5" aria-label="Main Views">
                 <button type="button" onclick="switchTab('ask')" id="tab-btn-ask" class="sidebar-item tab-item active">
-                    <span class="text-base">🔍</span>
+                    <svg class="w-4 h-4 shrink-0"><use href="#icon-search"></use></svg>
                     <span class="sidebar-label" data-i18n="tab_ask">{{ i18n.get('tab_ask', 'Ask & Search') }}</span>
                 </button>
                 <button type="button" onclick="switchTab('knowledge')" id="tab-btn-knowledge" class="sidebar-item tab-item">
-                    <span class="text-base">🧠</span>
+                    <svg class="w-4 h-4 shrink-0"><use href="#icon-brain"></use></svg>
                     <span class="sidebar-label" data-i18n="tab_knowledge">{{ i18n.get('tab_knowledge', 'Facts & Entities') }}</span>
                 </button>
                 <button type="button" onclick="switchTab('decisions')" id="tab-btn-decisions" class="sidebar-item tab-item">
-                    <span class="text-base">⚖️</span>
+                    <svg class="w-4 h-4 shrink-0"><use href="#icon-scale"></use></svg>
                     <span class="sidebar-label" data-i18n="tab_decisions">{{ i18n.get('tab_decisions', 'Decisions & Timeline') }}</span>
                 </button>
                 <button type="button" onclick="switchTab('vault')" id="tab-btn-vault" class="sidebar-item tab-item">
-                    <span class="text-base">💬</span>
+                    <svg class="w-4 h-4 shrink-0"><use href="#icon-chat"></use></svg>
                     <span class="sidebar-label" data-i18n="tab_vault">{{ i18n.get('tab_vault', 'Conversation Vault') }}</span>
                 </button>
             </nav>
@@ -310,15 +498,15 @@
         <!-- Bottom Admin, Ingest, Theme & Language Controls -->
         <div class="pt-3 border-t border-cardborder/70 space-y-1.5">
             <button type="button" onclick="switchTab('import')" id="tab-btn-import" class="sidebar-item tab-item">
-                <span class="text-base">📥</span>
+                <svg class="w-4 h-4 shrink-0"><use href="#icon-upload"></use></svg>
                 <span class="sidebar-label" data-i18n="tab_import">{{ i18n.get('tab_import', 'Ingest & Enrich') }}</span>
             </button>
             <button type="button" onclick="switchTab('settings')" id="tab-btn-settings" class="sidebar-item tab-item">
-                <span class="text-base">⚙️</span>
+                <svg class="w-4 h-4 shrink-0"><use href="#icon-settings"></use></svg>
                 <span class="sidebar-label" data-i18n="tab_settings">{{ i18n.get('tab_settings', 'Admin & Settings') }}</span>
             </button>
             <button type="button" onclick="toggleOnboardingBanner(true)" class="sidebar-item text-emerald-400 hover:text-emerald-300">
-                <span class="text-base">🚀</span>
+                <svg class="w-4 h-4 shrink-0"><use href="#icon-rocket"></use></svg>
                 <span class="sidebar-label text-xs font-semibold" data-i18n="quickstart_btn">{{ i18n.get('quickstart_btn', 'Quickstart & MCP') }}</span>
             </button>
 
@@ -326,14 +514,14 @@
             <div class="pt-2 border-t border-cardborder/50 flex items-center justify-between gap-1.5 relative">
                 <div class="relative flex-1">
                     <button type="button" onclick="toggleThemeMenu()" class="w-full px-2.5 py-1.5 rounded-xl bg-[#0c0f17] border border-cardborder text-xs text-slate-300 hover:text-white flex items-center justify-center gap-1.5 transition" title="Theme & Mode">
-                        <span id="theme-toggle-icon">🌙</span>
+                        <svg id="theme-toggle-icon" class="w-4 h-4 shrink-0"><use href="#icon-moon"></use></svg>
                         <span class="sidebar-label" data-i18n="theme_btn_label">{{ i18n.get('theme_btn_label', 'Theme') }}</span>
                     </button>
                     <div id="theme-popover-menu" class="hidden absolute bottom-11 left-0 w-64 rounded-2xl glass-panel shadow-2xl p-3 z-50 space-y-2.5 text-xs">
                         <div class="flex items-center justify-between border-b border-cardborder pb-2">
-                            <span class="font-bold text-white">🎨 Theme & Mode</span>
-                            <button type="button" onclick="toggleTheme()" class="px-2 py-1 rounded-lg bg-[#10141d] border border-cardborder text-slate-300 hover:text-white text-[11px]">
-                                ☀️/🌙 Mode
+                            <span class="font-bold text-white flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-emerald-400"><use href="#icon-palette"></use></svg> <span data-i18n="theme_studio_title">Theme & Mode</span></span>
+                            <button type="button" onclick="toggleTheme()" class="px-2 py-1 rounded-lg bg-[#10141d] border border-cardborder text-slate-300 hover:text-white text-[11px] flex items-center gap-1">
+                                <svg class="w-3 h-3"><use href="#icon-sun"></use></svg>/<svg class="w-3 h-3"><use href="#icon-moon"></use></svg> <span>Mode</span>
                             </button>
                         </div>
                         <div id="theme-presets-list" class="grid grid-cols-1 gap-1.5"></div>
@@ -364,13 +552,14 @@
                 <div class="flex items-start justify-between gap-3 border-b border-cardborder pb-3">
                     <div>
                         <h2 class="text-sm font-bold text-white flex items-center gap-2" data-i18n="onboarding_title">
-                            {{ i18n.get('onboarding_title', '🚀 Welcome to AI Memory — 60-Second Quickstart & MCP Setup') }}
+                            <svg class="w-4 h-4 text-emerald-400 shrink-0"><use href="#icon-rocket"></use></svg>
+                            <span>{{ i18n.get('onboarding_title', 'Welcome to EngramVault — 60-Second Quickstart & MCP Setup') }}</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="onboarding_subtitle">
                             {{ i18n.get('onboarding_subtitle', 'Follow these 3 steps to populate your Vault and connect your AI coding agents (Antigravity, Claude Code, Claude Desktop, Cursor).') }}
                         </p>
                     </div>
-                    <button type="button" onclick="toggleOnboardingBanner(false)" class="text-slate-400 hover:text-white text-sm px-2 py-0.5 rounded-lg bg-[#10141d]">✕</button>
+                    <button type="button" onclick="toggleOnboardingBanner(false)" class="text-slate-400 hover:text-white p-1 rounded-lg bg-[#10141d] hover:bg-slate-800" title="Chiudi"><svg class="w-3.5 h-3.5"><use href="#icon-x"></use></svg></button>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -381,8 +570,8 @@
                                 {{ i18n.get('onboarding_step1_desc', 'Configure your preferred LLM provider (or local Ollama) in Settings. Multilingual 384-dim semantic vectors work out-of-the-box with zero config.') }}
                             </p>
                         </div>
-                        <button type="button" onclick="switchTab('settings')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition">
-                            ⚙️ Open AI Settings
+                        <button type="button" onclick="switchTab('settings')" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5"><use href="#icon-settings"></use></svg> <span>Open AI Settings</span>
                         </button>
                     </div>
 
@@ -393,8 +582,8 @@
                                 {{ i18n.get('onboarding_step2_desc', 'Drop your ChatGPT/Claude/Gemini export in the Ingest tab, or load the curated Demo Dataset in 1 click to test Hybrid Search & Knowledge Curation immediately.') }}
                             </p>
                         </div>
-                        <button type="button" onclick="loadDemoDatasetFromWizard()" id="btn-onboarding-demo" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow" data-i18n="onboarding_load_demo_btn">
-                            {{ i18n.get('onboarding_load_demo_btn', '✨ Load Demo Dataset (6 Chats + Facts/Decisions)') }}
+                        <button type="button" onclick="loadDemoDatasetFromWizard()" id="btn-onboarding-demo" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition shadow flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5"><use href="#icon-sparkles"></use></svg> <span data-i18n="onboarding_load_demo_btn">{{ i18n.get('onboarding_load_demo_btn', 'Load Demo Dataset (6 Chats + Facts/Decisions)') }}</span>
                         </button>
                     </div>
 
@@ -406,8 +595,8 @@
                             </p>
                             <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "memoria": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
                         </div>
-                        <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition" data-i18n="onboarding_copy_mcp_btn">
-                            {{ i18n.get('onboarding_copy_mcp_btn', '📋 Copy MCP Config JSON') }}
+                        <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5"><use href="#icon-clipboard"></use></svg> <span data-i18n="onboarding_copy_mcp_btn">{{ i18n.get('onboarding_copy_mcp_btn', 'Copy MCP Config JSON') }}</span>
                         </button>
                     </div>
                 </div>
@@ -422,8 +611,8 @@
                             <div id="stat-convs" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.conversations or 0 }}</div>
                             <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_chats">{{ i18n.get('banner_chats', 'Chats') }}</div>
                         </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
-                            💬
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                            <svg class="w-5 h-5"><use href="#icon-chat"></use></svg>
                         </div>
                     </div>
 
@@ -432,8 +621,8 @@
                             <div id="stat-facts" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.facts or 0 }}</div>
                             <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_facts">{{ i18n.get('banner_facts', 'Verified Facts') }}</div>
                         </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
-                            🧠
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                            <svg class="w-5 h-5"><use href="#icon-brain"></use></svg>
                         </div>
                     </div>
 
@@ -442,8 +631,8 @@
                             <div id="stat-decisions" class="text-2xl font-extrabold text-white tracking-tight">{{ stats.decisions or 0 }}</div>
                             <div class="text-xs text-slate-400 font-medium mt-0.5" data-i18n="banner_decisions">{{ i18n.get('banner_decisions', 'Decisions') }}</div>
                         </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
-                            ⚖️
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                            <svg class="w-5 h-5"><use href="#icon-scale"></use></svg>
                         </div>
                     </div>
 
@@ -454,8 +643,8 @@
                                 Chunks · <span id="header-active-llm" class="text-emerald-400">LLM</span>
                             </div>
                         </div>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg group-hover:scale-105 transition">
-                            ⚡
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition">
+                            <svg class="w-5 h-5"><use href="#icon-bolt"></use></svg>
                         </div>
                     </div>
                 </div>
@@ -465,22 +654,22 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="space-y-1.5 flex-1 min-w-0">
                             <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">📲 SHARE TARGET</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1"><svg class="w-3 h-3"><use href="#icon-share"></use></svg> SHARE TARGET</span>
                                 <span class="font-bold text-white text-xs">Contenuto ricevuto da condivisione mobile</span>
                             </div>
                             <p id="share-target-preview" class="text-slate-300 font-mono text-[11px] truncate bg-[#0c0f17] p-2 rounded-lg border border-cardborder"></p>
                         </div>
-                        <button type="button" onclick="dismissShareBanner()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Chiudi">✕</button>
+                        <button type="button" onclick="dismissShareBanner()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Chiudi"><svg class="w-3.5 h-3.5"><use href="#icon-x"></use></svg></button>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 pt-3">
                         <button type="button" onclick="submitQuery()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow">
-                            <span>🔍</span> Cerca nel Vault
+                            <svg class="w-3.5 h-3.5"><use href="#icon-search"></use></svg> <span>Cerca nel Vault</span>
                         </button>
                         <button type="button" onclick="saveShareAsFact()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cardborder text-slate-200 text-xs transition flex items-center gap-1.5">
-                            <span>✨</span> Salva come Fact
+                            <svg class="w-3.5 h-3.5"><use href="#icon-sparkles"></use></svg> <span>Salva come Fact</span>
                         </button>
                         <button type="button" onclick="saveShareAsDecision()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cardborder text-slate-200 text-xs transition flex items-center gap-1.5">
-                            <span>⚖️</span> Salva come Decision
+                            <svg class="w-3.5 h-3.5"><use href="#icon-scale"></use></svg> <span>Salva come Decision</span>
                         </button>
                     </div>
                 </div>
@@ -518,14 +707,12 @@
                         <div class="flex items-center gap-2 text-xs">
                             <span class="text-slate-500" data-i18n="quick_try_label">{{ i18n.get('quick_try_label', 'Quick Prompts:') }}</span>
                             <button onclick="useQuickI18nPrompt('quick_inventory_query')"
-                                    data-i18n="quick_inventory"
-                                    class="bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-md transition">
-                                {{ i18n.get('quick_inventory', '📦 My Verified Inventory') }}
+                                    class="bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded-md transition flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5"><use href="#icon-package"></use></svg> <span data-i18n="quick_inventory">{{ i18n.get('quick_inventory', 'My Verified Inventory') }}</span>
                             </button>
                             <button onclick="useQuickI18nPrompt('quick_decisions_query')"
-                                    data-i18n="quick_decisions"
-                                    class="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-md transition">
-                                {{ i18n.get('quick_decisions', '⚖️ Architectural & Tech Decisions') }}
+                                    class="bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 px-3 py-1 rounded-md transition flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5"><use href="#icon-scale"></use></svg> <span data-i18n="quick_decisions">{{ i18n.get('quick_decisions', 'Architectural & Tech Decisions') }}</span>
                             </button>
                         </div>
                     </div>
@@ -558,11 +745,11 @@
                     </h2>
                     <p class="text-xs text-slate-400" data-i18n="knowledge_subtitle">{{ i18n.get('knowledge_subtitle', 'Click on [FACT / CLAIM] or [CURRENT / PAST] badges to validate and curate your memory.') }}</p>
                     <div class="flex items-center gap-1.5 mt-2">
-                        <button id="btn-view-entities" onclick="switchKnowledgeView('entities')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition">
-                            📦 <span data-i18n="tab_entities_sub">{{ i18n.get('tab_entities_sub', 'Entities & Facts') }}</span>
+                        <button id="btn-view-entities" onclick="switchKnowledgeView('entities')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5"><use href="#icon-package"></use></svg> <span data-i18n="tab_entities_sub">{{ i18n.get('tab_entities_sub', 'Entities & Facts') }}</span>
                         </button>
-                        <button id="btn-view-relations" onclick="switchKnowledgeView('relations')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-transparent hover:text-white transition">
-                            🕸️ <span data-i18n="tab_relations_sub">{{ i18n.get('tab_relations_sub', 'Knowledge Graph Relations') }}</span>
+                        <button id="btn-view-relations" onclick="switchKnowledgeView('relations')" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 border border-transparent hover:text-white transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5"><use href="#icon-network"></use></svg> <span data-i18n="tab_relations_sub">{{ i18n.get('tab_relations_sub', 'Knowledge Graph Relations') }}</span>
                         </button>
                     </div>
                 </div>
@@ -603,9 +790,9 @@
                 <div class="flex items-center gap-2">
                     <div class="relative w-56 sm:w-72">
                         <input type="text" id="decisions-search-input" oninput="debounceDecisionsSearch()"
-                               placeholder="{{ i18n.get('decisions_search_placeholder', '🔍 Search topic or text...') }}"
+                               placeholder="{{ i18n.get('decisions_search_placeholder', 'Search topic or text...') }}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-xl pl-3 pr-7 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
-                        <button type="button" id="decisions-search-clear" onclick="clearDecisionsSearch()" class="hidden absolute right-2.5 top-1.5 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+                        <button type="button" id="decisions-search-clear" onclick="clearDecisionsSearch()" class="hidden absolute right-2.5 top-2 text-slate-500 hover:text-slate-300"><svg class="w-3 h-3"><use href="#icon-x"></use></svg></button>
                     </div>
                     <select id="decisions-status-filter" onchange="loadDecisions(true)" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="status_all">{{ i18n.get('status_all', 'All statuses') }}</option>
@@ -623,7 +810,7 @@
                 <!-- Decisions Column -->
                 <div class="lg:col-span-2 glass-panel p-5 rounded-2xl space-y-4">
                     <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                        <span data-i18n="decisions_list_title">{{ i18n.get('decisions_list_title', '⚖️ Recorded Decisions') }}</span>
+                        <span class="flex items-center gap-1.5"><svg class="w-4 h-4"><use href="#icon-scale"></use></svg> <span data-i18n="decisions_list_title">{{ i18n.get('decisions_list_title', 'Recorded Decisions') }}</span></span>
                         <span id="decisions-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
                     <div id="decisions-list" class="space-y-3"></div>
@@ -637,7 +824,7 @@
                 <!-- Timeline Column -->
                 <div class="glass-panel p-5 rounded-2xl space-y-4">
                     <h3 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center justify-between">
-                        <span data-i18n="timeline_title">{{ i18n.get('timeline_title', '⏳ Setup & State Timeline') }}</span>
+                        <span class="flex items-center gap-1.5"><svg class="w-4 h-4"><use href="#icon-clock"></use></svg> <span data-i18n="timeline_title">{{ i18n.get('timeline_title', 'Setup & State Timeline') }}</span></span>
                         <span id="timeline-count-badge" class="text-xs text-slate-400 font-normal"></span>
                     </h3>
                     <div id="timeline-list" class="space-y-3 relative pl-4 border-l-2 border-indigo-500/20 max-h-[70vh] overflow-y-auto pr-1"></div>
@@ -655,9 +842,9 @@
                 <div class="flex items-center gap-2">
                     <div class="relative w-64 sm:w-80">
                         <input type="text" id="vault-search-input" oninput="debounceVaultSearch()"
-                               placeholder="{{ i18n.get('vault_search_placeholder', '🔍 Search title or message content...') }}"
+                               placeholder="{{ i18n.get('vault_search_placeholder', 'Search title or message content...') }}"
                                class="w-full bg-[#10141d] border border-cardborder rounded-xl pl-3 pr-7 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
-                        <button type="button" id="vault-search-clear" onclick="clearVaultSearch()" class="hidden absolute right-2.5 top-1.5 text-slate-500 hover:text-slate-300 text-xs">✕</button>
+                        <button type="button" id="vault-search-clear" onclick="clearVaultSearch()" class="hidden absolute right-2.5 top-2 text-slate-500 hover:text-slate-300"><svg class="w-3 h-3"><use href="#icon-x"></use></svg></button>
                     </div>
                     <select id="vault-provider-filter" onchange="loadVault(true)" class="bg-[#10141d] border border-cardborder rounded-xl px-3 py-1.5 text-xs text-white">
                         <option value="" data-i18n="vault_all_providers">{{ i18n.get('vault_all_providers', 'All providers') }}</option>
@@ -690,8 +877,8 @@
                             <p id="vault-detail-meta" class="text-[11px] text-slate-400 font-mono mt-0.5">—</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" id="vault-delete-btn" onclick="deleteCurrentVaultConversation()" class="hidden px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 hover:bg-rose-500/20 whitespace-nowrap transition" title="{{ i18n.get('vault_delete_conv', 'Delete conversation') }}">
-                                🗑️ <span data-i18n="vault_delete_conv">{{ i18n.get('vault_delete_conv', 'Delete conversation') }}</span>
+                            <button type="button" id="vault-delete-btn" onclick="deleteCurrentVaultConversation()" class="hidden px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-400 hover:bg-rose-500/20 whitespace-nowrap transition flex items-center gap-1.5" title="{{ i18n.get('vault_delete_conv', 'Delete conversation') }}">
+                                <svg class="w-3.5 h-3.5"><use href="#icon-trash"></use></svg> <span data-i18n="vault_delete_conv">{{ i18n.get('vault_delete_conv', 'Delete conversation') }}</span>
                             </button>
                             <button type="button" id="vault-expand-modal-btn" onclick="if(window.activeVaultConvId) openModal(window.activeVaultConvId)" class="px-2.5 py-1 rounded-lg bg-[#10141d] border border-cardborder text-xs text-slate-300 hover:text-white whitespace-nowrap">
                                 ⤢ Modal
@@ -733,7 +920,7 @@
                         <div class="border-2 border-dashed border-cardborder hover:border-emerald-500/50 rounded-2xl p-6 text-center transition cursor-pointer bg-[#10141d]/50"
                              onclick="document.getElementById('file-upload-input').click()">
                             <input id="file-upload-input" type="file" name="file" class="hidden" onchange="fileSelected(this)">
-                            <div class="text-3xl mb-1">📁</div>
+                            <div class="mb-2"><svg class="w-10 h-10 mx-auto text-slate-400"><use href="#icon-folder"></use></svg></div>
                             <p id="upload-label" class="text-sm text-slate-300 font-medium" data-i18n="import_drop_label">{{ i18n.get('import_drop_label', 'Select a file or drag & drop it here') }}</p>
                             <p class="text-xs text-slate-500 mt-1" data-i18n="import_drop_hint">{{ i18n.get('import_drop_hint', 'Supports .zip, .json, .jsonl, .md') }}</p>
                         </div>
@@ -763,7 +950,7 @@
                                 <span id="enrich-running-pill" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono uppercase" data-i18n="enrich_status_idle">{{ i18n.get('enrich_status_idle', 'Idle') }}</span>
                             </h2>
                             <div id="enrich-pending-container" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono" title="Conversazioni non ancora analizzate dal modello LLM">
-                                <span>⏳</span>
+                                <svg class="w-3.5 h-3.5"><use href="#icon-clock"></use></svg>
                                 <span id="enrich-pending-badge">0 in attesa</span>
                             </div>
                         </div>
@@ -816,7 +1003,7 @@
                         <div class="flex gap-2">
                             <button onclick="startEnrich(false)" id="btn-start-enrich"
                                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl font-medium text-xs transition flex items-center justify-center gap-1.5">
-                                <span data-i18n="btn_start_enrich">{{ i18n.get('btn_start_enrich', '▶ Start Incremental Enrich') }}</span>
+                                <svg class="w-3.5 h-3.5"><use href="#icon-play"></use></svg> <span data-i18n="btn_start_enrich">{{ i18n.get('btn_start_enrich', 'Start Incremental Enrich') }}</span>
                             </button>
                             <button onclick="stopEnrich()" id="btn-stop-enrich" disabled
                                     class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 px-4 py-2.5 rounded-xl font-medium text-xs transition disabled:opacity-40" data-i18n="btn_stop_enrich">
@@ -824,8 +1011,8 @@
                             </button>
                         </div>
                         <button onclick="startEnrich(true)"
-                                class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-300 border border-cardborder text-slate-400 py-2 rounded-xl text-xs transition" data-i18n="btn_rebuild_enrich">
-                            {{ i18n.get('btn_rebuild_enrich', '⚠️ Rebuild Knowledge Graph from Scratch (--rebuild)') }}
+                                class="w-full bg-slate-800 hover:bg-rose-950/40 hover:text-rose-300 border border-cardborder text-slate-400 py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-amber-400"><use href="#icon-alert-triangle"></use></svg> <span data-i18n="btn_rebuild_enrich">{{ i18n.get('btn_rebuild_enrich', 'Rebuild Knowledge Graph from Scratch (--rebuild)') }}</span>
                         </button>
                         <div class="pt-3 border-t border-cardborder/60 flex items-center justify-between gap-2">
                             <div class="text-[11px] text-slate-400">
@@ -833,8 +1020,8 @@
                                 <span id="embedding-engine-badge" class="ml-1 font-mono text-emerald-400">(384-dim)</span>
                             </div>
                             <button onclick="reindexEmbeddings()" id="btn-reindex-embeddings"
-                                    class="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-medium transition">
-                                <span data-i18n="btn_reindex_embeddings">{{ i18n.get('btn_reindex_embeddings', '🔄 Re-Index Vault Embeddings') }}</span>
+                                    class="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-medium transition flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5"><use href="#icon-refresh"></use></svg> <span data-i18n="btn_reindex_embeddings">{{ i18n.get('btn_reindex_embeddings', 'Re-Index Vault Embeddings') }}</span>
                             </button>
                         </div>
                     </div>
@@ -850,17 +1037,17 @@
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span data-i18n="settings_active_title">{{ i18n.get('settings_active_title', '🎯 Active LLM Provider & Model') }}</span>
+                            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400"><use href="#icon-target"></use></svg> <span data-i18n="settings_active_title">{{ i18n.get('settings_active_title', 'Active LLM Provider & Model') }}</span></span>
                             <span id="settings-status-badge" class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" data-i18n="settings_configured_badge">{{ i18n.get('settings_configured_badge', 'Configured') }}</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="settings_active_subtitle">{{ i18n.get('settings_active_subtitle', 'Select which LLM provider and model to use as defaults for synthesis queries and batch knowledge extraction.') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
-                            <span data-i18n="btn_refresh_all_models">{{ i18n.get('btn_refresh_all_models', '🔄 Refresh All Providers') }}</span>
+                            <svg class="w-3.5 h-3.5"><use href="#icon-refresh"></use></svg> <span data-i18n="btn_refresh_all_models">{{ i18n.get('btn_refresh_all_models', 'Refresh All Providers') }}</span>
                         </button>
                         <button onclick="saveActiveSelection()" id="btn-save-active-llm" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                            <span data-i18n="btn_save_default_llm">{{ i18n.get('btn_save_default_llm', '💾 Save Default') }}</span>
+                            <svg class="w-3.5 h-3.5"><use href="#icon-save"></use></svg> <span data-i18n="btn_save_default_llm">{{ i18n.get('btn_save_default_llm', 'Save Default') }}</span>
                         </button>
                     </div>
                 </div>
@@ -880,11 +1067,11 @@
                             <label class="block text-xs font-semibold text-slate-300" data-i18n="settings_model_label">{{ i18n.get('settings_model_label', 'Selected Model:') }}</label>
                             <div class="flex items-center gap-2">
                                 <button onclick="refreshModelsFromApi()" id="btn-refresh-models" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition">
-                                    <span data-i18n="btn_refresh_provider">{{ i18n.get('btn_refresh_provider', '🔄 Refresh') }}</span>
+                                    <svg class="w-3 h-3"><use href="#icon-refresh"></use></svg> <span data-i18n="btn_refresh_provider">{{ i18n.get('btn_refresh_provider', 'Refresh') }}</span>
                                 </button>
                                 <span class="text-slate-600">|</span>
                                 <button onclick="refreshAllModelsFromApi()" id="btn-refresh-all-models-link" class="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition">
-                                    <span data-i18n="btn_refresh_all_short">{{ i18n.get('btn_refresh_all_short', '🌐 Refresh All') }}</span>
+                                    <svg class="w-3 h-3"><use href="#icon-globe"></use></svg> <span data-i18n="btn_refresh_all_short">{{ i18n.get('btn_refresh_all_short', 'Refresh All') }}</span>
                                 </button>
                                 <span class="text-slate-600">|</span>
                                 <button onclick="promptCustomModel()" class="text-xs text-emerald-400 hover:text-emerald-300 transition">
@@ -897,7 +1084,7 @@
                         <div class="flex items-center justify-between mt-1.5">
                             <span id="model-count-hint" class="text-[11px] text-slate-500"></span>
                             <button onclick="testActiveConnection()" id="btn-test-active" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 transition">
-                                <span data-i18n="btn_test_connection">{{ i18n.get('btn_test_connection', '⚡ Test Connection') }}</span>
+                                <svg class="w-3 h-3"><use href="#icon-bolt"></use></svg> <span data-i18n="btn_test_connection">{{ i18n.get('btn_test_connection', 'Test Connection') }}</span>
                             </button>
                         </div>
                     </div>
@@ -912,12 +1099,12 @@
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span data-i18n="settings_keys_title">{{ i18n.get('settings_keys_title', '🔑 API Keys & Credentials Management') }}</span>
+                            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-indigo-400"><use href="#icon-key"></use></svg> <span data-i18n="settings_keys_title">{{ i18n.get('settings_keys_title', 'API Keys & Credentials Management') }}</span></span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="settings_keys_subtitle">{{ i18n.get('settings_keys_subtitle', 'Entered keys are stored in the persistent SQLite database and masked for security.') }}</p>
                     </div>
                     <button onclick="saveAllApiKeys()" id="btn-save-keys" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                        <span data-i18n="btn_save_all_keys">{{ i18n.get('btn_save_all_keys', '💾 Save All Credentials') }}</span>
+                        <svg class="w-3.5 h-3.5"><use href="#icon-save"></use></svg> <span data-i18n="btn_save_all_keys">{{ i18n.get('btn_save_all_keys', 'Save All Credentials') }}</span>
                     </button>
                 </div>
 
@@ -931,17 +1118,17 @@
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span data-i18n="jev_title">{{ i18n.get('jev_title', '⚡ System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter)') }}</span>
+                            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-amber-400"><use href="#icon-bolt"></use></svg> <span data-i18n="jev_title">{{ i18n.get('jev_title', 'System 1 Fast Decision Engine (Optional — TypeSafe Jev / OpenRouter)') }}</span></span>
                             <span id="jev-status-badge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Disabled (Local Fallback)</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="jev_subtitle">{{ i18n.get('jev_subtitle', 'Accelerates query routing (Choice), batch enrichment noise filtering (Noul), and chunk reranking (Score) in ~100ms with automatic local fallback when disabled or offline.') }}</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button type="button" onclick="testJevRouter()" id="btn-test-jev" class="bg-indigo-600/80 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
-                            <span data-i18n="jev_btn_test">{{ i18n.get('jev_btn_test', '⚡ Test System 1 Router') }}</span>
+                            <svg class="w-3.5 h-3.5"><use href="#icon-bolt"></use></svg> <span data-i18n="jev_btn_test">{{ i18n.get('jev_btn_test', 'Test System 1 Router') }}</span>
                         </button>
                         <button type="button" onclick="saveJevSettings()" id="btn-save-jev" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                            <span data-i18n="jev_btn_save">{{ i18n.get('jev_btn_save', 'Save Jev Settings') }}</span>
+                            <svg class="w-3.5 h-3.5"><use href="#icon-save"></use></svg> <span data-i18n="jev_btn_save">{{ i18n.get('jev_btn_save', 'Save Jev Settings') }}</span>
                         </button>
                     </div>
                 </div>
@@ -975,13 +1162,13 @@
                 <div class="border-b border-cardborder pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <span data-i18n="sec_title">{{ i18n.get('sec_title', '🔐 Security, API Bearer Token & Web Password') }}</span>
+                            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400"><use href="#icon-lock"></use></svg> <span data-i18n="sec_title">{{ i18n.get('sec_title', 'Security, API Bearer Token & Web Password') }}</span></span>
                             <span id="sec-status-badge" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-mono">Open LAN Mode</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="sec_desc">{{ i18n.get('sec_desc', 'Protect remote Agent API (/api/v1/agent/*) and MCP (/mcp) endpoints with a Bearer Token, and optionally require a password for Web UI access.') }}</p>
                     </div>
                     <button type="button" onclick="saveSecuritySettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
-                        <span data-i18n="sec_save_btn">{{ i18n.get('sec_save_btn', '💾 Save Security Settings') }}</span>
+                        <svg class="w-3.5 h-3.5"><use href="#icon-save"></use></svg> <span data-i18n="sec_save_btn">{{ i18n.get('sec_save_btn', 'Save Security Settings') }}</span>
                     </button>
                 </div>
 
@@ -997,8 +1184,8 @@
                         <label class="block font-semibold text-slate-300 mb-1" data-i18n="sec_token_label">{{ i18n.get('sec_token_label', 'Active API / MCP Bearer Token:') }}</label>
                         <div class="flex gap-1.5">
                             <input type="text" id="sec-api-token-input" readonly class="w-full bg-[#10141d] border border-cardborder rounded-xl px-3 py-2 text-xs text-emerald-300 font-mono">
-                            <button type="button" onclick="copyApiToken()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 whitespace-nowrap" data-i18n="sec_copy_token_btn">{{ i18n.get('sec_copy_token_btn', '📋 Copy Token') }}</button>
-                            <button type="button" onclick="regenerateApiToken()" class="px-2.5 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-white whitespace-nowrap" data-i18n="sec_regen_token_btn">{{ i18n.get('sec_regen_token_btn', '🔄 Regenerate Token') }}</button>
+                            <button type="button" onclick="copyApiToken()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 whitespace-nowrap flex items-center gap-1.5"><svg class="w-3 h-3"><use href="#icon-clipboard"></use></svg> <span data-i18n="sec_copy_token_btn">{{ i18n.get('sec_copy_token_btn', 'Copy Token') }}</span></button>
+                            <button type="button" onclick="regenerateApiToken()" class="px-2.5 py-2 rounded-xl bg-indigo-600/80 hover:bg-indigo-500 text-white whitespace-nowrap flex items-center gap-1.5"><svg class="w-3 h-3"><use href="#icon-refresh"></use></svg> <span data-i18n="sec_regen_token_btn">{{ i18n.get('sec_regen_token_btn', 'Regenerate Token') }}</span></button>
                         </div>
                     </div>
 
@@ -1029,8 +1216,8 @@
                 </div>
                 <div class="flex items-center flex-wrap gap-4 text-xs">
                     <a href="https://ko-fi.com/gaskb" target="_blank" rel="noopener" class="text-slate-400 hover:text-amber-400 transition flex items-center gap-1.5 font-medium">
-                        <span>☕</span>
-                        <span data-i18n="footer_kofi">Free & open project. If you find it useful, feel free to buy me a coffee on Ko-fi ☕</span>
+                        <svg class="w-3.5 h-3.5 text-amber-400"><use href="#icon-coffee"></use></svg>
+                        <span data-i18n="footer_kofi">{{ i18n.get('footer_kofi', 'Free & open project. If you find it useful, feel free to buy me a coffee on Ko-fi') }}</span>
                     </a>
                 </div>
             </div>
@@ -1041,8 +1228,8 @@
     <div id="custom-theme-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-xs">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
-                <h3 class="text-base font-bold text-white" data-i18n="theme_studio_title">{{ i18n.get('theme_studio_title', '🎨 Multi-Theme Engine & Custom Studio') }}</h3>
-                <button onclick="closeModal('custom-theme-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <h3 class="text-base font-bold text-white flex items-center gap-2"><svg class="w-4 h-4 text-cyan-400"><use href="#icon-palette"></use></svg> <span data-i18n="theme_studio_title">{{ i18n.get('theme_studio_title', 'Multi-Theme Engine & Custom Studio') }}</span></h3>
+                <button onclick="closeModal('custom-theme-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800" title="Chiudi"><svg class="w-4 h-4"><use href="#icon-x"></use></svg></button>
             </div>
             <form onsubmit="saveCustomTheme(event)" class="space-y-3">
                 <div>
@@ -1074,7 +1261,7 @@
                     </div>
                     <div class="flex gap-2">
                         <button type="button" onclick="closeModal('custom-theme-modal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white" data-i18n="btn_cancel">{{ i18n.get('btn_cancel', 'Cancel') }}</button>
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" data-i18n="theme_save_btn">{{ i18n.get('theme_save_btn', '💾 Save & Apply Theme') }}</button>
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1.5"><svg class="w-3.5 h-3.5"><use href="#icon-save"></use></svg> <span data-i18n="theme_save_btn">{{ i18n.get('theme_save_btn', 'Save & Apply Theme') }}</span></button>
                     </div>
                 </div>
             </form>
@@ -1089,7 +1276,7 @@
                     <h3 id="modal-title" class="font-bold text-white text-base" data-i18n="modal_conv_title">{{ i18n.get('modal_conv_title', 'Conversation Title') }}</h3>
                     <p id="modal-meta" class="text-xs text-slate-400"></p>
                 </div>
-                <button onclick="closeModal('conv-modal')" class="text-slate-400 hover:text-white text-xl font-bold p-1">✕</button>
+                <button onclick="closeModal('conv-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800" title="Chiudi"><svg class="w-4 h-4"><use href="#icon-x"></use></svg></button>
             </div>
             <div id="modal-messages" class="p-4 overflow-y-auto space-y-4 flex-1 text-sm"></div>
         </div>
@@ -1100,7 +1287,7 @@
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
                 <h3 class="text-base font-bold text-white" data-i18n="modal_dec_title">{{ i18n.get('modal_dec_title', 'New Personal / Technical Decision') }}</h3>
-                <button onclick="closeModal('decision-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeModal('decision-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800" title="Chiudi"><svg class="w-4 h-4"><use href="#icon-x"></use></svg></button>
             </div>
             <form id="decision-form" onsubmit="handleCreateDecision(event)" class="space-y-3 text-xs">
                 <div>
@@ -1134,7 +1321,7 @@
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
                 <h3 class="text-base font-bold text-white" data-i18n="modal_stmt_title">{{ i18n.get('modal_stmt_title', 'New Manual Fact / Claim') }}</h3>
-                <button onclick="closeModal('statement-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeModal('statement-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800" title="Chiudi"><svg class="w-4 h-4"><use href="#icon-x"></use></svg></button>
             </div>
             <form id="statement-form" onsubmit="handleCreateStatement(event)" class="space-y-3 text-xs">
                 <div>
@@ -1190,10 +1377,10 @@
         <div class="bg-cardbg border border-cardborder rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-cardborder pb-3">
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <span>🕸️</span>
+                    <svg class="w-4 h-4 text-indigo-400"><use href="#icon-network"></use></svg>
                     <span data-i18n="modal_rel_title">{{ i18n.get('modal_rel_title', 'New Knowledge Graph Relation') }}</span>
                 </h3>
-                <button onclick="closeModal('relation-modal')" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeModal('relation-modal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800" title="Chiudi"><svg class="w-4 h-4"><use href="#icon-x"></use></svg></button>
             </div>
             <form id="relation-form" onsubmit="handleCreateRelation(event)" class="space-y-3 text-xs">
                 <div>
@@ -1231,6 +1418,11 @@
 
     <!-- JavaScript Controller -->
     <script>
+        // --- SVG Icon Helper (gaskb_style) ---
+        function svgIcon(name, cls = 'w-4 h-4') {
+            return `<svg class="${cls} inline-block shrink-0" fill="none" stroke="currentColor"><use href="#icon-${name}"></use></svg>`;
+        }
+
         let currentMode = 'auto';
         let enrichPollInterval = null;
 
@@ -1290,11 +1482,11 @@
             if (nextTheme === 'dark') {
                 html.classList.add('dark');
                 const icon = document.getElementById('theme-toggle-icon');
-                if (icon) icon.innerText = '🌙';
+                if (icon) icon.innerHTML = '<use href="#icon-moon"></use>';
             } else {
                 html.classList.remove('dark');
                 const icon = document.getElementById('theme-toggle-icon');
-                if (icon) icon.innerText = '☀️';
+                if (icon) icon.innerHTML = '<use href="#icon-sun"></use>';
             }
             localStorage.setItem('gaskb_theme', nextTheme);
             if (window.activeThemeObj) {
@@ -1386,7 +1578,7 @@
                     }
 
                     if (convId) {
-                        return `<a href="javascript:void(0)" onclick="openModal('${escapeHtml(convId)}')" class="citation-link" title="Fai clic per aprire la chat originale"><span>📄</span> <span>${escapeHtml(text)}</span> <span class="text-[10px] opacity-70">➔</span></a>`;
+                        return `<a href="javascript:void(0)" onclick="openModal('${escapeHtml(convId)}')" class="citation-link" title="Fai clic per aprire la chat originale">${svgIcon('file-text', 'w-3 h-3 text-slate-400')} <span>${escapeHtml(text)}</span> <span class="opacity-70">${svgIcon('arrow-right', 'w-2.5 h-2.5')}</span></a>`;
                     }
                     return `<a href="${encodeURI(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
                 };
@@ -1422,7 +1614,7 @@
             html = html.replace(/\*(.*?)\*/gim, '<em>$1</em>');
 
             // Links with #conv-
-            html = html.replace(/\[(.*?)\]\(#conv-(.*?)\)/gim, '<a href="javascript:void(0)" onclick="openModal(\'$2\')" class="citation-link" title="Apri conversazione"><span>📄</span> <span>$1</span> <span class="text-[10px]">➔</span></a>');
+            html = html.replace(/\[(.*?)\]\(#conv-(.*?)\)/gim, '<a href="javascript:void(0)" onclick="openModal(\'$2\')" class="citation-link" title="Apri conversazione">' + svgIcon('file-text', 'w-3 h-3 text-slate-400') + ' <span>$1</span> <span class="opacity-70">' + svgIcon('arrow-right', 'w-2.5 h-2.5') + '</span></a>');
             html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 
             // Unordered list items
@@ -1487,7 +1679,7 @@
                                     <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 uppercase font-mono mr-1 text-[10px]">${escapeHtml(s.provider)}</span>
                                     <span class="font-semibold text-white ${hasConv ? 'group-hover:text-indigo-300 transition' : ''}">${escapeHtml(s.conv_title)}</span>
                                 </div>
-                                ${hasConv ? '<span class="text-indigo-400 text-[10px] group-hover:translate-x-0.5 transition whitespace-nowrap ml-2">Leggi chat ➔</span>' : ''}
+                                ${hasConv ? '<span class="text-indigo-400 text-[10px] group-hover:translate-x-0.5 transition whitespace-nowrap ml-2 flex items-center gap-1">Leggi chat ' + svgIcon('arrow-right', 'w-2.5 h-2.5') + '</span>' : ''}
                             </div>
                             <p class="text-slate-400 mt-1 italic line-clamp-2">"${escapeHtml(s.chunk_text)}"</p>
                         `;
@@ -1603,8 +1795,8 @@
                                     ${currText}
                                 </button>
                                 <button onclick="deleteStatement('${s.id}')" title="Delete statement"
-                                        class="text-slate-600 hover:text-rose-400 transition p-0.5 text-xs">
-                                    ✕
+                                        class="text-slate-500 hover:text-rose-400 transition p-0.5" title="Delete statement">
+                                    ${svgIcon('x', 'w-3 h-3')}
                                 </button>
                             </div>
                         </div>
@@ -1623,7 +1815,7 @@
                         </h4>
                         <div class="flex items-center gap-1">
                             <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase font-mono">${escapeHtml(e.category)}</span>
-                            <button onclick="deleteEntity('${escapeHtml(e.id)}', '${escapeHtml(e.name)}')" title="Delete entity" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs">✕</button>
+                            <button onclick="deleteEntity('${escapeHtml(e.id)}', '${escapeHtml(e.name)}')" title="Delete entity" class="text-slate-500 hover:text-rose-400 p-0.5">${svgIcon('x', 'w-3 h-3')}</button>
                         </div>
                     </div>
                     <div class="space-y-2">${stmtsHtml || `<span class="text-xs text-slate-500">${tr('no_statements', 'No statements recorded')}</span>`}</div>
@@ -1744,7 +1936,7 @@
 
             if (!data || data.length === 0) {
                 c.innerHTML = `<div class="col-span-3 text-center py-10 text-xs text-slate-500">
-                    🕸️ Nessuna relazione semantica ancora estratta.<br>
+                    <div class="flex items-center justify-center gap-2 mb-1">${svgIcon('network', 'w-5 h-5 text-indigo-400')} <span>Nessuna relazione semantica ancora estratta.</span></div>
                     Usa il pulsante <strong>"+ Nuova Relazione"</strong> o avvia l'arricchimento batch per popolare il grafo.
                 </div>`;
                 return;
@@ -1758,14 +1950,14 @@
                         <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold">
                             ${escapeHtml(r.relation_type)}
                         </span>
-                        <button onclick="deleteRelation('${escapeHtml(r.id)}')" title="Elimina relazione" class="text-slate-600 hover:text-rose-400 p-0.5 text-xs transition">✕</button>
+                        <button onclick="deleteRelation('${escapeHtml(r.id)}')" title="Elimina relazione" class="text-slate-500 hover:text-rose-400 p-0.5 transition">${svgIcon('x', 'w-3 h-3')}</button>
                     </div>
                     <div class="flex items-center justify-between text-xs py-1">
                         <div class="flex-1">
                             <div class="font-bold text-slate-100">${escapeHtml(r.from_name)}</div>
                             <span class="text-[9px] text-slate-500 font-mono">${escapeHtml(r.from_category)}</span>
                         </div>
-                        <div class="px-2 text-indigo-400 text-sm">➔</div>
+                        <div class="px-2 text-indigo-400">${svgIcon('arrow-right', 'w-3.5 h-3.5')}</div>
                         <div class="flex-1 text-right">
                             <div class="font-bold text-slate-100">${escapeHtml(r.to_name)}</div>
                             <span class="text-[9px] text-slate-500 font-mono">${escapeHtml(r.to_category)}</span>
@@ -1906,7 +2098,7 @@
                                 <option value="EVALUATING" ${d.status === 'EVALUATING' ? 'selected' : ''}>EVALUATING</option>
                                 <option value="ABANDONED" ${d.status === 'ABANDONED' ? 'selected' : ''}>ABANDONED</option>
                             </select>
-                            <button onclick="deleteDecision('${escapeHtml(d.id)}')" title="Delete decision" class="text-slate-600 hover:text-rose-400 text-xs">✕</button>
+                            <button onclick="deleteDecision('${escapeHtml(d.id)}')" title="Delete decision" class="text-slate-500 hover:text-rose-400 p-0.5">${svgIcon('x', 'w-3 h-3')}</button>
                         </div>
                     </div>
                     <p class="text-slate-200 leading-relaxed">${escapeHtml(d.decision_text)}</p>
@@ -1999,7 +2191,7 @@
                                 ${kindBadge}
                                 ${curr}
                             </div>
-                            <button onclick="${delAction}" title="Delete event" class="text-slate-600 hover:text-rose-400 text-xs opacity-0 group-hover:opacity-100 transition">✕</button>
+                            <button onclick="${delAction}" title="Delete event" class="text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-0.5">${svgIcon('x', 'w-3 h-3')}</button>
                         </div>
                         <div class="font-semibold text-white">${escapeHtml(ev.subject)} <span class="text-slate-400 font-normal">(${escapeHtml(ev.predicate)})</span></div>
                         <div class="text-slate-300 italic">"${escapeHtml(ev.object)}"</div>
@@ -2113,7 +2305,7 @@
                         </div>
                         <p class="text-[11px] text-slate-500 truncate">${escapeHtml((cv.created_at || '').slice(0, 10))} • Ref: ${escapeHtml(cv.external_ref)}</p>
                     </div>
-                    <span class="text-emerald-400 text-xs shrink-0">➔</span>
+                    <span class="text-emerald-400 shrink-0">${svgIcon('arrow-right', 'w-3 h-3')}</span>
                 `;
                 c.appendChild(item);
             });
@@ -2140,7 +2332,7 @@
                     d.className = `p-3.5 rounded-xl text-xs space-y-1.5 ${isUser ? 'bg-emerald-950/30 border border-emerald-500/25 mr-6' : 'bg-[#10141d] border border-cardborder ml-6'}`;
                     d.innerHTML = `
                         <div class="flex justify-between font-bold ${isUser ? 'text-emerald-400' : 'text-indigo-400'}">
-                            <span>${isUser ? '👤 ' + tr('user_you', 'You') : '🤖 ' + escapeHtml((data.provider || '').toUpperCase())}</span>
+                            <span class="flex items-center gap-1.5">${isUser ? svgIcon('user', 'w-3.5 h-3.5 text-slate-400') + ' ' + tr('user_you', 'You') : svgIcon('bot', 'w-3.5 h-3.5 text-emerald-400') + ' ' + escapeHtml((data.provider || '').toUpperCase())}</span>
                             <span class="text-[10px] text-slate-500 font-normal">${escapeHtml((m.ts || '').slice(0, 19).replace('T', ' '))}</span>
                         </div>
                         <div class="text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(m.content)}</div>
@@ -2202,7 +2394,7 @@
                 d.className = `p-3 rounded-xl text-xs space-y-1 ${isUser ? 'bg-emerald-950/30 border border-emerald-500/20 mr-8' : 'bg-[#10141d] border border-cardborder ml-8'}`;
                 d.innerHTML = `
                     <div class="flex justify-between font-bold ${isUser ? 'text-emerald-400' : 'text-indigo-400'}">
-                        <span>${isUser ? '👤 ' + tr('user_you', 'You') : '🤖 ' + escapeHtml((data.provider || '').toUpperCase())}</span>
+                        <span class="flex items-center gap-1.5">${isUser ? svgIcon('user', 'w-3.5 h-3.5 text-slate-400') + ' ' + tr('user_you', 'You') : svgIcon('bot', 'w-3.5 h-3.5 text-emerald-400') + ' ' + escapeHtml((data.provider || '').toUpperCase())}</span>
                         <span class="text-[10px] text-slate-500 font-normal">${escapeHtml((m.ts || '').slice(0, 19).replace('T', ' '))}</span>
                     </div>
                     <div class="text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(m.content)}</div>
@@ -2405,9 +2597,9 @@
 
             const hint = document.getElementById('provider-configured-hint');
             if (p.is_configured) {
-                hint.innerHTML = `<span class="text-emerald-400">✓ Provider configurato e pronto all'uso.</span>`;
+                hint.innerHTML = `<span class="text-emerald-400 flex items-center gap-1">${svgIcon('check', 'w-3.5 h-3.5')} Provider configurato e pronto all'uso.</span>`;
             } else {
-                hint.innerHTML = `<span class="text-amber-400">⚠ Chiave API mancante. Inseriscila nella sezione sottostante per abilitare le chiamate.</span>`;
+                hint.innerHTML = `<span class="text-amber-400 flex items-center gap-1">${svgIcon('alert-triangle', 'w-3.5 h-3.5')} Chiave API mancante. Inseriscila nella sezione sottostante per abilitare le chiamate.</span>`;
             }
         }
 
@@ -2438,16 +2630,16 @@
                     if (badge) {
                         badge.innerText = `${prov.toUpperCase()} / ${model}`;
                     }
-                    btn.innerHTML = '<span>✓ Salvato!</span>';
+                    btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('check', 'w-3.5 h-3.5 text-emerald-400')} Salvato!</span>`;
                     setTimeout(() => {
                         btn.disabled = false;
-                        btn.innerHTML = '<span>💾 Salva Predefinito</span>';
+                        btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('save', 'w-3.5 h-3.5')} Salva Predefinito</span>`;
                     }, 1800);
                 }
             } catch (e) {
                 alert('Errore salvataggio: ' + e);
                 btn.disabled = false;
-                btn.innerHTML = '<span>💾 Salva Predefinito</span>';
+                btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('save', 'w-3.5 h-3.5')} Salva Predefinito</span>`;
             }
         }
 
@@ -2476,7 +2668,7 @@
                 alert('Errore chiamata API: ' + e);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<span>🔄 Aggiorna</span>';
+                btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('refresh', 'w-3.5 h-3.5')} Aggiorna</span>`;
             }
         }
 
@@ -2509,8 +2701,8 @@
             } catch (e) {
                 alert('Errore chiamata API: ' + e);
             } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔄 Aggiorna Tutti i Provider</span>'; }
-                if (linkBtn) { linkBtn.disabled = false; linkBtn.innerHTML = '<span>🌐 Aggiorna Tutti</span>'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('refresh', 'w-3.5 h-3.5')} Aggiorna Tutti i Provider</span>`; }
+                if (linkBtn) { linkBtn.disabled = false; linkBtn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('globe', 'w-3.5 h-3.5')} Aggiorna Tutti</span>`; }
             }
         }
 
@@ -2543,7 +2735,7 @@
 
             box.classList.remove('hidden');
             box.className = 'p-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 text-indigo-300 text-xs flex items-center gap-2';
-            box.innerHTML = `<span class="animate-spin">⚡</span><span>Invio richiesta di test al modello <strong>${prov}/${model}</strong>...</span>`;
+            box.innerHTML = `<div class="flex items-center gap-2"><span class="animate-spin">${svgIcon('refresh', 'w-3.5 h-3.5 text-amber-400')}</span><span>Invio richiesta di test al modello <strong>${prov}/${model}</strong>...</span></div>`;
             btn.disabled = true;
 
             try {
@@ -2555,14 +2747,14 @@
                 const data = await res.json();
                 if (data.status === 'success') {
                     box.className = 'p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-xs';
-                    box.innerHTML = `✅ <strong>Connessione Riuscita (${data.elapsed_ms}ms)!</strong> Risposta: <em>"${data.response}"</em>`;
+                    box.innerHTML = `<div class="flex items-start gap-2">${svgIcon('check-circle', 'w-4 h-4 text-emerald-400 shrink-0 mt-0.5')} <div><strong>Connessione Riuscita (${data.elapsed_ms}ms)!</strong> Risposta: <em>"${data.response}"</em></div></div>`;
                 } else {
                     box.className = 'p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs';
-                    box.innerHTML = `❌ <strong>Test Fallito:</strong> ${data.message}`;
+                    box.innerHTML = `<div class="flex items-start gap-2">${svgIcon('x-circle', 'w-4 h-4 text-rose-400 shrink-0 mt-0.5')} <div><strong>Test Fallito:</strong> ${data.message}</div></div>`;
                 }
             } catch (e) {
                 box.className = 'p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs';
-                box.innerHTML = `❌ <strong>Errore di rete:</strong> ${e}`;
+                box.innerHTML = `<div class="flex items-start gap-2">${svgIcon('x-circle', 'w-4 h-4 text-rose-400 shrink-0 mt-0.5')} <div><strong>Errore di rete:</strong> ${e}</div></div>`;
             } finally {
                 btn.disabled = false;
             }
@@ -2654,7 +2846,7 @@
                 alert('Error saving credentials: ' + e);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = `<span data-i18n="settings_save_keys_btn">${tr('settings_save_keys_btn', '💾 Save All Credentials')}</span>`;
+                btn.innerHTML = `<span class="flex items-center gap-1.5">${svgIcon('save', 'w-3.5 h-3.5')} <span data-i18n="settings_save_keys_btn">${tr('settings_save_keys_btn', 'Save All Credentials')}</span></span>`;
             }
         }
 
@@ -2804,7 +2996,7 @@
                 const out = document.getElementById('jev-test-output');
                 if (out) {
                     out.classList.remove('hidden');
-                    out.innerText = `✅ Jev System 1 configuration saved (enabled=${enabled}, model=${model}, threshold=${threshold}).`;
+                    out.innerText = `Jev System 1 configuration saved (enabled=${enabled}, model=${model}, threshold=${threshold}).`;
                 }
             } catch (e) {
                 alert('Error saving Jev settings: ' + e);
@@ -2825,11 +3017,11 @@
                 });
                 const data = await res.json();
                 if (out) {
-                    out.innerText = `⚡ Engine used: ${data.decision.engine} | Mode: ${data.decision.mode} | Category: ${data.decision.category} | Strict Owned Noul: ${data.decision.strict_owned_only}`;
+                    out.innerText = `Engine used: ${data.decision.engine} | Mode: ${data.decision.mode} | Category: ${data.decision.category} | Strict Owned Noul: ${data.decision.strict_owned_only}`;
                 }
                 await loadJevSettings();
             } catch (e) {
-                if (out) out.innerText = "❌ Error testing router: " + e;
+                if (out) out.innerText = "Error testing router: " + e;
             }
         }
 
@@ -2902,10 +3094,10 @@
                 row.className = `flex items-center justify-between px-2.5 py-1.5 rounded-xl cursor-pointer transition ${isSelected ? 'bg-emerald-500/20 border border-emerald-500/40 text-white font-semibold' : 'hover:bg-[#10141d] text-slate-300'}`;
                 row.innerHTML = `
                     <div class="flex items-center gap-2 flex-1" onclick="selectThemePalette('${t.id}')">
-                        <span class="w-3.5 h-3.5 rounded-full inline-block border border-white/20" style="background:${t.primary}"></span>
-                        <span>${t.icon || '🎨'} ${t.name}</span>
+                        <span class="w-3 h-3 rounded-full inline-block border border-white/20 shrink-0 shadow-sm" style="background:${t.primary}"></span>
+                        <span class="text-xs">${t.name}</span>
                     </div>
-                    ${!t.builtin ? `<button type="button" onclick="deleteCustomTheme('${t.id}')" class="text-slate-500 hover:text-rose-400 text-xs px-1" title="Delete custom theme">✕</button>` : ''}
+                    ${!t.builtin ? `<button type="button" onclick="deleteCustomTheme('${t.id}')" class="text-slate-500 hover:text-rose-400 p-0.5" title="Delete custom theme">${svgIcon('x', 'w-3 h-3')}</button>` : ''}
                 `;
                 list.appendChild(row);
             });
@@ -2993,7 +3185,7 @@
                 dark_card: document.getElementById('custom-theme-card')?.value || '#122036'
             };
             navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-            alert('✅ Custom Theme JSON copied to clipboard!');
+            alert('Custom Theme JSON copied to clipboard!');
         }
 
         function importCustomThemeJson() {
@@ -3050,7 +3242,7 @@
                 const pwField = document.getElementById('sec-web-password-input');
                 if (pwField) pwField.value = '';
                 await loadSecuritySettings();
-                alert('✅ Security settings updated!');
+                alert('Security settings updated!');
             } catch (e) {
                 alert('Error saving security settings: ' + e);
             }
@@ -3063,7 +3255,7 @@
                 body: JSON.stringify({ clear_web_password: true })
             });
             await loadSecuritySettings();
-            alert('✅ Web UI password removed (Open LAN access restored).');
+            alert('Web UI password removed (Open LAN access restored).');
         }
 
         async function regenerateApiToken() {
@@ -3077,7 +3269,7 @@
             const tok = document.getElementById('sec-api-token-input')?.value || '';
             if (tok) {
                 navigator.clipboard.writeText(tok);
-                alert('✅ Bearer Token copied to clipboard!');
+                alert('Bearer Token copied to clipboard!');
             }
         }
 
@@ -3108,7 +3300,7 @@
             const pre = document.getElementById('onboarding-mcp-snippet');
             if (pre) {
                 navigator.clipboard.writeText(pre.innerText);
-                alert('✅ MCP Configuration JSON copied to clipboard!');
+                alert('MCP Configuration JSON copied to clipboard!');
             }
         }
 
@@ -3123,14 +3315,14 @@
                 const data = await res.json();
                 if (res.ok) {
                     await fetchStats();
-                    alert(`✅ Loaded Demo Dataset (${data.seeded_conversations || 6} conversations, verified Facts & Decisions)!`);
+                    alert(`Loaded Demo Dataset (${data.seeded_conversations || 6} conversations, verified Facts & Decisions)!`);
                 }
             } catch (e) {
                 alert('Error loading demo dataset: ' + e);
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerText = tr('onboarding_load_demo_btn', '✨ Load Demo Dataset (6 Chats + Facts/Decisions)');
+                    btn.innerText = tr('onboarding_load_demo_btn', 'Load Demo Dataset (6 Chats + Facts/Decisions)');
                 }
             }
         }
@@ -3216,11 +3408,11 @@
             if (savedTheme === 'dark') {
                 document.documentElement.classList.add('dark');
                 const icon = document.getElementById('theme-toggle-icon');
-                if (icon) icon.innerText = '🌙';
+                if (icon) icon.innerHTML = '<use href="#icon-moon"></use>';
             } else {
                 document.documentElement.classList.remove('dark');
                 const icon = document.getElementById('theme-toggle-icon');
-                if (icon) icon.innerText = '☀️';
+                if (icon) icon.innerHTML = '<use href="#icon-sun"></use>';
             }
 
             if (localStorage.getItem('gaskb_sidebar_collapsed') === '1') {
