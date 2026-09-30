@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import patch
 import pytest
 
-from memoria.cli.main import main
-from memoria.db.engine import Database
+from engramvault.cli.main import main
+from engramvault.db.engine import Database
 
 
 def test_cli_init_and_stats(tmp_path: Path, capsys):

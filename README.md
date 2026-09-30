@@ -1,13 +1,14 @@
-# Engram AI — AI Memory Vault (`engramvault.dev` · `engramvault.net`) — v2.10.0
+# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.11.0
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/Engram_AI-v2.10.0-emerald.svg)](https://engramvault.dev)
+[![Version](https://img.shields.io/badge/EngramVault-v2.11.0-emerald.svg)](https://engramvault.net)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/gaskb/engramvault/actions/workflows/ci.yml/badge.svg)](https://github.com/gaskb/engramvault/actions)
 
 ---
 
@@ -15,7 +16,7 @@
 
 When working across multiple AI assistants and coding agents (**ChatGPT**, **Claude**, **Claude Code**, **Google Antigravity**, **Gemini**, **Ollama**), personal context and technical decisions get fragmented into isolated silos.
 
-`Memoria AI` unifies your entire AI history into a single **SQLite (`vault.db`)** instance organized in 4 layers:
+`EngramVault` unifies your entire AI history into a single **SQLite (`vault.db`)** instance organized in 4 layers:
 
 ```mermaid
 flowchart LR
@@ -24,7 +25,7 @@ flowchart LR
         A2["Claude Code & Antigravity JSONL"]
         A3["Drop-Folder Auto Watcher"]
     end
-    subgraph Vault["Memoria AI (SQLite + FTS5 + 384-dim Vectors)"]
+    subgraph Vault["EngramVault (SQLite + FTS5 + 384-dim Vectors)"]
         B1["Immutable Conversation Vault (SHA-256)"]
         B2["Epistemic Graph (FACT · CLAIM · DECISION · TIMELINE)"]
         B3["Hybrid Search (BM25 + Semantic Vectors + RRF)"]
@@ -51,10 +52,25 @@ flowchart LR
 
 ---
 
-## 🚀 60-Second Quickstart & First-Run Onboarding Wizard
+## 🧠 Epistemic Hierarchy & AI Extraction (Human-in-the-Loop)
+
+Unlike traditional RAG systems or unstructured note tools that blindly trust LLM summaries, **EngramVault enforces a strict epistemic hierarchy**:
+
+* **`EVIDENCE` (Immutable Truth)**: The exact raw transcripts from ChatGPT, Claude, Antigravity, or Gemini. Nothing is ever altered, hallucinated, or discarded.
+* **`CLAIM` / Extracted Relations (AI-Assisted)**: Suggested statements, concepts, and relationships distilled from conversations via LLMs or local heuristics. Every extracted statement is explicitly tagged as an unverified `CLAIM` until validated.
+* **`FACT` (Human-Verified Knowledge)**: Statements confirmed, promoted, or directly authored by the user (hardware specs, system topology, verified configurations). Preserved with SCD Type 2 temporal validity (`valid_from`, `valid_until`, `is_current`, `supersedes_id`).
+* **`DECISION` (Explicit Choices)**: Architectural or technical trade-offs recorded with rationale, status (`ADOPTED`, `EVALUATING`, `ABANDONED`), and source references.
+
+### Privacy & Extraction Modes:
+* **100% Offline / Local-First (Default)**: EngramVault operates entirely within your network. Heuristic extraction and concept clustering run locally without sending any data to external cloud APIs.
+* **LLM-Powered Distillation (Optional)**: If you provide an API key (Ollama, Gemini, Anthropic, OpenAI, DeepSeek, Grok), the batch enricher uses the LLM to structure complex entity graphs. You always retain complete control via the **Curation Studio** to review, promote, or discard suggested claims.
+
+---
+
+## 🚀 60-Second Quickstart
 
 ```bash
-docker run -d --name memoria-ai -p 5006:8080 -v memoria_data:/app/data gaskb/engramvault:latest
+docker run -d --name engramvault -p 5006:8080 -v engramvault_data:/app/data gaskb/engramvault:latest
 ```
 
 Open **`http://localhost:5006`**:
@@ -144,7 +160,7 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
 - **Vector BLOB Reshape Protection**: Validates 384-dimensional float buffer integrity (`1536` bytes) in `_ensure_vector_cache`, gracefully skipping malformed entries without runtime crashes.
 - **Real-Time Unenriched Conversation Tracker**: The "Ingest & Enrich" view displays real-time counters of unanalyzed conversations (`X in attesa / Y totali`), providing clear feedback on batch extraction status.
 - **Viewport Layout Optimization**: Zero-margin base styling ensures the footer is cleanly visible at the bottom of the viewport on initial load without default vertical scrollbars.
-- **CLI Robustness**: Full unit-test suite for `memoria` CLI commands (`init`, `seed`, `stats`, `search`, `ask`, `entities`, `decisions`, `timeline`) with support for global `--db` positioning.
+- **CLI Robustness**: Full unit-test suite for `engramvault` CLI commands (`init`, `seed`, `stats`, `search`, `ask`, `entities`, `decisions`, `timeline`) with support for global `--db` positioning (legacy `memoria` alias preserved).
 
 ---
 
@@ -164,18 +180,20 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
 
 ## 🌐 Internationalization (`i18n`) & Environment Variables
 
-- **Modular `i18n` (`memoria/i18n/locales/*.json`)**: Ships with **English (`en`)** as default and full **Italian (`it`)** support across all 6 tabs, modals, and dynamic cards. Adding a new language requires only dropping `<lang>.json` in `memoria/i18n/locales/`.
+- **Modular `i18n` (`engramvault/i18n/locales/*.json`)**: Ships with **English (`en`)** as default and full **Italian (`it`)** support across all 6 tabs, modals, and dynamic cards. Adding a new language requires only dropping `<lang>.json` in `engramvault/i18n/locales/`.
 - **Environment Variables**:
+  All variables support the `ENGRAMVAULT_` prefix (with transparent fallback to legacy `MEMORIA_` prefixes):
   ```env
-  MEMORIA_DEFAULT_LANG=en
-  MEMORIA_DEFAULT_THEME=emerald           # emerald | amber | indigo | ruby | slate
-  MEMORIA_API_TOKEN=                      # Optional Bearer token for /api/v1/agent/* and /mcp
-  MEMORIA_WEB_PASSWORD=                   # Optional password for Web UI login screen
-  MEMORIA_EMBEDDING_BACKEND=auto          # auto | api | gemini | ollama | fastembed | native
-  MEMORIA_JEV_ENABLED=false               # Optional System 1 Jev engine (true | false)
-  MEMORIA_JEV_MODEL=typesafe/jev-1.13     # typesafe/jev-1.13 or local qwen2.5-1.5b
-  MEMORIA_JEV_BASE_URL=https://openrouter.ai/api/v1 # or http://jev_system1_1_5b:8080/v1
-  MEMORIA_JEV_TIMEOUT=5.0                 # Timeout in seconds before falling back to local heuristic
+  ENGRAMVAULT_DEFAULT_LANG=en
+  ENGRAMVAULT_DEFAULT_THEME=emerald       # emerald | amber | indigo | ruby | slate
+  ENGRAMVAULT_API_TOKEN=                  # Optional Bearer token for /api/v1/agent/* and /mcp
+  ENGRAMVAULT_WEB_PASSWORD=               # Optional password for Web UI login screen
+  ENGRAMVAULT_EMBEDDING_BACKEND=auto      # auto | api | gemini | ollama | fastembed | native
+  ENGRAMVAULT_LLM_PROVIDER=               # Optional LLM provider: openai | anthropic | gemini | grok | deepseek | qwen
+  ENGRAMVAULT_JEV_ENABLED=false           # Optional System 1 Jev engine (true | false)
+  ENGRAMVAULT_JEV_MODEL=typesafe/jev-1.13 # typesafe/jev-1.13 or local qwen2.5-1.5b
+  ENGRAMVAULT_JEV_BASE_URL=https://openrouter.ai/api/v1
+  ENGRAMVAULT_JEV_TIMEOUT=5.0             # Timeout in seconds before falling back to local heuristic
   ```
 
 ---
@@ -190,15 +208,15 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
 ## 🧪 Running Tests
 
 ```bash
-./venv/bin/pytest
+pytest
 ```
 
 ---
 
 ## 📄 License & Support
 
-Released under the **MIT License**.
+Released under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-*Memoria AI creates a private, self-hosted memory for your AI workflow and is distributed for free. If you find it useful, feel free to [buy me a coffee on Ko-fi ☕](https://ko-fi.com/gaskb).*
+*EngramVault creates a private, self-hosted memory for your AI workflow and is distributed for free. If you find it useful, feel free to [buy me a coffee on Ko-fi ☕](https://ko-fi.com/gaskb).*
 
-*Memoria AI è gratuito. Se ti torna utile, sentiti libero di [offrirmi un caffè su Ko-fi ☕](https://ko-fi.com/gaskb).*
+*EngramVault è gratuito. Se ti torna utile, sentiti libero di [offrirmi un caffè su Ko-fi ☕](https://ko-fi.com/gaskb).*

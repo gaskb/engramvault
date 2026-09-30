@@ -3,8 +3,8 @@ import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from memoria.db.engine import Database
-from memoria.sync.antigravity import AntigravitySyncer
+from engramvault.db.engine import Database
+from engramvault.sync.antigravity import AntigravitySyncer
 
 
 @pytest.fixture
@@ -98,7 +98,7 @@ def test_antigravity_syncer_remote(anti_sync_env):
         "total": 1,
     }
 
-    with patch("memoria.sync.antigravity.post_multipart_file", return_value=mock_resp) as mock_post:
+    with patch("engramvault.sync.antigravity.post_multipart_file", return_value=mock_resp) as mock_post:
         res = syncer.sync()
         assert res["status"] == "success"
         assert res["synced_count"] == 1

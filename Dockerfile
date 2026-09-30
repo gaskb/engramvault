@@ -15,7 +15,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY pyproject.toml README.md ./
-COPY memoria/ ./memoria/
+COPY engramvault/ ./engramvault/
 RUN pip install --no-cache-dir .
 
 RUN groupadd -g 1000 appuser \
@@ -30,4 +30,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8080/api/stats >/dev/null || exit 1
 
-CMD ["python", "-m", "memoria.cli.main", "serve", "--host", "0.0.0.0", "--port", "8080", "--db", "/app/data/vault.db"]
+CMD ["python", "-m", "engramvault.cli.main", "serve", "--host", "0.0.0.0", "--port", "8080", "--db", "/app/data/vault.db"]

@@ -6,10 +6,10 @@ Tests for v1.4.0:
 """
 from fastapi.testclient import TestClient
 
-from memoria.db.engine import Database
-from memoria.i18n import get_available_languages, get_translations, t
-from memoria.search.embeddings import EmbeddingEngine, reindex_database_embeddings
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.i18n import get_available_languages, get_translations, t
+from engramvault.search.embeddings import EmbeddingEngine, reindex_database_embeddings
+from engramvault.web.app import create_app
 
 
 def test_i18n_default_english_and_locales():

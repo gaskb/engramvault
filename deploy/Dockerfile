@@ -14,10 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt pyproject.toml ./
 RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir -e .
 
-COPY memoria/ ./memoria/
+COPY engramvault/ ./engramvault/
 
 RUN mkdir -p /app/data
 
 EXPOSE 8080
 
-CMD ["python", "-m", "memoria.cli.main", "serve", "--host", "0.0.0.0", "--port", "8080", "--db", "/app/data/vault.db"]
+CMD ["python", "-m", "engramvault.cli.main", "serve", "--host", "0.0.0.0", "--port", "8080", "--db", "/app/data/vault.db"]

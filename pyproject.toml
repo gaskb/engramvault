@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "engramvault"
-version = "2.10.0"
+version = "2.11.0"
 description = "Engram AI — AI Memory Vault: Self-hosted AI Conversation Vault, Hybrid Search & Epistemic Knowledge Graph"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,10 +18,11 @@ dependencies = [
 ]
 
 [project.scripts]
-memoria = "memoria.cli.main:main"
+engramvault = "engramvault.cli.main:main"
+memoria = "engramvault.cli.main:main"
 
 [tool.setuptools.packages.find]
-include = ["memoria*"]
+include = ["engramvault*"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -33,7 +34,7 @@ check_untyped_defs = true
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
-include = ["memoria", "tests"]
+include = ["engramvault", "tests"]
 
 [tool.ruff]
 line-length = 105

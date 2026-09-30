@@ -18,11 +18,11 @@ from unittest.mock import MagicMock, patch
 
 from starlette.testclient import TestClient
 
-from memoria.db.engine import Database, utc_now_iso
-from memoria.llm.client import parse_llm_json
-from memoria.search.embeddings import EmbeddingEngine
-from memoria.security.auth import SecurityManager, _hash_password, _verify_password_hash
-from memoria.web.app import create_app
+from engramvault.db.engine import Database, utc_now_iso
+from engramvault.llm.client import parse_llm_json
+from engramvault.search.embeddings import EmbeddingEngine
+from engramvault.security.auth import SecurityManager, _hash_password, _verify_password_hash
+from engramvault.web.app import create_app
 
 
 def test_pbkdf2_random_salt_and_legacy_compatibility():
@@ -158,7 +158,7 @@ def test_multipart_ingest_and_concurrent_sqlite_wal(tmp_path: Path):
 
 
 def test_query_router_and_api_token_mutation_auth(tmp_path: Path):
-    from memoria.knowledge.query_router import QueryRouter
+    from engramvault.knowledge.query_router import QueryRouter
 
     db_file = tmp_path / "router_auth.db"
     app = create_app(db_file)

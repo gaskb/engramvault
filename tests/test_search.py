@@ -1,10 +1,10 @@
 from pathlib import Path
 import pytest
 
-from memoria.adapters.base import NormalizedConversation, NormalizedMessage
-from memoria.db.engine import Database
-from memoria.search.embeddings import EmbeddingEngine
-from memoria.search.hybrid import HybridSearcher, clean_fts_query
+from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
+from engramvault.db.engine import Database
+from engramvault.search.embeddings import EmbeddingEngine
+from engramvault.search.hybrid import HybridSearcher, clean_fts_query
 
 
 @pytest.fixture

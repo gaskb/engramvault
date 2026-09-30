@@ -19,11 +19,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from memoria.db.engine import Database
-from memoria.db.models import RelationRecord
-from memoria.knowledge.extractor import guess_category
-from memoria.llm.client import parse_llm_json
-from memoria.settings.manager import SettingsManager
+from engramvault.db.engine import Database
+from engramvault.db.models import RelationRecord
+from engramvault.knowledge.extractor import guess_category
+from engramvault.llm.client import parse_llm_json
+from engramvault.settings.manager import SettingsManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("relations_extractor")

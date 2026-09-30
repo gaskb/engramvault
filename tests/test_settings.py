@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, patch
 from starlette.testclient import TestClient
-from memoria.db.engine import Database
-from memoria.knowledge.enricher import KnowledgeEnricher
-from memoria.knowledge.query_planner import QueryPlanner
-from memoria.settings.manager import SettingsManager, mask_key
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.knowledge.enricher import KnowledgeEnricher
+from engramvault.knowledge.query_planner import QueryPlanner
+from engramvault.settings.manager import SettingsManager, mask_key
+from engramvault.web.app import create_app
 
 
 def test_mask_key():
@@ -90,7 +90,7 @@ def test_settings_api_endpoints(tmp_path):
     assert "claude-custom-agent" in add_res.json()["models"]
 
     # 5. POST /api/settings/test
-    with patch("memoria.llm.client.LLMClient.chat_completion", return_value="OK"):
+    with patch("engramvault.llm.client.LLMClient.chat_completion", return_value="OK"):
         test_res = client.post(
             "/api/settings/test",
             json={"provider": "anthropic", "model": "claude-sonnet-4-5-20250929"},

@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from memoria.db.engine import Database
-from memoria.sync.claude_code import ClaudeCodeSyncer
+from engramvault.db.engine import Database
+from engramvault.sync.claude_code import ClaudeCodeSyncer
 
 
 @pytest.fixture
@@ -95,7 +95,7 @@ def test_claude_code_syncer_remote(sync_env):
         "total": 1,
     }
 
-    with patch("memoria.sync.claude_code.post_multipart_file", return_value=mock_resp) as mock_post:
+    with patch("engramvault.sync.claude_code.post_multipart_file", return_value=mock_resp) as mock_post:
         res = syncer.sync()
         assert res["status"] == "success"
         assert res["synced_count"] == 1

@@ -4,14 +4,14 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from memoria.db.engine import Database
-from memoria.db.models import RelationRecord, StatementRecord
-from memoria.knowledge.enricher import KnowledgeEnricher
-from memoria.knowledge.query_planner import QueryPlanner
-from memoria.llm.client import LLMClient
-from memoria.mcp_server import handle_mcp_jsonrpc, build_agent_search_response
-from memoria.seed.seed_data import seed_database
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.db.models import RelationRecord, StatementRecord
+from engramvault.knowledge.enricher import KnowledgeEnricher
+from engramvault.knowledge.query_planner import QueryPlanner
+from engramvault.llm.client import LLMClient
+from engramvault.mcp_server import handle_mcp_jsonrpc, build_agent_search_response
+from engramvault.seed.seed_data import seed_database
+from engramvault.web.app import create_app
 
 
 @pytest.fixture

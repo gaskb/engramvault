@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 
-from memoria.adapters.chatgpt import parse_chatgpt
-from memoria.adapters.claude import parse_claude
-from memoria.adapters.claude_code import parse_claude_code
-from memoria.adapters.markdown import parse_markdown
+from engramvault.adapters.chatgpt import parse_chatgpt
+from engramvault.adapters.claude import parse_claude
+from engramvault.adapters.claude_code import parse_claude_code
+from engramvault.adapters.markdown import parse_markdown
 
 
 def test_chatgpt_adapter():

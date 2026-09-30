@@ -1,8 +1,8 @@
 import io
 import pytest
 from fastapi.testclient import TestClient
-from memoria.db.engine import Database
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.web.app import create_app
 
 
 @pytest.fixture
@@ -178,7 +178,7 @@ def test_validation_and_upload_limits(client, monkeypatch):
     assert "non supportato" in res_bad_ext.json()["detail"]
 
     # 4. Upload file exceeding MAX_UPLOAD_MB returns 413
-    import memoria.web.routes.curation as curation_mod
+    import engramvault.web.routes.curation as curation_mod
     monkeypatch.setattr(curation_mod, "MAX_UPLOAD_MB", 1)  # 1 MB limit for test
     oversized = io.BytesIO(b"A" * (1024 * 1024 + 1024))  # 1 MB + 1 KB
     res_too_large = client.post(

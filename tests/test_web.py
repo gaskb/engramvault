@@ -1,7 +1,7 @@
 import pytest
 from starlette.testclient import TestClient
-from memoria.db.engine import Database
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.web.app import create_app
 
 
 @pytest.fixture

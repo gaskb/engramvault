@@ -5,9 +5,9 @@ with automatic circuit-breaker local fallback.
 """
 from fastapi.testclient import TestClient
 
-from memoria.db.engine import Database
-from memoria.llm.jev import JevSystemOneEngine
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.llm.jev import JevSystemOneEngine
+from engramvault.web.app import create_app
 
 
 def test_jev_disabled_by_default_and_local_fallback(tmp_path):
@@ -102,7 +102,7 @@ def test_jev_web_endpoints(tmp_path):
 
 def test_jev_safe_float_and_resilient_parsing(tmp_path, monkeypatch):
     """Test _safe_float handles edge cases (booleans, strings, none, invalid) and category normalization."""
-    from memoria.llm.jev import _safe_float
+    from engramvault.llm.jev import _safe_float
 
     assert _safe_float(None, 0.5) == 0.5
     assert _safe_float(True) == 1.0

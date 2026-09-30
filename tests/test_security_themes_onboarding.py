@@ -3,7 +3,7 @@
 from pathlib import Path
 from fastapi.testclient import TestClient
 
-from memoria.web.app import create_app
+from engramvault.web.app import create_app
 
 
 def test_security_bearer_token_and_web_password(tmp_path: Path):

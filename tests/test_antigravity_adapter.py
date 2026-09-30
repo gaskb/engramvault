@@ -3,8 +3,8 @@ import sqlite3
 import zipfile
 from pathlib import Path
 
-from memoria.adapters.antigravity import _clean_user_request, parse_antigravity
-from memoria.adapters.registry import detect_provider, parse_source
+from engramvault.adapters.antigravity import _clean_user_request, parse_antigravity
+from engramvault.adapters.registry import detect_provider, parse_source
 
 
 def test_clean_user_request():

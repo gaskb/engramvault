@@ -2,12 +2,12 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import pytest
-from memoria.db.engine import Database
-from memoria.knowledge.enricher import KnowledgeEnricher
-from memoria.llm.base import LLMResponse
-from memoria.llm.client import LLMClient
-from memoria.seed.seed_data import seed_database
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.knowledge.enricher import KnowledgeEnricher
+from engramvault.llm.base import LLMResponse
+from engramvault.llm.client import LLMClient
+from engramvault.seed.seed_data import seed_database
+from engramvault.web.app import create_app
 from starlette.testclient import TestClient
 
 

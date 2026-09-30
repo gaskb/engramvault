@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from memoria.adapters.base import NormalizedConversation, NormalizedMessage
-from memoria.db.engine import Database
-from memoria.db.models import DecisionRecord, StatementRecord
+from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
+from engramvault.db.engine import Database
+from engramvault.db.models import DecisionRecord, StatementRecord
 
 
 def test_db_init(tmp_path: Path):

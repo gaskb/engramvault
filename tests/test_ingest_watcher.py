@@ -2,9 +2,9 @@ import json
 import time
 from pathlib import Path
 import pytest
-from memoria.db.engine import Database
-from memoria.ingest.pipeline import ingest_source
-from memoria.ingest.watcher import DropFolderWatcher
+from engramvault.db.engine import Database
+from engramvault.ingest.pipeline import ingest_source
+from engramvault.ingest.watcher import DropFolderWatcher
 
 
 @pytest.fixture

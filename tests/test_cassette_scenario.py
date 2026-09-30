@@ -1,9 +1,9 @@
 from pathlib import Path
 import pytest
 
-from memoria.db.engine import Database
-from memoria.knowledge.query_planner import QueryPlanner
-from memoria.seed.seed_data import seed_database
+from engramvault.db.engine import Database
+from engramvault.knowledge.query_planner import QueryPlanner
+from engramvault.seed.seed_data import seed_database
 
 
 @pytest.fixture

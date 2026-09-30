@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from memoria.web.app import create_app
+from engramvault.web.app import create_app
 
 
 def test_agent_api_search_and_remember(tmp_path):

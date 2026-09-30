@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from memoria.adapters.base import NormalizedConversation, NormalizedMessage
-from memoria.db.engine import Database
-from memoria.knowledge.extractor import KnowledgeExtractor
+from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
+from engramvault.db.engine import Database
+from engramvault.knowledge.extractor import KnowledgeExtractor
 
 
 def test_fact_vs_claim_separation(tmp_path: Path):

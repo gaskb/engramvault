@@ -2,10 +2,10 @@ import uuid
 import pytest
 from starlette.testclient import TestClient
 
-from memoria.adapters.base import NormalizedConversation, NormalizedMessage
-from memoria.db.engine import Database
-from memoria.db.models import StatementRecord
-from memoria.web.app import create_app
+from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
+from engramvault.db.engine import Database
+from engramvault.db.models import StatementRecord
+from engramvault.web.app import create_app
 
 
 @pytest.fixture

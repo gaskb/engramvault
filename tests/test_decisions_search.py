@@ -2,9 +2,9 @@ import uuid
 import pytest
 from starlette.testclient import TestClient
 
-from memoria.db.engine import Database
-from memoria.db.models import DecisionRecord, StatementRecord
-from memoria.web.app import create_app
+from engramvault.db.engine import Database
+from engramvault.db.models import DecisionRecord, StatementRecord
+from engramvault.web.app import create_app
 
 
 @pytest.fixture

@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 from starlette.testclient import TestClient
 
-from memoria.db.engine import Database
-from memoria.web.app import STATIC_DIR, create_app
+from engramvault.db.engine import Database
+from engramvault.web.app import STATIC_DIR, create_app
 
 
 @pytest.fixture

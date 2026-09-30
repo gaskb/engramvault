@@ -1,15 +1,15 @@
 import json
 from unittest.mock import MagicMock, patch
 import pytest
-from memoria.llm.base import LLMResponse
-from memoria.llm.factory import detect_provider, get_llm_provider
-from memoria.llm.providers.anthropic import AnthropicProvider
-from memoria.llm.providers.openai import OpenAIProvider
-from memoria.llm.providers.gemini import GeminiProvider
-from memoria.llm.providers.grok import GrokProvider
-from memoria.llm.providers.deepseek import DeepSeekProvider
-from memoria.llm.providers.qwen import QwenProvider
-from memoria.llm.client import LLMClient
+from engramvault.llm.base import LLMResponse
+from engramvault.llm.factory import detect_provider, get_llm_provider
+from engramvault.llm.providers.anthropic import AnthropicProvider
+from engramvault.llm.providers.openai import OpenAIProvider
+from engramvault.llm.providers.gemini import GeminiProvider
+from engramvault.llm.providers.grok import GrokProvider
+from engramvault.llm.providers.deepseek import DeepSeekProvider
+from engramvault.llm.providers.qwen import QwenProvider
+from engramvault.llm.client import LLMClient
 
 
 def test_detect_provider():
