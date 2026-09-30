@@ -1,7 +1,7 @@
 services:
-  memoria:
+  engramvault:
     image: gaskb/engramvault:latest
-    container_name: memoria_ai_anti
+    container_name: engramvault
     restart: unless-stopped
     ports:
       - "5006:8080"
@@ -13,9 +13,9 @@ services:
       - MEMORIA_DEFAULT_LANG=en
       - MEMORIA_EMBEDDING_BACKEND=auto
       - MEMORIA_INSTANCE_NAME=.220
-      - MEMORIA_DOCS_URL=https://app.notion.com/p/AI-Things-00000000000000000000000000000000
-      - MEMORIA_DOCS_LABEL=Notion
-      - MEMORIA_REPO_URL=http://github.com/root/memoria_ai_anti
+      - MEMORIA_DOCS_URL=https://engramvault.net
+      - MEMORIA_DOCS_LABEL=Website
+      - MEMORIA_REPO_URL=http://github.com/root/engramvault
       - MEMORIA_REPO_LABEL=GitLab
       - MEMORIA_DESIGN_SYSTEM_URL=https://app.notion.com/p/UI-Design-System-gaskb-style-11111111111111111111111111111111
       # Per abilitare LLM esterni (es. Google Gemini o OpenAI):
