@@ -218,7 +218,7 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
             "server": MCP_SERVER_INFO,
             "serverInfo": MCP_SERVER_INFO,
             "tools_count": len(MCP_TOOLS_SCHEMA),
-            "transport": "Streamable HTTP (POST /mcp) & stdio (python -m memoria.mcp_server)",
+            "transport": "Streamable HTTP (POST /mcp) & stdio (python -m engramvault.mcp_server)",
             "endpoint": f"{base_url}/mcp",
             "agent_rest_api": {
                 "search": f"{base_url}/api/v1/agent/search?q=<query>",

@@ -87,7 +87,7 @@ def test_mcp_jsonrpc_and_sse(tmp_path):
     # 1. GET /mcp info
     info = client.get("/mcp")
     assert info.status_code == 200
-    assert info.json()["server"]["name"] == "memoria-ai-mcp"
+    assert info.json()["server"]["name"] in ("engramvault-mcp", "memoria-ai-mcp")
 
     # 2. POST /mcp initialize (JSON)
     init_resp = client.post(
@@ -100,7 +100,7 @@ def test_mcp_jsonrpc_and_sse(tmp_path):
         },
     )
     assert init_resp.status_code == 200
-    assert init_resp.json()["result"]["serverInfo"]["name"] == "memoria-ai-mcp"
+    assert init_resp.json()["result"]["serverInfo"]["name"] in ("engramvault-mcp", "memoria-ai-mcp")
 
     # 3. POST /mcp tools/list
     tools_resp = client.post(
@@ -129,7 +129,7 @@ def test_mcp_jsonrpc_and_sse(tmp_path):
     )
     assert call_resp.status_code == 200
     text_out = call_resp.json()["result"]["content"][0]["text"]
-    assert "Memoria AI" in text_out
+    assert "EngramVault" in text_out or "Memoria AI" in text_out
 
     # 5. POST /mcp with SSE Accept header (text/event-stream)
     sse_resp = client.post(

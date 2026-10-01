@@ -9,7 +9,7 @@ _LOCALE_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def load_all_locales(force_reload: bool = False) -> Dict[str, Dict[str, Any]]:
-    """Auto-discovers and loads all `<lang>.json` files inside `memoria/i18n/locales/`."""
+    """Auto-discovers and loads all `<lang>.json` files inside `engramvault/i18n/locales/`."""
     global _LOCALE_CACHE
     if _LOCALE_CACHE and not force_reload:
         return _LOCALE_CACHE

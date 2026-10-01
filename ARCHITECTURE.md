@@ -1,6 +1,6 @@
-# Architettura di Memoria AI Anti
+# Architettura di EngramVault
 
-Questo documento descrive le scelte architetturali, il modello dati e il funzionamento interno di `memoria_ai_anti`.
+Questo documento descrive le scelte architetturali, il modello dati e il funzionamento interno di **EngramVault**.
 
 ## 1. Principi Fondamentali
 
@@ -52,7 +52,7 @@ Questo documento descrive le scelte architetturali, il modello dati e il funzion
 I motori di ricerca puramente semantici (vettori) falliscono regolarmente su codici prodotto e sigle alfanumeriche (es. `TDK SA-X`, `Maxell XLII-S`, `Audient iD22`), confondendole o generalizzandole.
 Al contempo, la ricerca puramente lessicale (BM25) fallisce sui sinonimi e concetti affini.
 
-`memoria_ai_anti` unisce i due mondi tramite **Reciprocal Rank Fusion (RRF)**:
+**EngramVault** unisce i due mondi tramite **Reciprocal Rank Fusion (RRF)**:
 
 $$RRF(d) = \frac{w_{bm25}}{k + rank_{bm25}(d)} + \frac{w_{vec}}{k + rank_{vec}(d)}$$
 
@@ -64,7 +64,7 @@ $$RRF(d) = \frac{w_{bm25}}{k + rank_{bm25}(d)} + \frac{w_{vec}}{k + rank_{vec}(d
 
 ## 4. Integrazione con AI Esterne e Locali
 
-Il modulo `memoria.llm.client` supporta qualsiasi endpoint compatibile OpenAI (incluso Ollama in locale o gateway cloud per Gemini, Claude, OpenAI):
+Il modulo `engramvault.llm.client` supporta qualsiasi endpoint compatibile OpenAI (incluso Ollama in locale o gateway cloud per Gemini, Claude, OpenAI):
 
 1. **Elaborazione Query Sintetiche:** Invia al modello solo i top chunk e i fatti pertinenti estratti localmente, risparmiando token e preservando la privacy.
 2. **Estrazione Strutturata:** Funzione `extract_knowledge_with_llm()` per generare entità e relazioni complesse in batch.

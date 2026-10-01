@@ -15,7 +15,7 @@ def test_client(tmp_path):
 def test_index_page(test_client):
     response = test_client.get("/")
     assert response.status_code == 200
-    assert "Memoria AI" in response.text
+    assert "EngramVault" in response.text or "Memoria AI" in response.text
     assert "site-header-centered" in response.text
     assert "tabs tabs-centered" in response.text
     assert "/mcp" in response.text

@@ -85,7 +85,7 @@ class LLMClient:
         from engramvault.i18n import get_prompt
 
         system_prompt = get_prompt("synthesis_system", lang) or (
-            "You are the intelligent personal assistant of 'Memoria AI'.\n"
+            "You are the intelligent personal assistant of 'EngramVault'.\n"
             "Cross-reference the user's verified inventory (FACT) and decisions with past conversation excerpts (CLAIM).\n"
             "Always cite conversation sources using markdown links [Title](#conv-ID) and reply in the language of the user's question."
         )

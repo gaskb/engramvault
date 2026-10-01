@@ -1,0 +1,12 @@
+[Unit]
+Description=EngramVault - Nightly Ingestion & Backup Job
+After=network.target
+
+[Service]
+Type=oneshot
+User=gas
+WorkingDirectory=/home/gas/engramvault
+ExecStart=/bin/bash -c '\
+  /home/gas/engramvault/venv/bin/python -m engramvault.cli.main ingest /home/gas/.claude/projects --provider claude_code --db /home/gas/.engramvault/vault.db && \
+  sqlite3 /home/gas/.engramvault/vault.db ".backup /home/gas/.engramvault/vault_backup_$(date +%%Y%%m%%d).db" && \
+  find /home/gas/.engramvault -name "vault_backup_*.db" -mtime +14 -delete'

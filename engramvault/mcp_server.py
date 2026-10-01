@@ -1,9 +1,9 @@
 """
-Memoria AI — Agent API Engine & Model Context Protocol (MCP) Server (Issue #11).
+EngramVault — Agent API Engine & Model Context Protocol (MCP) Server (Issue #11).
 
 Supports:
 1. In-process execution for FastAPI endpoints (`/api/v1/agent/*` and `POST /mcp` Streamable HTTP / SSE)
-2. Standalone `stdio` MCP Server (`python -m memoria.mcp_server`) that proxies to `MEMORIA_API_URL`
+2. Standalone `stdio` MCP Server (`python -m engramvault.mcp_server`) that proxies to `ENGRAMVAULT_API_URL`
    (`http://localhost:5006`) with automatic local database fallback.
 """
 
@@ -22,18 +22,19 @@ from engramvault.knowledge.extractor import guess_category
 from engramvault.knowledge.query_planner import QueryPlanner
 
 DEFAULT_REMOTE_URL = (
-    os.environ.get("MEMORIA_API_URL")
+    os.environ.get("ENGRAMVAULT_API_URL")
+    or os.environ.get("MEMORIA_API_URL")
     or os.environ.get("MEMORIA_PUBLIC_URL")
     or "http://localhost:8080"
 ).rstrip("/")
 
 MCP_SERVER_INFO = {
-    "name": "memoria-ai-mcp",
+    "name": "engramvault-mcp",
     "version": API_VERSION,
 }
 
 MCP_INSTRUCTIONS = (
-    "Memoria AI è il Vault Storico delle conversazioni (ChatGPT, Claude, Gemini, Ollama, Antigravity), "
+    "EngramVault è il Vault Storico delle conversazioni (ChatGPT, Claude, Gemini, Ollama, Antigravity), "
     "dei Fatti Verificati (inventario hardware/audio/software, configurazioni, preferenze) e delle Decisioni Architetturali di Gas.\n"
     "Usa `memoria_search` come primo strumento per cercare rapidamente (< 30ms) discussioni passate, fatti o decisioni su un argomento.\n"
     "Usa `memoria_get_conversation` per leggere i messaggi completi di una conversazione trovata.\n"
@@ -44,7 +45,7 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
     {
         "name": "memoria_search",
         "description": (
-            "Ricerca ibrida ultra-veloce (< 30ms) nel Vault di Memoria AI (Fatti verificati, Claims, Decisioni storiche "
+            "Ricerca ibrida ultra-veloce (< 30ms) nel Vault di EngramVault (Fatti verificati, Claims, Decisioni storiche "
             "e oltre 39.000 messaggi di conversazioni passate su ChatGPT, Claude, Gemini, Ollama e Antigravity). "
             "Restituisce sia un riassunto Markdown pronto per l'agente sia i dati strutturati con conversation_id."
         ),
@@ -83,7 +84,7 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
             "properties": {
                 "conversation_id": {
                     "type": "string",
-                    "description": "UUID della conversazione nel Vault di Memoria AI.",
+                    "description": "UUID della conversazione nel Vault di EngramVault.",
                 },
                 "max_messages": {
                     "type": "integer",
@@ -97,7 +98,7 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
     {
         "name": "memoria_ask",
         "description": (
-            "Interroga il motore di sintesi LLM di Memoria AI per ottenere una risposta ragionata multi-hop "
+            "Interroga il motore di sintesi LLM di EngramVault per ottenere una risposta ragionata multi-hop "
             "combinando l'inventario utente (FACT), i claims tecnici e le fonti storiche."
         ),
         "inputSchema": {
@@ -120,7 +121,7 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
     {
         "name": "memoria_remember_fact",
         "description": (
-            "Salva immediatamente un nuovo Fatto Verificato (FACT) o preferenza nel Knowledge Layer di Memoria AI "
+            "Salva immediatamente un nuovo Fatto Verificato (FACT) o preferenza nel Knowledge Layer di EngramVault "
             "(es. possesso di un componente hardware/software, configurazione scelta, preferenza tecnica)."
         ),
         "inputSchema": {
@@ -154,7 +155,7 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
     {
         "name": "memoria_remember_decision",
         "description": (
-            "Registra immediatamente una nuova Decisione Architetturale o Tecnica nel registro decisionale di Memoria AI."
+            "Registra immediatamente una nuova Decisione Architetturale o Tecnica nel registro decisionale di EngramVault."
         ),
         "inputSchema": {
             "type": "object",
@@ -265,7 +266,7 @@ def build_agent_search_response(
     relations = db.find_related_entities(entity_ids, limit=12) if entity_ids else []
 
     # Build Markdown Brief for Agents
-    md_lines = [f"## 🧠 Memoria AI — Risultati per: `{query}`\n"]
+    md_lines = [f"## 🧠 EngramVault — Risultati per: `{query}`\n"]
 
     if statements:
         md_lines.append(f"### 1. Fatti & Claims Rilevanti ({len(statements)})")
@@ -508,7 +509,7 @@ def handle_mcp_tool_call(
                 "content": [
                     {
                         "type": "text",
-                        "text": f"✅ Fatto registrato in Memoria AI (`id`: `{stmt_id}`): **{subject}** (`{category}`) -> `{predicate}`: **{object_value}**",
+                        "text": f"✅ Fatto registrato in EngramVault (`id`: `{stmt_id}`): **{subject}** (`{category}`) -> `{predicate}`: **{object_value}**",
                     }
                 ],
             }
@@ -530,7 +531,7 @@ def handle_mcp_tool_call(
                 "content": [
                     {
                         "type": "text",
-                        "text": f"✅ Decisione registrata in Memoria AI (`id`: `{dec_id}`): **[{status}] {topic}** — {decision_text}",
+                        "text": f"✅ Decisione registrata in EngramVault (`id`: `{dec_id}`): **[{status}] {topic}** — {decision_text}",
                     }
                 ],
             }
@@ -602,7 +603,7 @@ def handle_mcp_tool_call(
                 "content": [
                     {
                         "type": "text",
-                        "text": f"✅ Relazione registrata in Memoria AI (`id`: `{rel_id}`): **{from_ent}** (`{f_cat}`) $\\xrightarrow{{\\text{{{rel_type}}}}}$ **{to_ent}** (`{t_cat}`)",
+                        "text": f"✅ Relazione registrata in EngramVault (`id`: `{rel_id}`): **{from_ent}** (`{f_cat}`) $\\xrightarrow{{\\text{{{rel_type}}}}}$ **{to_ent}** (`{t_cat}`)",
                     }
                 ],
             }

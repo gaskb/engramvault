@@ -1,4 +1,4 @@
-"""Tests for Memoria AI CLI commands."""
+"""Tests for EngramVault CLI commands."""
 
 from pathlib import Path
 from unittest.mock import patch

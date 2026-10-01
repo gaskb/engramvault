@@ -1,4 +1,4 @@
-"""Security & Authentication module for Memoria AI (Issue #15)."""
+"""Security & Authentication module for EngramVault (Issue #15)."""
 
 from engramvault.security.auth import (
     SecurityManager,

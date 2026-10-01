@@ -1,15 +1,15 @@
-# Report di Analisi e Revisione Tecnica: Memoria AI (`memoria_ai_anti`)
+# Report di Analisi e Revisione Tecnica: EngramVault (`engramvault`)
 
-> **Data Analisi:** 26 Settembre 2026  
-> **Versione Analizzata:** v2.2.0 (UI: 2.2.0 / API: v1 / MCP: 2.0)  
-> **Repository:** `memoria_ai_anti` (Homelab Node `.220`)  
+> **Data Analisi:** 26 Settembre 2026 (Aggiornato: Ottobre 2026)  
+> **Versione Analizzata:** v2.2.0 -> v2.11.0  
+> **Repository:** `engramvault` (Homelab Node `.220`)  
 > **Oggetto:** Audit di validità, qualità del codice, solidità, sicurezza, copertura test, architettura e UX/UI.
 
 ---
 
 ## 1. Giudizio Complessivo & Sintesi Esecutiva
 
-Il progetto **Memoria AI** (`memoria_ai_anti`) è un progetto **estremamente valido, concettualmente avanzato e ben posizionato per un ambiente Homelab**. 
+Il progetto **EngramVault** (originariamente `memoria_ai_anti`) è un progetto **estremamente valido, concettualmente avanzato e ben posizionato per un ambiente Homelab e Open Source**. 
 
 Risolve un problema reale e critico: la frammentazione e la dispersione delle conversazioni con diversi assistenti AI (ChatGPT, Claude, Claude Code, Gemini, Ollama, Antigravity) e la perdita di memoria a lungo termine degli agenti di sviluppo.
 
@@ -243,6 +243,6 @@ Tuttavia, l'analisi evidenzia aree scoperte da test:
 
 ## 10. Conclusione
 
-`memoria_ai_anti` è un progetto di **notevole valore tecnologico ed ergonomico**, concepito con una visione chiara e con scelte di design molto intelligenti per un homelab self-hosted. 
+**EngramVault** è un progetto di **notevole valore tecnologico ed ergonomico**, concepito con una visione chiara e con scelte di design molto intelligenti per un homelab self-hosted e per l'ecosistema open-source. 
 
 Risolvendo le criticità di sicurezza identificate (in primis la protezione dell'endpoint di onboarding token e la sanitizzazione XSS del frontend) ed eliminando le duplicazioni di route, il progetto raggiunge un livello di **solidità, affidabilità e maturità di livello enterprise-grade**.

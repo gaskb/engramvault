@@ -19,7 +19,7 @@ DEFAULT_ANTIGRAVITY_STATE_FILE = DEFAULT_DATA_DIR / "antigravity_sync_state.json
 class AntigravitySyncer:
     """
     Scans ~/.gemini/antigravity/ and synchronizes new or updated session transcripts
-    to Memoria AI (local database or remote instance).
+    to EngramVault (local database or remote instance).
     """
 
     def __init__(

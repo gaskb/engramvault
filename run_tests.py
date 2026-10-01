@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test runner for memoria_ai_anti using Python's built-in unittest module.
+Test runner for EngramVault using Python's built-in unittest module.
 Does not require external dependencies.
 """
 import sys

@@ -259,7 +259,7 @@ class JevSystemOneEngine:
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {cfg['api_key']}",
                     "HTTP-Referer": "https://github.com/gaskb/memoria-ai",
-                    "X-Title": "Memoria AI (System 1 Router)",
+                    "X-Title": "EngramVault (System 1 Router)",
                 },
                 method="POST",
             )

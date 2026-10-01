@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
-    <title>{{ app_title or 'Engram AI' }} — {{ app_subtitle or 'AI Memory Vault' }} (Memoria AI)</title>
+    <title>{{ app_title or 'EngramVault' }} — {{ app_subtitle or 'AI Memory Vault' }}</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
@@ -593,7 +593,7 @@
                             <p class="text-slate-300 leading-relaxed mb-1.5" data-i18n="onboarding_step3_desc">
                                 {{ i18n.get('onboarding_step3_desc', 'Copy this ready-to-use mcp_config.json snippet into Google Antigravity, Claude Code, Claude Desktop, or Cursor:') }}
                             </p>
-                            <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "memoria": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
+                            <pre id="onboarding-mcp-snippet" class="p-2 rounded-lg bg-black/50 border border-cardborder text-[10px] font-mono text-emerald-300 overflow-x-auto max-h-24">{ "mcpServers": { "engramvault": { "serverUrl": "http://localhost:5006/mcp" } } }</pre>
                         </div>
                         <button type="button" onclick="copyMcpConfigSnippet()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center justify-center gap-1.5">
                             <svg class="w-3.5 h-3.5"><use href="#icon-clipboard"></use></svg> <span data-i18n="onboarding_copy_mcp_btn">{{ i18n.get('onboarding_copy_mcp_btn', 'Copy MCP Config JSON') }}</span>

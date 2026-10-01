@@ -1,4 +1,4 @@
--- Memoria AI - SQLite Schema
+-- EngramVault - SQLite Schema
 
 PRAGMA foreign_keys = ON;
 

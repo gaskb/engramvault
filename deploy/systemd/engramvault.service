@@ -1,0 +1,15 @@
+[Unit]
+Description=EngramVault - Web Dashboard & Vault Service
+After=network.target
+
+[Service]
+Type=simple
+User=gas
+WorkingDirectory=/home/gas/engramvault
+ExecStart=/home/gas/engramvault/venv/bin/python -m engramvault.cli.main serve --host 0.0.0.0 --port 8080 --db /home/gas/.engramvault/vault.db
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

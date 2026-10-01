@@ -1,5 +1,5 @@
 """
-Multi-Theme Engine for Memoria AI (Issue #20).
+Multi-Theme Engine for EngramVault (Issue #20).
 Supports 5 built-in M3 presets (emerald, amber, indigo, ruby, slate) in Dark & Light modes,
 plus user-created Custom Themes persisted in SQLite and exportable/importable as JSON.
 """
