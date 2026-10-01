@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>net.gaskb.memoria.antigravity-sync</string>
+    <string>net.gaskb.engramvault.antigravity-sync</string>
     <key>ProgramArguments</key>
     <array>
         <string>__PYTHON_BIN__</string>
@@ -21,8 +21,8 @@
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>__HOME__/.memoria/antigravity_sync.log</string>
+    <string>__HOME__/.engramvault/antigravity_sync.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/.memoria/antigravity_sync.err.log</string>
+    <string>__HOME__/.engramvault/antigravity_sync.err.log</string>
 </dict>
 </plist>

@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-# Setup macOS LaunchAgent for Memoria Antigravity Sync
+# Setup macOS LaunchAgent for EngramVault Antigravity Sync
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PYTHON_BIN="${PROJECT_DIR}/venv/bin/python"
 REMOTE_URL="${1:-http://localhost:5006}"
-PLIST_SRC="${SCRIPT_DIR}/net.gaskb.memoria.antigravity-sync.plist"
-PLIST_DEST="${HOME}/Library/LaunchAgents/net.gaskb.memoria.antigravity-sync.plist"
+PLIST_SRC="${SCRIPT_DIR}/net.gaskb.engramvault.antigravity-sync.plist"
+PLIST_DEST="${HOME}/Library/LaunchAgents/net.gaskb.engramvault.antigravity-sync.plist"
 
-echo "=== Configurazione LaunchAgent Memoria Antigravity Sync ==="
+echo "=== Configurazione LaunchAgent EngramVault Antigravity Sync ==="
 echo "Project Dir : ${PROJECT_DIR}"
 echo "Python Bin  : ${PYTHON_BIN}"
 echo "Remote URL  : ${REMOTE_URL}"
@@ -22,7 +22,7 @@ if [ ! -f "${PYTHON_BIN}" ]; then
 fi
 
 mkdir -p "${HOME}/Library/LaunchAgents"
-mkdir -p "${HOME}/.memoria"
+mkdir -p "${HOME}/.engramvault"
 
 # Generate customized plist from template
 sed \
@@ -40,5 +40,5 @@ launchctl load "${PLIST_DEST}"
 
 echo "✓ LaunchAgent Antigravity installato e attivato con successo!"
 echo "Log disponibili in:"
-echo "  - ${HOME}/.memoria/antigravity_sync.log"
-echo "  - ${HOME}/.memoria/antigravity_sync.err.log"
+echo "  - ${HOME}/.engramvault/antigravity_sync.log"
+echo "  - ${HOME}/.engramvault/antigravity_sync.err.log"

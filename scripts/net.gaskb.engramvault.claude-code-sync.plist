@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>net.gaskb.memoria.claude-code-sync</string>
+    <string>net.gaskb.engramvault.claude-code-sync</string>
     <key>ProgramArguments</key>
     <array>
         <string>__PYTHON_BIN__</string>
@@ -21,8 +21,8 @@
     <key>RunAtLoad</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>__HOME__/.memoria/claude_code_sync.log</string>
+    <string>__HOME__/.engramvault/claude_code_sync.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/.memoria/claude_code_sync.err.log</string>
+    <string>__HOME__/.engramvault/claude_code_sync.err.log</string>
 </dict>
 </plist>
