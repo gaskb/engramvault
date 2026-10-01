@@ -1,13 +1,17 @@
 # Security Policy
 
+**English** · [🇮🇹 Italiano](SECURITY.it.md)
+
+---
+
 EngramVault is designed for storing AI conversations, knowledge graphs, and sensitive developer context. We take the security of this data very seriously.
 
 ## Supported Versions
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.10.x  | :white_check_mark: |
-| < 2.10  | :x:                |
+| 2.12.x  | :white_check_mark: |
+| < 2.12  | :x:                |
 
 ## Reporting a Vulnerability
 

@@ -5,8 +5,8 @@ def _env(name: str, default: str = "") -> str:
     return os.getenv(f"ENGRAMVAULT_{name}", os.getenv(f"MEMORIA_{name}", default))
 
 # Versioning (Release Version + API Contract Version + MCP Protocol Version)
-APP_VERSION = "2.12.1"
-UI_VERSION = "2.12.1"
+APP_VERSION = "2.12.2"
+UI_VERSION = "2.12.2"
 API_VERSION = "v1"
 MCP_PROTOCOL_VERSION = "2.0"
 APP_TITLE = _env("APP_TITLE", "EngramVault")

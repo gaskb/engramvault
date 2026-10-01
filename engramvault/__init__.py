@@ -2,4 +2,4 @@
 EngramVault - Personal AI Conversation Vault & Knowledge Layer.
 """
 
-__version__ = "2.12.1"
+__version__ = "2.12.2"

@@ -1,5 +1,9 @@
 # Contributing to EngramVault
 
+**English** · [🇮🇹 Italiano](CONTRIBUTING.it.md)
+
+---
+
 Thank you for your interest in contributing to **EngramVault**! We welcome community contributions, bug fixes, adapters for new AI providers, and UI improvements.
 
 ## Code of Conduct
