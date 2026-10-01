@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  memoria:
+  engramvault:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
@@ -11,9 +11,10 @@ services:
       - "8080:8080"
     volumes:
       - ../data:/app/data
-      - ~/.claude/projects:/root/.claude/projects:ro
+      # Optional: Mount local Claude projects for automatic sync
+      # - ~/.claude/projects:/root/.claude/projects:ro
     environment:
-      - MEMORIA_DB_PATH=/app/data/vault.db
-      - MEMORIA_DATA_DIR=/app/data
+      - ENGRAMVAULT_DB_PATH=/app/data/vault.db
+      - ENGRAMVAULT_DATA_DIR=/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"

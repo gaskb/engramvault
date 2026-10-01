@@ -8,25 +8,15 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - MEMORIA_DB_PATH=/app/data/vault.db
-      - MEMORIA_DATA_DIR=/app/data
-      - MEMORIA_DEFAULT_LANG=en
-      - MEMORIA_EMBEDDING_BACKEND=auto
-      - MEMORIA_INSTANCE_NAME=.220
-      - MEMORIA_DOCS_URL=https://engramvault.net
-      - MEMORIA_DOCS_LABEL=Website
-      - MEMORIA_REPO_URL=http://github.com/root/engramvault
-      - MEMORIA_REPO_LABEL=GitLab
-      - MEMORIA_DESIGN_SYSTEM_URL=https://app.notion.com/p/UI-Design-System-gaskb-style-11111111111111111111111111111111
-      # Per abilitare LLM esterni (es. Google Gemini o OpenAI):
-      # - MEMORIA_LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-      # - MEMORIA_LLM_API_KEY=your_key_here
-      # - MEMORIA_LLM_MODEL=gemini-2.0-flash
-    networks:
-      - default
-      - services_net
-
-networks:
-  default:
-  services_net:
-    external: true
+      - ENGRAMVAULT_DB_PATH=/app/data/vault.db
+      - ENGRAMVAULT_DATA_DIR=/app/data
+      - ENGRAMVAULT_DEFAULT_LANG=en
+      - ENGRAMVAULT_DEFAULT_THEME=emerald
+      - ENGRAMVAULT_EMBEDDING_BACKEND=auto
+      # Optional: Web & API Security
+      # - ENGRAMVAULT_API_TOKEN=your_bearer_token_here
+      # - ENGRAMVAULT_WEB_PASSWORD=your_web_password_here
+      # Optional: External LLM Provider (Gemini, OpenAI, Anthropic, Ollama, Grok, DeepSeek)
+      # - ENGRAMVAULT_LLM_PROVIDER=gemini
+      # - ENGRAMVAULT_LLM_API_KEY=your_api_key_here
+      # - ENGRAMVAULT_LLM_MODEL=gemini-2.0-flash

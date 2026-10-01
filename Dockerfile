@@ -4,8 +4,8 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    MEMORIA_DATA_DIR=/app/data \
-    MEMORIA_DB_PATH=/app/data/vault.db
+    ENGRAMVAULT_DATA_DIR=/app/data \
+    ENGRAMVAULT_DB_PATH=/app/data/vault.db
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \

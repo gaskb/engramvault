@@ -4,9 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=gas
-WorkingDirectory=/home/gas/engramvault
-ExecStart=/home/gas/engramvault/venv/bin/python -m engramvault.cli.main serve --host 0.0.0.0 --port 8080 --db /home/gas/.engramvault/vault.db
+# Change User and WorkingDirectory to match your deployment environment
+User=engramvault
+Group=engramvault
+WorkingDirectory=/opt/engramvault
+ExecStart=/opt/engramvault/venv/bin/python -m engramvault.cli.main serve --host 0.0.0.0 --port 8080 --db /var/lib/engramvault/vault.db
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
