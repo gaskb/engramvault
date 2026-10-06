@@ -1,10 +1,10 @@
-# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.4
+# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.5
 
 > **Vault personale e self-hosted per conversazioni AI, Knowledge Graph epistemico (`FACT` / `CLAIM` / `DECISION`), Motore di ricerca ibrida e Server MCP nativo per Agenti AI.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Versione](https://img.shields.io/badge/EngramVault-v2.12.4-emerald.svg)](https://engramvault.net)
+[![Versione](https://img.shields.io/badge/EngramVault-v2.12.5-emerald.svg)](https://engramvault.net)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--server-mcp-nativo)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--server-mcp-nativo)
 [![Licenza: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

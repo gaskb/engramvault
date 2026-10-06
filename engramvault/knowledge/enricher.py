@@ -13,6 +13,15 @@ from engramvault.llm.jev import JevSystemOneEngine
 logger = logging.getLogger("engramvault.enricher")
 
 
+def _clean_str(val: Any, default: str = "") -> str:
+    """Sanitizes text by removing null bytes and unpaired Unicode surrogates."""
+    if val is None:
+        return default
+    s = str(val).replace("\x00", "")
+    # Remove surrogate code points that crash utf-8 encoders in SQLite
+    return s.encode("utf-8", "ignore").decode("utf-8").strip()
+
+
 class KnowledgeEnricher:
     """
     Batch processor to systematically extract and structure knowledge (entities, facts,
@@ -207,17 +216,20 @@ class KnowledgeEnricher:
                         # 1. Entities
                         extracted_entity_cats = {}
                         for ent in parsed.get("entities", []):
-                            name = ent.get("name")
-                            cat = ent.get("category") or guess_category(name)
+                            name = _clean_str(ent.get("name") if isinstance(ent, dict) else "")
+                            raw_cat = _clean_str(ent.get("category") if isinstance(ent, dict) else "")
+                            cat = raw_cat or guess_category(name)
                             if name:
                                 self.db.upsert_entity(name, cat)
                                 extracted_entity_cats[name.strip().lower()] = cat
 
                         # 2. Facts
                         for f in parsed.get("facts", []):
-                            subj = f.get("subject")
-                            pred = f.get("predicate", "owned_by_user")
-                            obj = f.get("object", "true")
+                            if not isinstance(f, dict):
+                                continue
+                            subj = _clean_str(f.get("subject"))
+                            pred = _clean_str(f.get("predicate"), "owned_by_user")
+                            obj = _clean_str(f.get("object"), "true")
                             if subj:
                                 norm_subj = subj.strip().lower()
                                 cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
@@ -235,7 +247,7 @@ class KnowledgeEnricher:
                                     source_conversation_id=conv_id,
                                     valid_from=ts,
                                     is_current=1,
-                                    notes=f.get("notes") or f"Estratto da {model_name}",
+                                    notes=_clean_str(f.get("notes")) or f"Estratto da {model_name}",
                                 )
                                 self.db.insert_statement(stmt)
                                 self.status["new_facts"] += 1
@@ -243,9 +255,11 @@ class KnowledgeEnricher:
 
                         # 3. Claims
                         for c in parsed.get("claims", []):
-                            subj = c.get("subject")
-                            pred = c.get("predicate", "technical_claim")
-                            obj = c.get("object", "")
+                            if not isinstance(c, dict):
+                                continue
+                            subj = _clean_str(c.get("subject"))
+                            pred = _clean_str(c.get("predicate"), "technical_claim")
+                            obj = _clean_str(c.get("object"))
                             if subj and obj:
                                 norm_subj = subj.strip().lower()
                                 cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
@@ -270,9 +284,11 @@ class KnowledgeEnricher:
 
                         # 4. Decisions
                         for d in parsed.get("decisions", []):
-                            topic = d.get("topic") or "Decisione Personale"
-                            dec_text = d.get("decision")
-                            status_val = d.get("status", "ADOPTED").upper()
+                            if not isinstance(d, dict):
+                                continue
+                            topic = _clean_str(d.get("topic"), "Decisione Personale")
+                            dec_text = _clean_str(d.get("decision"))
+                            status_val = _clean_str(d.get("status"), "ADOPTED").upper()
                             if status_val not in ("EVALUATING", "ADOPTED", "ABANDONED", "SUPERSEDED"):
                                 status_val = "ADOPTED"
                             if dec_text:
@@ -291,9 +307,11 @@ class KnowledgeEnricher:
 
                         # 5. Relations
                         for r in parsed.get("relations", []):
-                            f_ent = (r.get("from_entity") or "").strip()
-                            t_ent = (r.get("to_entity") or "").strip()
-                            rel_type = (r.get("relation") or r.get("relation_type") or "relates_to").strip()
+                            if not isinstance(r, dict):
+                                continue
+                            f_ent = _clean_str(r.get("from_entity"))
+                            t_ent = _clean_str(r.get("to_entity"))
+                            rel_type = _clean_str(r.get("relation") or r.get("relation_type"), "relates_to")
                             if f_ent and t_ent and f_ent.lower() != t_ent.lower():
                                 f_cat = extracted_entity_cats.get(f_ent.lower()) or guess_category(f_ent)
                                 t_cat = extracted_entity_cats.get(t_ent.lower()) or guess_category(t_ent)
