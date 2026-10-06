@@ -126,3 +126,28 @@ def test_category_sanitization_and_promotion_and_open_world(populated_db):
     kenwood_stmt = next(s for s in stmts if s["subject"] == "Kenwood TS-590SG")
     assert kenwood_stmt["entity_category"] == "ham_radio"
 
+
+def test_parse_llm_json_malformed():
+    from engramvault.llm.client import parse_llm_json
+    # Malformed JSON should gracefully return None without raising NameError or JSONDecodeError
+    assert parse_llm_json("{invalid json") is None
+    assert parse_llm_json(None) is None
+    assert parse_llm_json("```json\n{\"test\": 1\n") is None
+
+
+def test_enricher_recovers_from_single_conversation_failure(populated_db):
+    mock_client = MagicMock(spec=LLMClient)
+    mock_client.is_configured.return_value = True
+    mock_client.model = "mock-resilient"
+
+    # First call returns invalid JSON, second returns valid JSON
+    mock_client.chat_completion.side_effect = [
+        "Unterminated json {...",
+        json.dumps({"entities": [{"name": "Device B", "category": "hardware"}], "facts": []}),
+    ]
+
+    enricher = KnowledgeEnricher(populated_db, llm=mock_client, delay_between_calls=0)
+    summary = enricher.run_batch(limit=2, rebuild=True)
+    assert summary["processed"] == 2
+    assert summary["error"] is None
+

@@ -180,147 +180,166 @@ class KnowledgeEnricher:
                 title = item.get("title", "")
                 self.status["current_conversation"] = title
 
-                conv_record = self.db.get_conversation(conv_id)
-                if not conv_record or not conv_record.get("messages"):
-                    self.db.mark_conversation_enriched(conv_id, model_name, 0)
+                try:
+                    conv_record = self.db.get_conversation(conv_id)
+                    if not conv_record or not conv_record.get("messages"):
+                        self.db.mark_conversation_enriched(conv_id, model_name, 0)
+                        self.status["processed"] += 1
+                        continue
+
+                    extracted_count = 0
+                    parsed = None
+                    if self.llm.is_configured():
+                        try:
+                            parsed = self.extract_with_llm(conv_record)
+                        except Exception as parse_exc:
+                            logger.warning(
+                                "Errore durante estrazione LLM per conversazione '%s' (%s): %s",
+                                title, conv_id, parse_exc
+                            )
+                            parsed = None
+
+                    if parsed and isinstance(parsed, dict):
+                        # Ingest LLM structured data
+                        ts = conv_record.get("created_at")
+                        first_msg_id = conv_record["messages"][0]["id"] if conv_record["messages"] else None
+
+                        # 1. Entities
+                        extracted_entity_cats = {}
+                        for ent in parsed.get("entities", []):
+                            name = ent.get("name")
+                            cat = ent.get("category") or guess_category(name)
+                            if name:
+                                self.db.upsert_entity(name, cat)
+                                extracted_entity_cats[name.strip().lower()] = cat
+
+                        # 2. Facts
+                        for f in parsed.get("facts", []):
+                            subj = f.get("subject")
+                            pred = f.get("predicate", "owned_by_user")
+                            obj = f.get("object", "true")
+                            if subj:
+                                norm_subj = subj.strip().lower()
+                                cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
+                                ent_id = self.db.upsert_entity(subj, cat)
+                                stmt = StatementRecord(
+                                    id=str(uuid.uuid4()),
+                                    entity_id=ent_id,
+                                    statement_type="FACT",
+                                    subject=subj,
+                                    predicate=pred,
+                                    object=str(obj),
+                                    author="user",
+                                    confidence=1.0,
+                                    source_message_id=first_msg_id,
+                                    source_conversation_id=conv_id,
+                                    valid_from=ts,
+                                    is_current=1,
+                                    notes=f.get("notes") or f"Estratto da {model_name}",
+                                )
+                                self.db.insert_statement(stmt)
+                                self.status["new_facts"] += 1
+                                extracted_count += 1
+
+                        # 3. Claims
+                        for c in parsed.get("claims", []):
+                            subj = c.get("subject")
+                            pred = c.get("predicate", "technical_claim")
+                            obj = c.get("object", "")
+                            if subj and obj:
+                                norm_subj = subj.strip().lower()
+                                cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
+                                ent_id = self.db.upsert_entity(subj, cat)
+                                stmt = StatementRecord(
+                                    id=str(uuid.uuid4()),
+                                    entity_id=ent_id,
+                                    statement_type="CLAIM",
+                                    subject=subj,
+                                    predicate=pred,
+                                    object=str(obj),
+                                    author="assistant",
+                                    confidence=0.85,
+                                    source_message_id=first_msg_id,
+                                    source_conversation_id=conv_id,
+                                    valid_from=ts,
+                                    is_current=1,
+                                    notes=f"Claim tecnico estratto da {model_name}",
+                                )
+                                self.db.insert_statement(stmt)
+                                extracted_count += 1
+
+                        # 4. Decisions
+                        for d in parsed.get("decisions", []):
+                            topic = d.get("topic") or "Decisione Personale"
+                            dec_text = d.get("decision")
+                            status_val = d.get("status", "ADOPTED").upper()
+                            if status_val not in ("EVALUATING", "ADOPTED", "ABANDONED", "SUPERSEDED"):
+                                status_val = "ADOPTED"
+                            if dec_text:
+                                dec = DecisionRecord(
+                                    id=str(uuid.uuid4()),
+                                    topic=topic,
+                                    decision_text=dec_text,
+                                    status=status_val,
+                                    decided_at=ts or "N/D",
+                                    source_message_id=first_msg_id,
+                                    source_conversation_id=conv_id,
+                                )
+                                self.db.insert_decision(dec)
+                                self.status["new_decisions"] += 1
+                                extracted_count += 1
+
+                        # 5. Relations
+                        for r in parsed.get("relations", []):
+                            f_ent = (r.get("from_entity") or "").strip()
+                            t_ent = (r.get("to_entity") or "").strip()
+                            rel_type = (r.get("relation") or r.get("relation_type") or "relates_to").strip()
+                            if f_ent and t_ent and f_ent.lower() != t_ent.lower():
+                                f_cat = extracted_entity_cats.get(f_ent.lower()) or guess_category(f_ent)
+                                t_cat = extracted_entity_cats.get(t_ent.lower()) or guess_category(t_ent)
+                                f_id = self.db.upsert_entity(f_ent, f_cat)
+                                t_id = self.db.upsert_entity(t_ent, t_cat)
+                                from engramvault.db.models import RelationRecord
+                                rel_rec = RelationRecord(
+                                    id=str(uuid.uuid4()),
+                                    from_entity_id=f_id,
+                                    to_entity_id=t_id,
+                                    relation_type=rel_type,
+                                    source_message_id=first_msg_id,
+                                )
+                                self.db.insert_relation(rel_rec)
+                                self.status["new_relations"] = self.status.get("new_relations", 0) + 1
+                                extracted_count += 1
+                    else:
+                        # Fallback to deterministic heuristic extractor
+                        from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
+                        norm_msgs = [
+                            NormalizedMessage(role=m["role"], text=m["content"], ts=m["ts"])
+                            for m in conv_record["messages"]
+                        ]
+                        norm_conv = NormalizedConversation(
+                            assistant=conv_record["provider"],
+                            title=conv_record["title"],
+                            date=conv_record["created_at"],
+                            external_ref=conv_record["external_ref"],
+                            messages=norm_msgs,
+                        )
+                        self.extractor.extract_from_conversation(norm_conv, conv_id, conv_record["messages"])
+                        extracted_count = 1
+
+                    self.db.mark_conversation_enriched(conv_id, model_name, extracted_count)
                     self.status["processed"] += 1
-                    continue
-
-                extracted_count = 0
-                parsed = None
-                if self.llm.is_configured():
-                    parsed = self.extract_with_llm(conv_record)
-
-                if parsed and isinstance(parsed, dict):
-                    # Ingest LLM structured data
-                    ts = conv_record.get("created_at")
-                    first_msg_id = conv_record["messages"][0]["id"] if conv_record["messages"] else None
-
-                    # 1. Entities
-                    extracted_entity_cats = {}
-                    for ent in parsed.get("entities", []):
-                        name = ent.get("name")
-                        cat = ent.get("category") or guess_category(name)
-                        if name:
-                            self.db.upsert_entity(name, cat)
-                            extracted_entity_cats[name.strip().lower()] = cat
-
-                    # 2. Facts
-                    for f in parsed.get("facts", []):
-                        subj = f.get("subject")
-                        pred = f.get("predicate", "owned_by_user")
-                        obj = f.get("object", "true")
-                        if subj:
-                            norm_subj = subj.strip().lower()
-                            cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
-                            ent_id = self.db.upsert_entity(subj, cat)
-                            stmt = StatementRecord(
-                                id=str(uuid.uuid4()),
-                                entity_id=ent_id,
-                                statement_type="FACT",
-                                subject=subj,
-                                predicate=pred,
-                                object=str(obj),
-                                author="user",
-                                confidence=1.0,
-                                source_message_id=first_msg_id,
-                                source_conversation_id=conv_id,
-                                valid_from=ts,
-                                is_current=1,
-                                notes=f.get("notes") or f"Estratto da {model_name}",
-                            )
-                            self.db.insert_statement(stmt)
-                            self.status["new_facts"] += 1
-                            extracted_count += 1
-
-                    # 3. Claims
-                    for c in parsed.get("claims", []):
-                        subj = c.get("subject")
-                        pred = c.get("predicate", "technical_claim")
-                        obj = c.get("object", "")
-                        if subj and obj:
-                            norm_subj = subj.strip().lower()
-                            cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
-                            ent_id = self.db.upsert_entity(subj, cat)
-                            stmt = StatementRecord(
-                                id=str(uuid.uuid4()),
-                                entity_id=ent_id,
-                                statement_type="CLAIM",
-                                subject=subj,
-                                predicate=pred,
-                                object=str(obj),
-                                author="assistant",
-                                confidence=0.85,
-                                source_message_id=first_msg_id,
-                                source_conversation_id=conv_id,
-                                valid_from=ts,
-                                is_current=1,
-                                notes=f"Claim tecnico estratto da {model_name}",
-                            )
-                            self.db.insert_statement(stmt)
-                            extracted_count += 1
-
-                    # 4. Decisions
-                    for d in parsed.get("decisions", []):
-                        topic = d.get("topic") or "Decisione Personale"
-                        dec_text = d.get("decision")
-                        status_val = d.get("status", "ADOPTED").upper()
-                        if status_val not in ("EVALUATING", "ADOPTED", "ABANDONED", "SUPERSEDED"):
-                            status_val = "ADOPTED"
-                        if dec_text:
-                            dec = DecisionRecord(
-                                id=str(uuid.uuid4()),
-                                topic=topic,
-                                decision_text=dec_text,
-                                status=status_val,
-                                decided_at=ts or "N/D",
-                                source_message_id=first_msg_id,
-                                source_conversation_id=conv_id,
-                            )
-                            self.db.insert_decision(dec)
-                            self.status["new_decisions"] += 1
-                            extracted_count += 1
-
-                    # 5. Relations
-                    for r in parsed.get("relations", []):
-                        f_ent = (r.get("from_entity") or "").strip()
-                        t_ent = (r.get("to_entity") or "").strip()
-                        rel_type = (r.get("relation") or r.get("relation_type") or "relates_to").strip()
-                        if f_ent and t_ent and f_ent.lower() != t_ent.lower():
-                            f_cat = extracted_entity_cats.get(f_ent.lower()) or guess_category(f_ent)
-                            t_cat = extracted_entity_cats.get(t_ent.lower()) or guess_category(t_ent)
-                            f_id = self.db.upsert_entity(f_ent, f_cat)
-                            t_id = self.db.upsert_entity(t_ent, t_cat)
-                            from engramvault.db.models import RelationRecord
-                            rel_rec = RelationRecord(
-                                id=str(uuid.uuid4()),
-                                from_entity_id=f_id,
-                                to_entity_id=t_id,
-                                relation_type=rel_type,
-                                source_message_id=first_msg_id,
-                            )
-                            self.db.insert_relation(rel_rec)
-                            self.status["new_relations"] = self.status.get("new_relations", 0) + 1
-                            extracted_count += 1
-                else:
-                    # Fallback to deterministic heuristic extractor
-                    from engramvault.adapters.base import NormalizedConversation, NormalizedMessage
-                    norm_msgs = [
-                        NormalizedMessage(role=m["role"], text=m["content"], ts=m["ts"])
-                        for m in conv_record["messages"]
-                    ]
-                    norm_conv = NormalizedConversation(
-                        assistant=conv_record["provider"],
-                        title=conv_record["title"],
-                        date=conv_record["created_at"],
-                        external_ref=conv_record["external_ref"],
-                        messages=norm_msgs,
+                except Exception as conv_exc:
+                    logger.error(
+                        "Errore durante l'elaborazione della conversazione '%s' (%s): %s",
+                        title, conv_id, conv_exc, exc_info=True
                     )
-                    self.extractor.extract_from_conversation(norm_conv, conv_id, conv_record["messages"])
-                    extracted_count = 1
-
-                self.db.mark_conversation_enriched(conv_id, model_name, extracted_count)
-                self.status["processed"] += 1
+                    # Mark enriched with 0 extracted so the batch doesn't get stuck indefinitely
+                    try:
+                        self.db.mark_conversation_enriched(conv_id, model_name, 0)
+                        self.status["processed"] += 1
+                    except Exception:
+                        pass
 
                 if self.delay_between_calls > 0:
                     time.sleep(self.delay_between_calls)

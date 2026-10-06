@@ -989,6 +989,7 @@
                                 <span data-i18n="enrich_model_label">{{ i18n.get('enrich_model_label', 'Model:') }}</span> <span id="enrich-model-name" class="text-indigo-300 font-mono">...</span>
                             </div>
                             <div id="enrich-current-conv" class="text-[10px] text-slate-500 truncate italic"></div>
+                            <div id="enrich-error-banner" class="hidden text-xs text-rose-400 bg-rose-500/10 border border-rose-500/30 rounded-lg p-2.5 font-mono"></div>
                         </div>
                     </div>
 
@@ -2488,6 +2489,16 @@
                 if (relEl) relEl.innerText = s.new_relations || 0;
                 document.getElementById('enrich-model-name').innerText = s.extractor_model || 'heuristics';
                 document.getElementById('enrich-current-conv').innerText = s.current_conversation ? `Attuale: "${s.current_conversation}"` : '';
+
+                const errBanner = document.getElementById('enrich-error-banner');
+                if (errBanner) {
+                    if (s.error) {
+                        errBanner.innerText = `Errore arricchimento: ${s.error}`;
+                        errBanner.classList.remove('hidden');
+                    } else {
+                        errBanner.classList.add('hidden');
+                    }
+                }
 
                 document.getElementById('btn-start-enrich').disabled = isRunning;
                 document.getElementById('btn-stop-enrich').disabled = !isRunning;

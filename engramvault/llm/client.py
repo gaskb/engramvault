@@ -1,7 +1,10 @@
 import json
+import logging
 from typing import Any, Dict, List, Optional
 from engramvault.llm.base import BaseLLMProvider, LLMResponse
 from engramvault.llm.factory import get_llm_provider
+
+logger = logging.getLogger("engramvault.llm.client")
 
 
 class LLMClient:
