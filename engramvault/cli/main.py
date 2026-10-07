@@ -54,6 +54,8 @@ def cmd_sync_claude_code(args, db: Database):
         state_file=args.state_file,
         remote_url=args.remote,
         db=db if not args.remote else None,
+        exclude_patterns=args.exclude.split(",") if getattr(args, "exclude", None) else None,
+        ignore_file=getattr(args, "ignore_file", None),
     )
     dest_desc = f"server remoto '{args.remote}'" if args.remote else f"database locale '{db.db_path}'"
     print(f"Sincronizzazione log Claude Code verso {dest_desc}...")
@@ -80,6 +82,8 @@ def cmd_sync_antigravity(args, db: Database):
         state_file=args.state_file,
         remote_url=args.remote,
         db=db if not args.remote else None,
+        exclude_patterns=args.exclude.split(",") if getattr(args, "exclude", None) else None,
+        ignore_file=getattr(args, "ignore_file", None),
     )
     dest_desc = f"server remoto '{args.remote}'" if args.remote else f"database locale '{db.db_path}'"
     print(f"Sincronizzazione sessioni Antigravity verso {dest_desc}...")
@@ -239,6 +243,8 @@ def main():
     p_sync_claude.add_argument("--remote", default=None, help="URL dell'istanza remota (es. http://localhost:5006)")
     p_sync_claude.add_argument("--projects-dir", default=None, help="Percorso alternativo ~/.claude/projects")
     p_sync_claude.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
+    p_sync_claude.add_argument("--exclude", default=None, help="Pattern di esclusione separati da virgola (es. '*/stipendio*,*privato*')")
+    p_sync_claude.add_argument("--ignore-file", default=None, help="Percorso a un file di pattern da ignorare")
     p_sync_claude.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
     p_sync_claude.set_defaults(func=cmd_sync_claude_code)
 
@@ -246,6 +252,8 @@ def main():
     p_sync_anti.add_argument("--remote", default=None, help="URL dell'istanza remota (es. http://localhost:5006)")
     p_sync_anti.add_argument("--antigravity-dir", default=None, help="Percorso alternativo ~/.gemini/antigravity")
     p_sync_anti.add_argument("--state-file", default=None, help="Percorso file di stato tracking")
+    p_sync_anti.add_argument("--exclude", default=None, help="Pattern di esclusione separati da virgola (es. '*/stipendio*,*privato*')")
+    p_sync_anti.add_argument("--ignore-file", default=None, help="Percorso a un file di pattern da ignorare")
     p_sync_anti.add_argument("--dry-run", action="store_true", help="Mostra solo le sessioni da sincronizzare senza inviarle")
     p_sync_anti.set_defaults(func=cmd_sync_antigravity)
 

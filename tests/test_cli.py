@@ -66,3 +66,25 @@ def test_cli_seed_and_inspect(tmp_path: Path, capsys):
     out, _ = capsys.readouterr()
     assert "DOMANDA: Cosa possiedo?" in out
     assert "MODALITÀ ESEGUITA: [STRUCTURED]" in out
+
+
+def test_cli_sync_exclude_flags(tmp_path: Path, capsys):
+    ignore_file = tmp_path / "sync_ignore.txt"
+    ignore_file.write_text("*.secret\n/private/path/*\n")
+
+    # Test sync claude-code with --dry-run, --exclude, --ignore-file
+    with patch("engramvault.sync.claude_code.ClaudeCodeSyncer.sync", return_value={"status": "dry_run", "changed_count": 0}) as mock_sync:
+        with patch("sys.argv", ["memoria", "sync", "claude-code", "--dry-run", "--exclude", "*bank*,*salary*", "--ignore-file", str(ignore_file)]):
+            main()
+        assert mock_sync.called
+    out, _ = capsys.readouterr()
+    assert "[DRY-RUN]" in out
+
+    # Test sync antigravity with --dry-run, --exclude, --ignore-file
+    with patch("engramvault.sync.antigravity.AntigravitySyncer.sync", return_value={"status": "dry_run", "changed_count": 0}) as mock_sync_anti:
+        with patch("sys.argv", ["memoria", "sync", "antigravity", "--dry-run", "--exclude", "*classified*", "--ignore-file", str(ignore_file)]):
+            main()
+        assert mock_sync_anti.called
+    out, _ = capsys.readouterr()
+    assert "[DRY-RUN]" in out
+

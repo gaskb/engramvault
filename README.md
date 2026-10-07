@@ -1,10 +1,10 @@
-# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.5
+# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.6
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/EngramVault-v2.12.5-emerald.svg)](https://engramvault.net)
+[![Version](https://img.shields.io/badge/EngramVault-v2.12.6-emerald.svg)](https://engramvault.net)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -163,6 +163,16 @@ Engram AI models interconnected homelab topology, software stacks, hardware setu
 - **Real-Time Unenriched Conversation Tracker**: The "Ingest & Enrich" view displays real-time counters of unanalyzed conversations (`X in attesa / Y totali`), providing clear feedback on batch extraction status.
 - **Viewport Layout Optimization**: Zero-margin base styling ensures the footer is cleanly visible at the bottom of the viewport on initial load without default vertical scrollbars.
 - **CLI Robustness**: Full unit-test suite for `engramvault` CLI commands (`init`, `seed`, `stats`, `search`, `ask`, `entities`, `decisions`, `timeline`) with support for global `--db` positioning (legacy `memoria` alias preserved).
+
+---
+
+## 🔒 Sensitive Workspace Exclusion & Sentinel Files (v2.12.6)
+
+Prevent confidential projects, NDA repositories, or personal workspaces from syncing to EngramVault across both **Google Antigravity** and **Claude Code**:
+
+- **Sentinel Files**: Simply drop a file named `.no-vault`, `.no-engramvault`, or `.engramvaultignore` into the root of any confidential project folder. Both syncers recursively detect these sentinels and exclude the session.
+- **Pattern Exclusions**: Pass `--exclude "*pattern1*,*pattern2*"` via CLI, set the `ENGRAMVAULT_SYNC_EXCLUDE` environment variable, or add patterns to `~/.engramvault/sync_ignore.txt`.
+- **Zero Overhead**: Excluded sessions are remembered with `ignored: true` in sync state so they are skipped without rescanning transcripts.
 
 ---
 

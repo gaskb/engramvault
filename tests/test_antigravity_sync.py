@@ -105,3 +105,78 @@ def test_antigravity_syncer_remote(anti_sync_env):
         assert mock_post.called
         call_url = mock_post.call_args[0][0]
         assert call_url == "http://localhost:5006/api/ingest"
+
+
+def test_antigravity_syncer_exclusions(anti_sync_env, tmp_path):
+    anti_dir = anti_sync_env["anti_dir"]
+    state_file = anti_sync_env["state_file"]
+    db = anti_sync_env["db"]
+
+    # 1. Session in a workspace containing .no-vault sentinel file
+    secret_workspace = tmp_path / "secret_project"
+    secret_workspace.mkdir()
+    (secret_workspace / ".no-vault").touch()
+
+    # 2. Public workspace
+    public_workspace = tmp_path / "public_project"
+    public_workspace.mkdir()
+
+    # Create dummy conversation_summaries.db
+    db_path = anti_dir / "conversation_summaries.db"
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute(
+        """CREATE TABLE conversation_summaries (
+            conversation_id TEXT PRIMARY KEY,
+            title TEXT,
+            workspace_uris TEXT
+        )"""
+    )
+    cur.execute(
+        "INSERT INTO conversation_summaries VALUES (?, ?, ?)",
+        ("sess-secret", "Secret Task", json.dumps([secret_workspace.as_uri()])),
+    )
+    cur.execute(
+        "INSERT INTO conversation_summaries VALUES (?, ?, ?)",
+        ("sess-pattern", "Busta Paga Stipendio", json.dumps([public_workspace.as_uri()])),
+    )
+    cur.execute(
+        "INSERT INTO conversation_summaries VALUES (?, ?, ?)",
+        ("sess-public", "Public App Task", json.dumps([public_workspace.as_uri()])),
+    )
+    conn.commit()
+    conn.close()
+
+    # Create JSONL transcripts for the three sessions
+    for cid in ["sess-secret", "sess-pattern", "sess-public"]:
+        ld = anti_dir / "brain" / cid / ".system_generated" / "logs"
+        ld.mkdir(parents=True)
+        (ld / "transcript_full.jsonl").write_text(
+            json.dumps({"step_index": 1, "type": "USER_INPUT", "content": f"Prompt for {cid}"}) + "\n"
+        )
+
+    # Initialize syncer with exclude patterns (e.g. *stipendio*)
+    syncer = AntigravitySyncer(
+        antigravity_dir=anti_dir,
+        state_file=state_file,
+        db=db,
+        exclude_patterns=["*stipendio*"],
+    )
+
+    # Scan should exclude sess-secret (.no-vault) and sess-pattern (matched by title/pattern)
+    changed = syncer.scan_changed_files()
+    assert len(changed) == 1
+    assert "sess-public" in str(changed[0])
+
+    # Perform sync
+    res = syncer.sync()
+    assert res["status"] == "success"
+    assert res["synced_count"] == 1
+
+    # Verify state records ignored sessions with ignored: True
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    synced_map = state.get("synced_files", {})
+    assert any("sess-secret" in k and v.get("ignored") is True for k, v in synced_map.items())
+    assert any("sess-pattern" in k and v.get("ignored") is True for k, v in synced_map.items())
+    assert any("sess-public" in k and v.get("ignored") is not True for k, v in synced_map.items())
+

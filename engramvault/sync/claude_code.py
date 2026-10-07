@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from engramvault.config import DEFAULT_DATA_DIR
 from engramvault.db.engine import Database
 from engramvault.ingest.pipeline import ingest_source
+from engramvault.sync.filter import SyncFilter
 
 logger = logging.getLogger("engramvault.sync")
 
@@ -89,7 +90,8 @@ def post_multipart_file(
 class ClaudeCodeSyncer:
     """
     Scans ~/.claude/projects/ and synchronizes new or updated session files (.jsonl)
-    to prevent losing chat histories when Claude Code deletes them after 30 days.
+    to prevent losing chat histories when Claude Code deletes them after 30 days,
+    respecting exclusion rules and sentinel files.
     """
 
     def __init__(
@@ -99,15 +101,51 @@ class ClaudeCodeSyncer:
         remote_url: Optional[str] = None,
         db: Optional[Database] = None,
         api_token: Optional[str] = None,
+        exclude_patterns: Optional[List[str]] = None,
+        ignore_file: Optional[Path | str] = None,
     ):
         self.projects_dir = Path(projects_dir or DEFAULT_CLAUDE_PROJECTS_DIR)
         self.state_file = Path(state_file or DEFAULT_STATE_FILE)
         self.remote_url = (remote_url or "").rstrip("/")
         self.api_token = api_token or os.environ.get("MEMORIA_API_TOKEN")
         self.db = db
+        self.sync_filter = SyncFilter(patterns=exclude_patterns, ignore_file=ignore_file)
+
+    def _is_session_ignored(self, file_path: Path) -> bool:
+        """Checks if a Claude Code session file belongs to an ignored workspace."""
+        project_folder_name = file_path.parent.name if file_path.parent else ""
+
+        # 1. Match project folder name against patterns
+        if project_folder_name and self.sync_filter.matches_pattern(project_folder_name):
+            return True
+
+        # 2. Decode cwd if present in session JSON lines
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                for idx, line in enumerate(f):
+                    if idx > 25:
+                        break
+                    if "cwd" in line:
+                        try:
+                            data = json.loads(line)
+                            cwd = data.get("cwd") or data.get("message", {}).get("cwd")
+                            if cwd and self.sync_filter.is_workspace_ignored(cwd):
+                                return True
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        # 3. If project folder matches encoded path (e.g. -Users-gas-dev-stipendio)
+        if project_folder_name.startswith("-"):
+            reconstructed = "/" + project_folder_name.lstrip("-").replace("-", "/")
+            if self.sync_filter.is_workspace_ignored(reconstructed):
+                return True
+
+        return False
 
     def scan_changed_files(self) -> List[Path]:
-        """Returns list of session files that are new or have changed since last sync."""
+        """Returns list of session files that are new or have changed since last sync and not ignored."""
         if not self.projects_dir.exists():
             return []
 
@@ -115,6 +153,8 @@ class ClaudeCodeSyncer:
         synced_map = state.get("synced_files", {})
 
         changed: List[Path] = []
+        ignored_count = 0
+
         for file_path in self.projects_dir.glob("**/*.jsonl"):
             if not file_path.is_file():
                 continue
@@ -123,10 +163,24 @@ class ClaudeCodeSyncer:
             stat = file_path.stat()
             current_mtime = stat.st_mtime
             current_size = stat.st_size
-
             prev = synced_map.get(rel_key)
+
+            # Check if ignored by filter
+            if self._is_session_ignored(file_path):
+                ignored_count += 1
+                if not prev or prev.get("mtime") != current_mtime or prev.get("size") != current_size:
+                    synced_map[rel_key] = {
+                        "mtime": current_mtime,
+                        "size": current_size,
+                        "ignored": True,
+                    }
+                continue
+
             if not prev or prev.get("mtime") != current_mtime or prev.get("size") != current_size:
                 changed.append(file_path)
+
+        if ignored_count > 0:
+            save_sync_state(self.state_file, state)
 
         return sorted(changed, key=lambda f: f.stat().st_mtime)
 

@@ -102,3 +102,67 @@ def test_claude_code_syncer_remote(sync_env):
         assert mock_post.called
         call_url = mock_post.call_args[0][0]
         assert call_url == "http://localhost:5006/api/ingest"
+
+
+def test_claude_code_syncer_exclusions(sync_env, tmp_path):
+    projects_dir = sync_env["projects_dir"]
+    state_file = sync_env["state_file"]
+    db = sync_env["db"]
+
+    # 1. Project folder matching an exclude pattern
+    proj_sensitive = projects_dir / "-Users-gas-dev-banking-app"
+    proj_sensitive.mkdir()
+    sess_sensitive = proj_sensitive / "session_sens.jsonl"
+    sess_sensitive.write_text(
+        json.dumps({"type": "user", "message": {"content": "Conto corrente"}, "timestamp": "2024-07-03T10:00:00Z"}) + "\n"
+    )
+
+    # 2. Project containing cwd with .no-vault sentinel file on disk
+    real_workdir = tmp_path / "finance_workdir"
+    real_workdir.mkdir()
+    (real_workdir / ".no-vault").touch()
+
+    proj_sentinel = projects_dir / "-Users-gas-dev-finance"
+    proj_sentinel.mkdir()
+    sess_sentinel = proj_sentinel / "session_sent.jsonl"
+    sess_sentinel.write_text(
+        json.dumps({
+            "type": "user",
+            "cwd": str(real_workdir),
+            "message": {"content": "Bilancio annuale"},
+            "timestamp": "2024-07-03T11:00:00Z",
+        }) + "\n"
+    )
+
+    # 3. Standard public project
+    proj_public = projects_dir / "-Users-gas-dev-public-docs"
+    proj_public.mkdir()
+    sess_public = proj_public / "session_pub.jsonl"
+    sess_public.write_text(
+        json.dumps({"type": "user", "message": {"content": "Scrivi documentazione"}, "timestamp": "2024-07-03T12:00:00Z"}) + "\n"
+    )
+
+    syncer = ClaudeCodeSyncer(
+        projects_dir=projects_dir,
+        state_file=state_file,
+        db=db,
+        exclude_patterns=["*banking*"],
+    )
+
+    # Scan should exclude banking (pattern) and finance (sentinel in cwd)
+    changed = syncer.scan_changed_files()
+    assert len(changed) == 1
+    assert changed[0] == sess_public
+
+    # Sync
+    res = syncer.sync()
+    assert res["status"] == "success"
+    assert res["synced_count"] == 1
+
+    # Verify state records ignored sessions with ignored: True
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    synced_map = state.get("synced_files", {})
+    assert any("session_sens.jsonl" in k and v.get("ignored") is True for k, v in synced_map.items())
+    assert any("session_sent.jsonl" in k and v.get("ignored") is True for k, v in synced_map.items())
+    assert any("session_pub.jsonl" in k and v.get("ignored") is not True for k, v in synced_map.items())
+

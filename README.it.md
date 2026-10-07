@@ -1,10 +1,10 @@
-# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.5
+# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.12.6
 
 > **Vault personale e self-hosted per conversazioni AI, Knowledge Graph epistemico (`FACT` / `CLAIM` / `DECISION`), Motore di ricerca ibrida e Server MCP nativo per Agenti AI.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Versione](https://img.shields.io/badge/EngramVault-v2.12.5-emerald.svg)](https://engramvault.net)
+[![Versione](https://img.shields.io/badge/EngramVault-v2.12.6-emerald.svg)](https://engramvault.net)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--server-mcp-nativo)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--server-mcp-nativo)
 [![Licenza: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -153,6 +153,16 @@ EngramVault modella topologie di rete, stack software, setup hardware e dipenden
 - **Protezione Reshape dei BLOB Vettoriali**: Valida l'integrità del buffer float a 384 dimensioni (`1536` byte) in `_ensure_vector_cache`, ignorando in modo sicuro record corrotti.
 - **Tracker Conversazioni Non Arricchite**: La vista "Importa & Arricchisci" mostra contatori in tempo reale delle conversazioni non ancora analizzate (`X in attesa / Y totali`).
 - **CLI Robusta**: Suite completa di test unitari per i comandi della CLI `engramvault` (`init`, `seed`, `stats`, `search`, `ask`, `entities`, `decisions`, `timeline`) con supporto per il posizionamento globale del parametro `--db`.
+
+---
+
+## 🔒 Esclusione Workspace Sensibili & File Sentinella (v2.12.6)
+
+Evita che progetti confidenziali, repository con NDA o workspace privati vengano sincronizzati con EngramVault da **Google Antigravity** e **Claude Code**:
+
+- **File Sentinella**: È sufficiente creare un file `.no-vault`, `.no-engramvault` o `.engramvaultignore` nella cartella radice di qualsiasi progetto riservato. Entrambi i sincronizzatori risalgono l'albero delle directory ed escludono automaticamente le relative sessioni.
+- **Pattern di Esclusione**: Usa l'opzione CLI `--exclude "*pattern1*,*pattern2*"`, la variabile d'ambiente `ENGRAMVAULT_SYNC_EXCLUDE`, oppure inserisci i pattern in `~/.engramvault/sync_ignore.txt`.
+- **Zero Overhead**: Le sessioni escluse vengono memorizzate con `ignored: true` nel file di stato della sincronizzazione, evitando scansioni e log ripetuti.
 
 ---
 
