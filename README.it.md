@@ -113,8 +113,8 @@ EngramVault può essere installato direttamente su qualsiasi smartphone (Android
 - **Service Worker & Offline Shell**: Gli asset statici (design system CSS, temi, icone, shell principale) sono memorizzati nella cache locale tramite `service-worker.js` con strategia stale-while-revalidate per caricamenti istantanei.
 
 ### Come Installare su Smartphone:
-- **Android (Chrome / Brave / Edge)**: Apri `https://vault.example.com` $\rightarrow$ tocca il menu del browser (⋮) $\rightarrow$ seleziona **"Installa app"** o **"Aggiungi a schermata Home"**.
-- **iOS (Safari)**: Apri `https://vault.example.com` $\rightarrow$ tocca il pulsante Condividi (⎋) $\rightarrow$ seleziona **"Aggiungi alla schermata Home"**.
+- **Android (Chrome / Brave / Edge)**: Apri l'URL della tua istanza (es. `http://localhost:5006` o `https://vault.example.com`) $\rightarrow$ tocca il menu del browser (⋮) $\rightarrow$ seleziona **"Installa app"** o **"Aggiungi a schermata Home"**.
+- **iOS (Safari)**: Apri l'URL della tua istanza $\rightarrow$ tocca il pulsante Condividi (⎋) $\rightarrow$ seleziona **"Aggiungi alla schermata Home"**.
 
 ---
 

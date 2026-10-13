@@ -114,8 +114,8 @@ Engram AI / EngramVault can be installed directly onto any smartphone (Android a
 - **Mobile App Backlog Roadmap**: Tracks future native/hybrid extensions (Issue #27) including Android home screen widgets, Whisper-powered quick audio memos, and local read-only SQLite replicas.
 
 ### How to Install on Mobile:
-- **Android (Chrome / Brave / Edge)**: Open `https://vault.example.com` $\rightarrow$ tap the browser menu (⋮) $\rightarrow$ select **"Install app"** or **"Add to Home screen"**.
-- **iOS (Safari)**: Open `https://vault.example.com` $\rightarrow$ tap the Share button (⎋) $\rightarrow$ select **"Add to Home Screen"**.
+- **Android (Chrome / Brave / Edge)**: Open your instance URL (e.g. `http://localhost:5006` or `https://vault.example.com`) $\rightarrow$ tap the browser menu (⋮) $\rightarrow$ select **"Install app"** or **"Add to Home screen"**.
+- **iOS (Safari)**: Open your instance URL $\rightarrow$ tap the Share button (⎋) $\rightarrow$ select **"Add to Home Screen"**.
 
 ## 🕸️ Knowledge Graph & Multi-Hop Reasoning (v2.9.0)
 

@@ -717,7 +717,7 @@ def _forward_to_remote_mcp(
 
 
 def run_stdio_server():
-    """Runs the MCP Server over stdio, forwarding to `MEMORIA_API_URL` (.220:5006) with local SQLite fallback."""
+    """Runs the MCP Server over stdio, forwarding to `MEMORIA_API_URL` (localhost:5006) with local SQLite fallback."""
     local_db: Optional[Database] = None
     local_planner: Optional[QueryPlanner] = None
 
