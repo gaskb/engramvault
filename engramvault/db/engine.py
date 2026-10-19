@@ -85,6 +85,15 @@ class Database:
             except Exception as exc:
                 logger.debug("FTS5 backfill skipped: %s", exc)
 
+            # Check for conflict_json migration in statements table
+            try:
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(statements)").fetchall()]
+                if cols and "conflict_json" not in cols:
+                    conn.execute("ALTER TABLE statements ADD COLUMN conflict_json TEXT DEFAULT NULL")
+                    conn.commit()
+            except Exception as exc:
+                logger.debug("statements conflict_json migration skipped: %s", exc)
+
     def conversation_exists_by_hash(self, content_hash: str) -> bool:
         with self.get_connection() as conn:
             cur = conn.execute(
@@ -277,12 +286,13 @@ class Database:
 
     def insert_statement(self, stmt: StatementRecord) -> str:
         stmt_id = stmt.id or str(uuid.uuid4())
-        sql = """INSERT INTO statements (id, entity_id, statement_type, subject, predicate, object, author, confidence, source_message_id, source_conversation_id, valid_from, valid_until, is_current, supersedes_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        sql = """INSERT INTO statements (id, entity_id, statement_type, subject, predicate, object, author, confidence, source_message_id, source_conversation_id, valid_from, valid_until, is_current, supersedes_id, notes, conflict_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         with self.get_connection() as conn:
             conn.execute(sql, (
                 stmt_id, stmt.entity_id, stmt.statement_type, stmt.subject, stmt.predicate, stmt.object,
                 stmt.author, stmt.confidence, stmt.source_message_id, stmt.source_conversation_id,
                 stmt.valid_from, stmt.valid_until, stmt.is_current, stmt.supersedes_id, stmt.notes,
+                stmt.conflict_json,
             ))
             conn.commit()
             return stmt_id
@@ -615,8 +625,9 @@ class Database:
         statement_type: Optional[str] = None,
         is_current: Optional[int] = None,
         notes: Optional[str] = None,
+        conflict_json: Optional[str] = None,
     ) -> bool:
-        """Updates statement attributes (type, status, notes)."""
+        """Updates statement attributes (type, status, notes, conflict_json)."""
         fields = []
         params = []
         if statement_type is not None:
@@ -628,6 +639,9 @@ class Database:
         if notes is not None:
             fields.append("notes = ?")
             params.append(notes)
+        if conflict_json is not None:
+            fields.append("conflict_json = ?")
+            params.append(conflict_json)
 
         if not fields:
             return False
@@ -638,6 +652,74 @@ class Database:
             cur = conn.execute(sql, params)
             conn.commit()
             return cur.rowcount > 0
+
+    def build_agent_context(
+        self,
+        max_facts: int = 50,
+        max_decisions: int = 20,
+    ) -> Dict[str, Any]:
+        """
+        Builds a high-speed (<50ms), compacted user and homelab context summary
+        specifically designed for LLM system prompt injection (/context command).
+        """
+        now_iso = utc_now_iso()
+        facts = self.get_statements(statement_type="FACT", is_current=1)
+        if max_facts and len(facts) > max_facts:
+            facts = facts[:max_facts]
+
+        decisions = self.get_decisions(limit=max_decisions)
+        active_decisions = [
+            d for d in decisions if d.get("status") in ("ADOPTED", "EVALUATING")
+        ]
+
+        # Group facts by entity category
+        by_cat: Dict[str, List[Dict[str, Any]]] = {}
+        for f in facts:
+            cat = f.get("entity_category") or "general"
+            by_cat.setdefault(cat, []).append(f)
+
+        md_lines = [
+            "# Profilo Utente & Contesto Homelab (EngramVault)",
+            f"- **Generato il**: {now_iso[:19].replace('T', ' ')} UTC",
+            f"- **Fatti Verificati Attivi**: {len(facts)}",
+            f"- **Decisioni Attive**: {len(active_decisions)}",
+            "",
+            "## 🖥️ Fatti Verificati & Inventario Attivo",
+        ]
+
+        if not facts:
+            md_lines.append("- _Nessun fatto verificato registrato come attivo nel Vault._")
+        else:
+            for cat, cat_facts in sorted(by_cat.items()):
+                md_lines.append(f"### Category: `{cat}`")
+                for s in cat_facts:
+                    pred = s.get("predicate", "owned_by_user")
+                    subj = s.get("subject", "")
+                    obj = s.get("object", "")
+                    if pred in ("owned_by_user", "uses", "prefers") and obj in ("true", "1", "yes"):
+                        md_lines.append(f"- **{subj}**")
+                    else:
+                        md_lines.append(f"- **{subj}** [{pred}]: {obj}")
+                md_lines.append("")
+
+        md_lines.append("## 📐 Decisioni Tecniche & Architetturali Attive")
+        if not active_decisions:
+            md_lines.append("- _Nessuna decisione attiva registrata nel Vault._")
+        else:
+            for d in active_decisions:
+                st = d.get("status", "ADOPTED")
+                topic = d.get("topic", "")
+                text = d.get("decision_text", "")
+                md_lines.append(f"- **[{st}] {topic}**: {text}")
+
+        return {
+            "generated_at": now_iso,
+            "facts_count": len(facts),
+            "decisions_count": len(active_decisions),
+            "facts": facts,
+            "decisions": active_decisions,
+            "context_markdown": "\n".join(md_lines).strip(),
+        }
 
     def delete_statement(self, stmt_id: str) -> bool:
         with self.get_connection() as conn:

@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from engramvault.config import API_VERSION, DEFAULT_DB_PATH
 from engramvault.db.engine import Database
 from engramvault.db.models import DecisionRecord, StatementRecord
+from engramvault.knowledge.contradiction import detect_contradiction
 from engramvault.knowledge.extractor import guess_category
 from engramvault.knowledge.query_planner import QueryPlanner
 
@@ -36,12 +37,36 @@ MCP_SERVER_INFO = {
 MCP_INSTRUCTIONS = (
     "EngramVault è il Vault Storico delle conversazioni (ChatGPT, Claude, Gemini, Ollama, Antigravity), "
     "dei Fatti Verificati (inventario hardware/audio/software, configurazioni, preferenze) e delle Decisioni Architetturali di Gas.\n"
-    "Usa `memoria_search` come primo strumento per cercare rapidamente (< 30ms) discussioni passate, fatti o decisioni su un argomento.\n"
+    "Usa `memoria_get_context` come prima chiamata ad avvio sessione (o per il comando /context) per ottenere il profilo utente consolidato in < 50ms.\n"
+    "Usa `memoria_search` per cercare rapidamente discussioni passate, fatti o decisioni su un argomento.\n"
     "Usa `memoria_get_conversation` per leggere i messaggi completi di una conversazione trovata.\n"
     "Usa `memoria_remember_fact` o `memoria_remember_decision` per salvare nuove decisioni o fatti emersi durante la sessione."
 )
 
 MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
+    {
+        "name": "memoria_get_context",
+        "description": (
+            "Recupera in tempi ultra-rapidi (< 50ms) il Profilo Utente consolidato e il contesto attivo dell'Homelab "
+            "(fatti verificati attivi, configurazioni, hardware posseduto e decisioni architetturali). "
+            "Ideale da richiamare all'inizio di una sessione di lavoro o per l'equivalente del comando /context."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "max_facts": {
+                    "type": "integer",
+                    "description": "Numero massimo di fatti attivi da includere nel sommario (default: 50).",
+                    "default": 50,
+                },
+                "max_decisions": {
+                    "type": "integer",
+                    "description": "Numero massimo di decisioni attive da includere nel sommario (default: 20).",
+                    "default": 20,
+                },
+            },
+        },
+    },
     {
         "name": "memoria_search",
         "description": (
@@ -482,6 +507,15 @@ def handle_mcp_tool_call(
                 "structuredContent": res,
             }
 
+        elif name == "memoria_get_context":
+            max_facts = int(arguments.get("max_facts", 50))
+            max_decisions = int(arguments.get("max_decisions", 20))
+            ctx = db.build_agent_context(max_facts=max_facts, max_decisions=max_decisions)
+            return {
+                "content": [{"type": "text", "text": ctx["context_markdown"]}],
+                "structuredContent": ctx,
+            }
+
         elif name == "memoria_remember_fact":
             subject = str(arguments.get("subject", "")).strip()
             predicate = str(arguments.get("predicate", "owned_by_user")).strip()
@@ -491,6 +525,21 @@ def handle_mcp_tool_call(
 
             ent_id = db.upsert_entity(subject, category)
             now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+            # Contradiction Detection check
+            conflict = detect_contradiction(
+                db=db,
+                subject=subject,
+                predicate=predicate,
+                object_value=object_value,
+                statement_type="FACT",
+                entity_category=category,
+            )
+            conflict_json = json.dumps(conflict, ensure_ascii=False) if conflict.get("has_conflict") else None
+            supersedes_id = conflict.get("conflicting_id") if conflict.get("conflict_type") == "SUPERSEDES" else None
+            if supersedes_id:
+                db.invalidate_statement(supersedes_id, valid_until=now_iso)
+
             stmt = StatementRecord(
                 id=str(uuid.uuid4()),
                 entity_id=ent_id,
@@ -502,16 +551,17 @@ def handle_mcp_tool_call(
                 confidence=1.0,
                 valid_from=now_iso,
                 is_current=1,
+                supersedes_id=supersedes_id,
                 notes=notes,
+                conflict_json=conflict_json,
             )
             stmt_id = db.insert_statement(stmt)
+            msg = f"✅ Fatto registrato in EngramVault (`id`: `{stmt_id}`): **{subject}** (`{category}`) -> `{predicate}`: **{object_value}**"
+            if conflict.get("has_conflict"):
+                msg += f"\n\n⚠️ **Nota Rilevamento Contraddizione ({conflict['conflict_type']})**: {conflict['explanation']}"
             return {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"✅ Fatto registrato in EngramVault (`id`: `{stmt_id}`): **{subject}** (`{category}`) -> `{predicate}`: **{object_value}**",
-                    }
-                ],
+                "content": [{"type": "text", "text": msg}],
+                "structuredContent": {"id": stmt_id, "conflict": conflict},
             }
 
         elif name == "memoria_remember_decision":

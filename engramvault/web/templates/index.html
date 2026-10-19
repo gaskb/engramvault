@@ -1782,6 +1782,22 @@
                     const badgeClass = s.statement_type === 'FACT' ? 'badge-fact hover:bg-emerald-500/30' : 'badge-claim hover:bg-indigo-500/30';
                     const currColor = s.is_current ? 'text-emerald-400' : 'text-slate-500';
                     const currText = s.is_current ? `● ${tr('stmt_current', 'CURRENT')}` : `○ ${tr('stmt_past', 'PAST')}`;
+
+                    let conflictHtml = '';
+                    if (s.conflict_json) {
+                        try {
+                            const cObj = typeof s.conflict_json === 'string' ? JSON.parse(s.conflict_json) : s.conflict_json;
+                            if (cObj && cObj.has_conflict) {
+                                const badgeType = cObj.conflict_type === 'SUPERSEDES' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                                const iconStr = cObj.conflict_type === 'SUPERSEDES' ? '🔄' : '⚠️';
+                                conflictHtml = `
+                                <div class="mt-1.5 text-[10px] px-2 py-1 rounded border ${badgeType} flex items-center gap-1.5">
+                                    <span>${iconStr} <strong>${escapeHtml(cObj.conflict_type || 'CONFLITTO')}:</strong></span>
+                                    <span class="truncate" title="${escapeHtml(cObj.explanation || '')}">${escapeHtml(cObj.explanation || cObj.conflicting_summary || '')}</span>
+                                </div>`;
+                            }
+                        } catch(err) {}
+                    }
                     
                     stmtsHtml += `
                     <div class="text-xs p-2.5 rounded-lg bg-[#10141d] border border-cardborder/50 group relative">
@@ -1802,6 +1818,7 @@
                             </div>
                         </div>
                         <div class="text-slate-200"><strong>${escapeHtml(s.predicate)}:</strong> ${escapeHtml(s.object)}</div>
+                        ${conflictHtml}
                         <div class="text-[10px] text-slate-500 mt-1 flex justify-between">
                             <span>${s.conversation_title ? tr('source_prefix', 'Source:') + ' ' + escapeHtml(s.conversation_title) : escapeHtml(s.notes || '')}</span>
                             <span>${escapeHtml((s.valid_from || '').slice(0, 10))}</span>

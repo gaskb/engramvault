@@ -6,6 +6,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 from engramvault.db.engine import Database
 from engramvault.db.models import DecisionRecord, StatementRecord
+from engramvault.knowledge.contradiction import detect_contradiction
 from engramvault.knowledge.extractor import KnowledgeExtractor, guess_category
 from engramvault.llm.client import LLMClient, parse_llm_json
 from engramvault.llm.jev import JevSystemOneEngine
@@ -234,6 +235,15 @@ class KnowledgeEnricher:
                                 norm_subj = subj.strip().lower()
                                 cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
                                 ent_id = self.db.upsert_entity(subj, cat)
+
+                                conflict = detect_contradiction(
+                                    self.db, subj, pred, str(obj), statement_type="FACT", entity_category=cat
+                                )
+                                conflict_json = json.dumps(conflict, ensure_ascii=False) if conflict.get("has_conflict") else None
+                                supersedes_id = conflict.get("conflicting_id") if conflict.get("conflict_type") == "SUPERSEDES" else None
+                                if supersedes_id:
+                                    self.db.invalidate_statement(supersedes_id, valid_until=ts or utc_now_iso())
+
                                 stmt = StatementRecord(
                                     id=str(uuid.uuid4()),
                                     entity_id=ent_id,
@@ -247,7 +257,9 @@ class KnowledgeEnricher:
                                     source_conversation_id=conv_id,
                                     valid_from=ts,
                                     is_current=1,
+                                    supersedes_id=supersedes_id,
                                     notes=_clean_str(f.get("notes")) or f"Estratto da {model_name}",
+                                    conflict_json=conflict_json,
                                 )
                                 self.db.insert_statement(stmt)
                                 self.status["new_facts"] += 1
@@ -264,6 +276,12 @@ class KnowledgeEnricher:
                                 norm_subj = subj.strip().lower()
                                 cat = extracted_entity_cats.get(norm_subj) or guess_category(subj)
                                 ent_id = self.db.upsert_entity(subj, cat)
+
+                                conflict = detect_contradiction(
+                                    self.db, subj, pred, str(obj), statement_type="CLAIM", entity_category=cat
+                                )
+                                conflict_json = json.dumps(conflict, ensure_ascii=False) if conflict.get("has_conflict") else None
+
                                 stmt = StatementRecord(
                                     id=str(uuid.uuid4()),
                                     entity_id=ent_id,
@@ -278,6 +296,7 @@ class KnowledgeEnricher:
                                     valid_from=ts,
                                     is_current=1,
                                     notes=f"Claim tecnico estratto da {model_name}",
+                                    conflict_json=conflict_json,
                                 )
                                 self.db.insert_statement(stmt)
                                 extracted_count += 1

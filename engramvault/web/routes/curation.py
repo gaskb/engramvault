@@ -16,6 +16,7 @@ from engramvault.config import MAX_UPLOAD_MB
 from engramvault.db.engine import Database, utc_now_iso
 from engramvault.db.models import DecisionRecord, StatementRecord
 from engramvault.ingest.pipeline import ingest_source
+from engramvault.knowledge.contradiction import detect_contradiction
 from engramvault.knowledge.enricher import KnowledgeEnricher
 from engramvault.knowledge.extractor import guess_category
 from engramvault.seed.seed_data import seed_database
@@ -33,10 +34,19 @@ class CreateStatementRequest(BaseModel):
     entity_category: Optional[str] = Field(default=None, max_length=128)
 
 
+class CheckConflictRequest(BaseModel):
+    subject: str = Field(..., min_length=1, max_length=512)
+    predicate: str = Field(..., min_length=1, max_length=256)
+    object: str = Field(..., min_length=1, max_length=4000)
+    statement_type: Literal["FACT", "CLAIM", "DECISION"] = Field(default="CLAIM")
+    entity_category: Optional[str] = Field(default=None, max_length=128)
+
+
 class UpdateStatementRequest(BaseModel):
     statement_type: Optional[Literal["FACT", "CLAIM", "DECISION"]] = None
     is_current: Optional[int] = None
     notes: Optional[str] = Field(default=None, max_length=2000)
+    conflict_json: Optional[str] = None
 
 
 class CreateDecisionRequest(BaseModel):
@@ -161,11 +171,37 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
             "stats": db.get_stats(),
         }
 
+    @router.post("/api/statements/check-conflict")
+    async def check_statement_conflict(payload: CheckConflictRequest):
+        cat = payload.entity_category or guess_category(payload.subject)
+        report = detect_contradiction(
+            db=db,
+            subject=payload.subject,
+            predicate=payload.predicate,
+            object_value=payload.object,
+            statement_type=payload.statement_type.upper(),
+            entity_category=cat,
+        )
+        return {"status": "success", "report": report}
+
     @router.post("/api/statements", dependencies=[Depends(require_mutation_auth)])
     async def create_statement(payload: CreateStatementRequest):
         cat = payload.entity_category or guess_category(payload.subject)
         ent_id = db.upsert_entity(payload.subject, cat)
         now_iso = utc_now_iso()
+
+        # Contradiction Detection check
+        conflict = detect_contradiction(
+            db=db,
+            subject=payload.subject,
+            predicate=payload.predicate,
+            object_value=payload.object,
+            statement_type=payload.statement_type.upper(),
+            entity_category=cat,
+        )
+        import json
+        conflict_json = json.dumps(conflict, ensure_ascii=False) if conflict.get("has_conflict") else None
+
         stmt = StatementRecord(
             id=str(uuid.uuid4()),
             entity_id=ent_id,
@@ -178,9 +214,15 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
             valid_from=now_iso,
             is_current=1,
             notes=payload.notes or "Inserito manualmente dall'utente",
+            conflict_json=conflict_json,
         )
         stmt_id = db.insert_statement(stmt)
-        return {"status": "success", "statement_id": stmt_id, "stats": db.get_stats()}
+        return {
+            "status": "success",
+            "statement_id": stmt_id,
+            "conflict": conflict,
+            "stats": db.get_stats(),
+        }
 
     @router.patch("/api/statements/{stmt_id}", dependencies=[Depends(require_mutation_auth)])
     async def update_statement(stmt_id: str, payload: UpdateStatementRequest):
@@ -189,6 +231,7 @@ def build_curation_router(db: Database, enricher: KnowledgeEnricher) -> APIRoute
             statement_type=payload.statement_type.upper() if payload.statement_type else None,
             is_current=payload.is_current,
             notes=payload.notes,
+            conflict_json=payload.conflict_json,
         )
         if not ok:
             raise HTTPException(status_code=404, detail="Statement non trovato o nessuna modifica")

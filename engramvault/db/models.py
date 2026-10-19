@@ -60,6 +60,7 @@ class StatementRecord:
     is_current: int = 1
     supersedes_id: Optional[str] = None
     notes: Optional[str] = None
+    conflict_json: Optional[str] = None
 
 
 @dataclass

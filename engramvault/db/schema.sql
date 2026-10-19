@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS statements (
     valid_until TEXT,
     is_current INTEGER DEFAULT 1,
     supersedes_id TEXT REFERENCES statements(id) ON DELETE SET NULL,
-    notes TEXT
+    notes TEXT,
+    conflict_json TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_stmt_entity ON statements(entity_id);

@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from engramvault.config import DEFAULT_LANG
 from engramvault.db.engine import Database, utc_now_iso
 from engramvault.db.models import DecisionRecord, StatementRecord
+from engramvault.knowledge.contradiction import detect_contradiction
 from engramvault.knowledge.extractor import guess_category
 from engramvault.knowledge.query_planner import QueryPlanner
 from engramvault.mcp_server import (
@@ -43,6 +44,20 @@ class AgentRememberRequest(BaseModel):
     topic: Optional[str] = Field(default=None, max_length=512)
     decision_text: Optional[str] = Field(default=None, max_length=4000)
     status: Literal["ADOPTED", "EVALUATING", "SUPERSEDED", "ABANDONED"] = Field(default="ADOPTED")
+
+
+class AgentContextRequest(BaseModel):
+    max_facts: int = Field(default=50, ge=1, le=500)
+    max_decisions: int = Field(default=20, ge=1, le=200)
+    format: str = Field(default="json", max_length=16)
+
+
+class AgentCheckConflictRequest(BaseModel):
+    subject: str = Field(..., max_length=512)
+    predicate: str = Field(default="owned_by_user", max_length=256)
+    object_value: str = Field(..., max_length=4000)
+    record_type: Literal["fact", "claim", "decision"] = Field(default="fact")
+    category: Optional[str] = Field(default=None, max_length=128)
 
 
 class AgentQueryRequest(BaseModel):
@@ -118,6 +133,41 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
             raise HTTPException(status_code=404, detail=f"Conversazione {conv_id} non trovata")
         return res
 
+    @router.get("/api/v1/agent/context", dependencies=[Depends(require_agent_auth)])
+    async def agent_get_context(
+        max_facts: int = 50,
+        max_decisions: int = 20,
+        format: str = "json",
+    ):
+        ctx = await asyncio.to_thread(db.build_agent_context, max_facts=max_facts, max_decisions=max_decisions)
+        if format.lower() in ("markdown", "text", "md"):
+            return Response(content=ctx["context_markdown"], media_type="text/markdown")
+        return ctx
+
+    @router.post("/api/v1/agent/context", dependencies=[Depends(require_agent_auth)])
+    async def agent_post_context(payload: AgentContextRequest):
+        ctx = await asyncio.to_thread(
+            db.build_agent_context,
+            max_facts=payload.max_facts,
+            max_decisions=payload.max_decisions,
+        )
+        if payload.format.lower() in ("markdown", "text", "md"):
+            return Response(content=ctx["context_markdown"], media_type="text/markdown")
+        return ctx
+
+    @router.post("/api/v1/agent/check_conflict", dependencies=[Depends(require_agent_auth)])
+    async def agent_check_conflict(payload: AgentCheckConflictRequest):
+        cat = payload.category or guess_category(payload.subject)
+        report = detect_contradiction(
+            db=db,
+            subject=payload.subject,
+            predicate=payload.predicate,
+            object_value=payload.object_value,
+            statement_type="FACT" if payload.record_type.lower() == "fact" else "CLAIM",
+            entity_category=cat,
+        )
+        return {"status": "success", "report": report}
+
     @router.post("/api/v1/agent/remember", dependencies=[Depends(require_agent_auth)])
     async def agent_remember(payload: AgentRememberRequest):
         now_iso = utc_now_iso()
@@ -144,10 +194,26 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
             raise HTTPException(status_code=400, detail="subject e object_value richiesti per un fatto")
         cat = payload.category or guess_category(payload.subject)
         ent_id = db.upsert_entity(payload.subject, cat)
+
+        # Run contradiction detection
+        target_type = "CLAIM" if rtype == "claim" else "FACT"
+        conflict = detect_contradiction(
+            db=db,
+            subject=payload.subject,
+            predicate=(payload.predicate or "owned_by_user").strip(),
+            object_value=payload.object_value.strip(),
+            statement_type=target_type,
+            entity_category=cat,
+        )
+        conflict_json = json.dumps(conflict, ensure_ascii=False) if conflict.get("has_conflict") else None
+        supersedes_id = conflict.get("conflicting_id") if conflict.get("conflict_type") == "SUPERSEDES" else None
+        if supersedes_id and target_type == "FACT":
+            db.invalidate_statement(supersedes_id, valid_until=now_iso)
+
         stmt = StatementRecord(
             id=str(uuid.uuid4()),
             entity_id=ent_id,
-            statement_type="FACT",
+            statement_type=target_type,
             subject=payload.subject.strip(),
             predicate=(payload.predicate or "owned_by_user").strip(),
             object=payload.object_value.strip(),
@@ -155,17 +221,20 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
             confidence=1.0,
             valid_from=now_iso,
             is_current=1,
+            supersedes_id=supersedes_id,
             notes=payload.notes or "Registrato da Agente AI",
+            conflict_json=conflict_json,
         )
         stmt_id = db.insert_statement(stmt)
         return {
             "status": "success",
-            "record_type": "fact",
+            "record_type": target_type.lower(),
             "id": stmt_id,
             "subject": stmt.subject,
             "predicate": stmt.predicate,
             "object_value": stmt.object,
             "category": cat,
+            "conflict": conflict,
         }
 
     @router.post("/api/v1/agent/ask", dependencies=[Depends(require_agent_auth)])
@@ -221,6 +290,7 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
             "transport": "Streamable HTTP (POST /mcp) & stdio (python -m engramvault.mcp_server)",
             "endpoint": f"{base_url}/mcp",
             "agent_rest_api": {
+                "context": f"{base_url}/api/v1/agent/context",
                 "search": f"{base_url}/api/v1/agent/search?q=<query>",
                 "conversation": f"{base_url}/api/v1/agent/conversation/<id>",
                 "remember": f"{base_url}/api/v1/agent/remember",

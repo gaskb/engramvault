@@ -128,6 +128,8 @@ def create_app(db_path: Path | str = DEFAULT_DB_PATH) -> FastAPI:
         version=API_VERSION,
         lifespan=lifespan,
     )
+    app.state.db = db
+    app.state.planner = planner
     app.state.security_mgr = security_mgr
     if STATIC_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
