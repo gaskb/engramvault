@@ -49,11 +49,21 @@ MCP_TOOLS_SCHEMA: List[Dict[str, Any]] = [
         "description": (
             "Recupera in tempi ultra-rapidi (< 50ms) il Profilo Utente consolidato e il contesto attivo dell'Homelab "
             "(fatti verificati attivi, configurazioni, hardware posseduto e decisioni architetturali). "
+            "Supporta filtraggio per categorie (es. 'audio', 'software', 'hardware_pc') e query semantica "
+            "per limitare il contesto a quanto pertinente alla sessione di lavoro. "
             "Ideale da richiamare all'inizio di una sessione di lavoro o per l'equivalente del comando /context."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Filtro semantico o tema della sessione (es. 'audiocassette', 'docker deployment', 'fastapi'). Se fornito, seleziona i fatti e decisioni più rilevanti.",
+                },
+                "categories": {
+                    "type": "string",
+                    "description": "Filtro opzionale per categoria/e separate da virgola (es. 'audio', 'software,hardware').",
+                },
                 "max_facts": {
                     "type": "integer",
                     "description": "Numero massimo di fatti attivi da includere nel sommario (default: 50).",
@@ -510,7 +520,14 @@ def handle_mcp_tool_call(
         elif name == "memoria_get_context":
             max_facts = int(arguments.get("max_facts", 50))
             max_decisions = int(arguments.get("max_decisions", 20))
-            ctx = db.build_agent_context(max_facts=max_facts, max_decisions=max_decisions)
+            query = arguments.get("query") or arguments.get("q")
+            categories = arguments.get("categories") or arguments.get("category")
+            ctx = db.build_agent_context(
+                query=query,
+                categories=categories,
+                max_facts=max_facts,
+                max_decisions=max_decisions,
+            )
             return {
                 "content": [{"type": "text", "text": ctx["context_markdown"]}],
                 "structuredContent": ctx,

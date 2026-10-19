@@ -84,6 +84,94 @@ def test_build_agent_context_populated(tmp_path):
     assert "Cloud Sync" not in md
 
 
+def test_build_agent_context_category_and_query_filtering(tmp_path):
+    db = Database(tmp_path / "filtered_context.db")
+
+    # Facts in different domains
+    e_pc = db.upsert_entity("Mac Mini M2", "hardware_pc")
+    db.insert_statement(StatementRecord(
+        id="fact-pc-1",
+        entity_id=e_pc,
+        statement_type="FACT",
+        subject="Mac Mini M2",
+        predicate="ram",
+        object="32GB",
+        author="user",
+        is_current=1,
+    ))
+
+    e_audio = db.upsert_entity("Sony HF 90", "audiocassette")
+    db.insert_statement(StatementRecord(
+        id="fact-audio-1",
+        entity_id=e_audio,
+        statement_type="FACT",
+        subject="Sony HF 90",
+        predicate="quality",
+        object="Type I Normal bias",
+        author="user",
+        is_current=1,
+    ))
+
+    e_aqua = db.upsert_entity("Acquario Marino", "aquarium")
+    db.insert_statement(StatementRecord(
+        id="fact-aqua-1",
+        entity_id=e_aqua,
+        statement_type="FACT",
+        subject="Acquario Marino",
+        predicate="volume",
+        object="250 litri",
+        author="user",
+        is_current=1,
+    ))
+
+    # Decisions in different domains
+    db.insert_decision(DecisionRecord(
+        id="dec-db",
+        topic="Database Homelab",
+        decision_text="Usare SQLite con WAL per EngramVault",
+        status="ADOPTED",
+        decided_at="2026-10-01T10:00:00Z",
+    ))
+    db.insert_decision(DecisionRecord(
+        id="dec-tape",
+        topic="Audiocassette Recorder",
+        decision_text="Preferire registratore 3 testine per Type II",
+        status="ADOPTED",
+        decided_at="2026-10-02T10:00:00Z",
+    ))
+
+    # 1. Category filter: only audiocassette
+    ctx_audio = db.build_agent_context(categories="audiocassette")
+    assert ctx_audio["facts_count"] == 1
+    assert ctx_audio["facts"][0]["subject"] == "Sony HF 90"
+    assert "Sony HF 90" in ctx_audio["context_markdown"]
+    assert "Mac Mini M2" not in ctx_audio["context_markdown"]
+    assert "Acquario Marino" not in ctx_audio["context_markdown"]
+    assert "**Filtro Categorie**: `audiocassette`" in ctx_audio["context_markdown"]
+
+    # 2. Multiple categories as list
+    ctx_multi = db.build_agent_context(categories=["hardware_pc", "aquarium"])
+    subjects_multi = {f["subject"] for f in ctx_multi["facts"]}
+    assert "Mac Mini M2" in subjects_multi
+    assert "Acquario Marino" in subjects_multi
+    assert "Sony HF 90" not in subjects_multi
+
+    # 3. Query-aware filter: search "Sony"
+    ctx_sony = db.build_agent_context(query="Sony")
+    assert "Sony HF 90" in {f["subject"] for f in ctx_sony["facts"]}
+    assert "**Focus Semantico**: `Sony`" in ctx_sony["context_markdown"]
+
+    # 4. Query-aware filter: search "SQLite WAL" (should find decision and relevant facts)
+    ctx_sql = db.build_agent_context(query="SQLite WAL")
+    assert any("SQLite" in d.get("decision_text", "") for d in ctx_sql["decisions"])
+    assert "**Focus Semantico**: `SQLite WAL`" in ctx_sql["context_markdown"]
+
+    # 5. Empty / Non-matching category
+    ctx_empty = db.build_agent_context(categories="nonexistent_domain")
+    assert ctx_empty["facts_count"] == 0
+    assert "Nessun fatto verificato registrato come attivo" in ctx_empty["context_markdown"]
+
+
 def test_agent_context_rest_and_mcp_endpoints(tmp_path):
     db_file = tmp_path / "app_context.db"
     app = create_app(db_file)
@@ -119,6 +207,29 @@ def test_agent_context_rest_and_mcp_endpoints(tmp_path):
     assert len(mcp_res["content"]) >= 1
     assert "structuredContent" in mcp_res
     assert mcp_res["structuredContent"]["facts_count"] >= 1
+
+    # 5. GET /api/v1/agent/context with categories and query
+    res_filtered = client.get("/api/v1/agent/context", params={"categories": "hardware", "q": "Proxmox"})
+    assert res_filtered.status_code == 200
+    f_data = res_filtered.json()
+    assert f_data["query"] == "Proxmox"
+    assert f_data["categories"] == ["hardware"]
+
+    # 6. POST /api/v1/agent/context with query and format markdown
+    res_post_q = client.post("/api/v1/agent/context", json={"query": "Proxmox", "format": "markdown"})
+    assert res_post_q.status_code == 200
+    assert res_post_q.headers["content-type"].startswith("text/markdown")
+    assert "**Focus Semantico**: `Proxmox`" in res_post_q.text
+
+    # 7. MCP memoria_get_context with query and categories
+    mcp_filtered = handle_mcp_tool_call(
+        "memoria_get_context",
+        {"query": "Proxmox", "categories": "hardware", "max_facts": 10},
+        db=db,
+        planner=planner,
+    )
+    assert "**Focus Semantico**: `Proxmox`" in mcp_filtered["content"][0]["text"]
+    assert "**Filtro Categorie**: `hardware`" in mcp_filtered["content"][0]["text"]
 
 
 def test_contradiction_detection_rules(tmp_path):

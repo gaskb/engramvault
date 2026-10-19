@@ -655,22 +655,94 @@ class Database:
 
     def build_agent_context(
         self,
+        query: Optional[str] = None,
+        categories: Optional[Any] = None,
         max_facts: int = 50,
         max_decisions: int = 20,
     ) -> Dict[str, Any]:
         """
         Builds a high-speed (<50ms), compacted user and homelab context summary
         specifically designed for LLM system prompt injection (/context command).
+        Supports deterministic category filtering and query-aware semantic matching.
         """
         now_iso = utc_now_iso()
-        facts = self.get_statements(statement_type="FACT", is_current=1)
-        if max_facts and len(facts) > max_facts:
-            facts = facts[:max_facts]
 
-        decisions = self.get_decisions(limit=max_decisions)
-        active_decisions = [
-            d for d in decisions if d.get("status") in ("ADOPTED", "EVALUATING")
-        ]
+        # Parse categories filter
+        clean_cats: Optional[set[str]] = None
+        if categories:
+            if isinstance(categories, str):
+                cat_list = [c.strip().lower() for c in categories.replace(";", ",").split(",") if c.strip()]
+            elif isinstance(categories, (list, tuple, set)):
+                cat_list = [str(c).strip().lower() for c in categories if str(c).strip()]
+            else:
+                cat_list = []
+            if cat_list:
+                clean_cats = set(cat_list)
+
+        clean_query = (query or "").strip()
+
+        if clean_query:
+            # Query-aware context using FTS5 search across statements and decisions
+            k_res = self.search_knowledge(
+                query=clean_query,
+                limit=max_facts * 2,
+            )
+            raw_facts = [
+                s for s in k_res.get("statements", [])
+                if s.get("statement_type") == "FACT" and s.get("is_current") == 1
+            ]
+            raw_decisions = [
+                d for d in k_res.get("decisions", [])
+                if d.get("status") in ("ADOPTED", "EVALUATING")
+            ]
+            # If categories filter is present, filter results
+            if clean_cats:
+                raw_facts = [f for f in raw_facts if (f.get("entity_category") or "general").lower() in clean_cats]
+
+            # If query didn't match enough facts, supplement with facts from selected categories or all facts
+            if len(raw_facts) < max_facts:
+                all_facts = self.get_statements(statement_type="FACT", is_current=1)
+                if clean_cats:
+                    all_facts = [f for f in all_facts if (f.get("entity_category") or "general").lower() in clean_cats]
+                seen_ids = {f["id"] for f in raw_facts}
+                for f in all_facts:
+                    if f["id"] not in seen_ids:
+                        raw_facts.append(f)
+                        if len(raw_facts) >= max_facts:
+                            break
+            facts = raw_facts[:max_facts]
+
+            if not raw_decisions:
+                all_decs = self.get_decisions(limit=max_decisions * 2)
+                raw_decisions = [d for d in all_decs if d.get("status") in ("ADOPTED", "EVALUATING")]
+                if clean_cats:
+                    cat_decs = [
+                        d for d in raw_decisions
+                        if any(c in d.get("topic", "").lower() or c in d.get("decision_text", "").lower() for c in clean_cats)
+                    ]
+                    if cat_decs:
+                        raw_decisions = cat_decs
+            active_decisions = raw_decisions[:max_decisions]
+
+        else:
+            # Deterministic category or global context
+            all_facts = self.get_statements(statement_type="FACT", is_current=1)
+            if clean_cats:
+                all_facts = [f for f in all_facts if (f.get("entity_category") or "general").lower() in clean_cats]
+            facts = all_facts[:max_facts]
+
+            all_decisions = self.get_decisions(limit=max_decisions * 2)
+            active_decisions = [
+                d for d in all_decisions if d.get("status") in ("ADOPTED", "EVALUATING")
+            ]
+            if clean_cats:
+                cat_decs = [
+                    d for d in active_decisions
+                    if any(c in d.get("topic", "").lower() or c in d.get("decision_text", "").lower() for c in clean_cats)
+                ]
+                if cat_decs:
+                    active_decisions = cat_decs
+            active_decisions = active_decisions[:max_decisions]
 
         # Group facts by entity category
         by_cat: Dict[str, List[Dict[str, Any]]] = {}
@@ -683,12 +755,18 @@ class Database:
             f"- **Generato il**: {now_iso[:19].replace('T', ' ')} UTC",
             f"- **Fatti Verificati Attivi**: {len(facts)}",
             f"- **Decisioni Attive**: {len(active_decisions)}",
+        ]
+        if clean_query:
+            md_lines.append(f"- **Focus Semantico**: `{clean_query}`")
+        if clean_cats:
+            md_lines.append(f"- **Filtro Categorie**: `{', '.join(sorted(clean_cats))}`")
+        md_lines.extend([
             "",
             "## 🖥️ Fatti Verificati & Inventario Attivo",
-        ]
+        ])
 
         if not facts:
-            md_lines.append("- _Nessun fatto verificato registrato come attivo nel Vault._")
+            md_lines.append("- _Nessun fatto verificato registrato come attivo nel Vault per questi criteri._")
         else:
             for cat, cat_facts in sorted(by_cat.items()):
                 md_lines.append(f"### Category: `{cat}`")
@@ -704,7 +782,7 @@ class Database:
 
         md_lines.append("## 📐 Decisioni Tecniche & Architetturali Attive")
         if not active_decisions:
-            md_lines.append("- _Nessuna decisione attiva registrata nel Vault._")
+            md_lines.append("- _Nessuna decisione attiva registrata nel Vault per questi criteri._")
         else:
             for d in active_decisions:
                 st = d.get("status", "ADOPTED")
@@ -714,6 +792,8 @@ class Database:
 
         return {
             "generated_at": now_iso,
+            "query": clean_query or None,
+            "categories": sorted(clean_cats) if clean_cats else None,
             "facts_count": len(facts),
             "decisions_count": len(active_decisions),
             "facts": facts,

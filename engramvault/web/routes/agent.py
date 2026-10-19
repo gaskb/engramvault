@@ -5,7 +5,7 @@ Agent API v1 & Model Context Protocol (MCP) Server Routes (Issue #26 / Q-01, S-0
 import asyncio
 import json
 import uuid
-from typing import Literal, Optional
+from typing import Any, List, Literal, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
@@ -47,6 +47,10 @@ class AgentRememberRequest(BaseModel):
 
 
 class AgentContextRequest(BaseModel):
+    query: Optional[str] = Field(default=None, max_length=2000)
+    q: Optional[str] = Field(default=None, max_length=2000)
+    categories: Optional[Union[str, List[str]]] = None
+    category: Optional[str] = Field(default=None, max_length=128)
     max_facts: int = Field(default=50, ge=1, le=500)
     max_decisions: int = Field(default=20, ge=1, le=200)
     format: str = Field(default="json", max_length=16)
@@ -135,19 +139,35 @@ def build_agent_router(db: Database, planner: QueryPlanner) -> APIRouter:
 
     @router.get("/api/v1/agent/context", dependencies=[Depends(require_agent_auth)])
     async def agent_get_context(
+        q: Optional[str] = None,
+        query: Optional[str] = None,
+        categories: Optional[str] = None,
+        category: Optional[str] = None,
         max_facts: int = 50,
         max_decisions: int = 20,
         format: str = "json",
     ):
-        ctx = await asyncio.to_thread(db.build_agent_context, max_facts=max_facts, max_decisions=max_decisions)
+        search_query = (query or q or "").strip() or None
+        cat_filter = categories or category
+        ctx = await asyncio.to_thread(
+            db.build_agent_context,
+            query=search_query,
+            categories=cat_filter,
+            max_facts=max_facts,
+            max_decisions=max_decisions,
+        )
         if format.lower() in ("markdown", "text", "md"):
             return Response(content=ctx["context_markdown"], media_type="text/markdown")
         return ctx
 
     @router.post("/api/v1/agent/context", dependencies=[Depends(require_agent_auth)])
     async def agent_post_context(payload: AgentContextRequest):
+        search_query = (payload.query or payload.q or "").strip() or None
+        cat_filter = payload.categories or payload.category
         ctx = await asyncio.to_thread(
             db.build_agent_context,
+            query=search_query,
+            categories=cat_filter,
             max_facts=payload.max_facts,
             max_decisions=payload.max_decisions,
         )

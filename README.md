@@ -1,10 +1,10 @@
-# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.13.0
+# EngramVault — AI Memory Vault (`engramvault.net` · `engramvault.dev`) — v2.13.1
 
 > **Self-hosted, local-first AI Conversation Vault, Epistemic Knowledge Graph (`FACT` / `CLAIM` / `DECISION`), Hybrid Search Engine, and Native MCP Server for AI Agents.**
 >
 > *Un punto centralizzato, leggero e intelligente per memorizzare, indicizzare e distillare conoscenza da migliaia di conversazioni con diverse AI (ChatGPT, Claude, Claude Code, Google Antigravity, Gemini, OpenWebUI/Ollama, Markdown).*
 
-[![Version](https://img.shields.io/badge/EngramVault-v2.13.0-emerald.svg)](https://engramvault.net)
+[![Version](https://img.shields.io/badge/EngramVault-v2.13.1-emerald.svg)](https://engramvault.net)
 [![REST API](https://img.shields.io/badge/REST_API-v1-teal.svg)](#agent-api--mcp-server)
 [![MCP Ready](https://img.shields.io/badge/MCP-2.0-indigo.svg)](#agent-api--mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -180,6 +180,7 @@ Prevent confidential projects, NDA repositories, or personal workspaces from syn
 
 | MCP Tool / REST Endpoint | Description |
 |---|---|
+| `memoria_get_context` (`GET|POST /api/v1/agent/context`) | Ultra-fast (< 50ms) user profile & active homelab context summary for LLM prompt injection (`/context`), with category filtering (`categories=...`) and semantic focus (`q=...` / `query=...`). |
 | `memoria_search` (`GET /api/v1/agent/search?q=...`) | Hybrid search across `FACT`, `CLAIM`, `DECISION`, Knowledge Graph relations, and 80,000+ conversation chunks in `< 30ms`. |
 | `memoria_get_conversation` (`GET /api/v1/agent/conversation/{id}`) | Retrieves the full chronological transcript of any conversation by `conversation_id`. |
 | `memoria_get_entity_graph` (`GET /api/v1/agent/graph/{entity}`) | Traverses outgoing & incoming Knowledge Graph connections (1-hop / 2-hop) for any entity. |
